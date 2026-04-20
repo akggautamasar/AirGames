@@ -567,10 +567,17 @@ function handleWS(msg) {
       break;
 
     // ── START: Both players connected — unlock board ──
+    // This fires for BOTH players (broadcast). The creator (X) is still on the
+    // waiting screen when this arrives, so we must call setupOnlineGameScreen()
+    // to transition them to the game screen first.
     case 'start':
       S.board = msg.board || S.board;
       S.turn  = msg.turn  || 'X';
 
+      // Always (re-)set up the game screen — safe to call multiple times
+      setupOnlineGameScreen();
+
+      // Now both are confirmed online
       setConnLabel('Both connected · Playing!');
       setDot('x', true); setDot('o', true);
       hideGameErr();
@@ -635,21 +642,25 @@ function handleWS(msg) {
 }
 
 function setupOnlineGameScreen() {
-  S.mode   = 'online';
-  S.scoreX = 0; S.scoreO = 0;
-  S.over   = false;
+  const fresh = S.mode !== 'online';
+  S.mode = 'online';
+
+  if (fresh) {
+    S.scoreX = 0; S.scoreO = 0;
+    S.over   = false;
+    resetBoard();
+    setDot('x', false); setDot('o', false);
+    setConnLabel('waiting for opponent…');
+  }
 
   $('game-mode-chip').textContent = `Online · ${S.roomCode}`;
   $('result-banner').classList.add('hidden');
   $('game-error').classList.add('hidden');
   $('online-status').classList.remove('hidden');
 
-  setDot('x', false); setDot('o', false);
-  setConnLabel('waiting for opponent…');
-  resetBoard();
   refreshScoreboard();
   setTurnBadge(S.turn);
-  setClickable(false); // locked until 'start'
+  setClickable(false); // stays locked until 'start' fires
   showScreen('game');
 }
 
