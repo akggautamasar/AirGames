@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AirGames — Tic Tac Toe</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ░░ LOBBY SCREEN ░░ -->
+  <div id="screen-lobby" class="screen active">
+    <div class="brand">
+      <span class="brand-tag">WorksBeyond</span>
+      <h1 class="brand-title">AirGames</h1>
+      <p class="brand-sub">Real-time Tic Tac Toe. No signup. Just play.</p>
+    </div>
+    <div class="lobby-actions">
+      <button id="btn-create" class="btn btn-primary">Create Room</button>
+      <div class="divider"><span>or</span></div>
+      <div class="join-row">
+        <input id="input-code" class="code-input" type="text" maxlength="6"
+               placeholder="ENTER CODE" autocomplete="off" spellcheck="false" />
+        <button id="btn-join" class="btn btn-secondary">Join</button>
+      </div>
+    </div>
+    <div id="lobby-error" class="error-msg hidden"></div>
+  </div>
+
+  <!-- ░░ WAITING SCREEN ░░ -->
+  <div id="screen-waiting" class="screen">
+    <div class="waiting-inner">
+      <div class="pulse-ring"></div>
+      <p class="waiting-label">Waiting for opponent</p>
+      <div class="room-info">
+        <span class="room-code-label">Room Code</span>
+        <span id="display-code" class="room-code-value">——</span>
+        <button id="btn-copy-code" class="btn-icon" title="Copy code">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        </button>
+      </div>
+      <div class="share-row">
+        <input id="share-link" class="share-input" readonly />
+        <button id="btn-copy-link" class="btn-icon" title="Copy link">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+        </button>
+      </div>
+      <p class="share-hint">Share the code or link with a friend</p>
+    </div>
+  </div>
+
+  <!-- ░░ GAME SCREEN ░░ -->
+  <div id="screen-game" class="screen">
+    <header class="game-header">
+      <div class="header-brand">AirGames</div>
+      <div class="header-room">
+        <span id="game-room-code" class="room-chip">——</span>
+        <button id="btn-copy-ingame" class="btn-icon-sm" title="Copy code">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <div class="status-bar">
+      <div class="player-badge" id="badge-x">
+        <span class="badge-mark x-mark">X</span>
+        <span class="badge-name">You</span>
+        <span class="badge-dot" id="dot-x"></span>
+      </div>
+      <div id="turn-indicator" class="turn-indicator">—</div>
+      <div class="player-badge right" id="badge-o">
+        <span class="badge-dot" id="dot-o"></span>
+        <span class="badge-name">Opponent</span>
+        <span class="badge-mark o-mark">O</span>
+      </div>
+    </div>
+
+    <div class="board-wrap">
+      <div id="board" class="board">
+        <div class="cell" data-index="0"></div>
+        <div class="cell" data-index="1"></div>
+        <div class="cell" data-index="2"></div>
+        <div class="cell" data-index="3"></div>
+        <div class="cell" data-index="4"></div>
+        <div class="cell" data-index="5"></div>
+        <div class="cell" data-index="6"></div>
+        <div class="cell" data-index="7"></div>
+        <div class="cell" data-index="8"></div>
+        <!-- Win line overlay -->
+        <svg id="win-line-svg" class="win-line-svg" viewBox="0 0 3 3" preserveAspectRatio="none">
+          <line id="win-line" x1="0" y1="0" x2="0" y2="0" />
+        </svg>
+      </div>
+    </div>
+
+    <div id="game-result" class="game-result hidden">
+      <span id="result-text"></span>
+    </div>
+
+    <div class="game-actions">
+      <button id="btn-rematch" class="btn btn-primary hidden">Rematch</button>
+    </div>
+
+    <div id="game-error" class="error-msg hidden"></div>
+  </div>
+
+  <!-- ░░ TOAST ░░ -->
+  <div id="toast" class="toast hidden">Copied!</div>
+
+  <audio id="snd-move" src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=" preload="auto"></audio>
+  <audio id="snd-win"  src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=" preload="auto"></audio>
+
+  <script src="script.js"></script>
+</body>
+</html>
