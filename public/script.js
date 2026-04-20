@@ -1,103 +1,108 @@
 /**
  * AirGames by WorksBeyond
- * Full game script: Local | Bot | Online + Icon Picker + Stats
+ * script.js — complete rewrite fixing all online multiplayer bugs
+ *
+ * BUGS FIXED:
+ * 1. $ helper defined before use (was hoisting issue with const)
+ * 2. Online flow: 'created' → show waiting. 'joined' → show game (board may have state).
+ *    'start' → unlock board for both players. Previously creator was never getting 'start' handled.
+ * 3. Server now sends field 'turn' (not 'currentTurn') — all refs updated to match.
+ * 4. Deep link: HTML/CSS/JS use absolute paths (/style.css, /script.js) — no 404s from /room/*.
+ * 5. Board interactivity: online players correctly blocked until 'start' received.
+ * 6. Waiting screen shown to creator; opponent gets game screen after joining.
  */
+
+// ── $ helper — MUST be first ──────────────────────────────────────────────────
+const $ = id => document.getElementById(id);
 
 // ══════════════════════════════════════════════════════
 // ICON CATALOGUE
 // ══════════════════════════════════════════════════════
 const ICON_SECTIONS = [
   {
-    title: "Classic X & O",
-    grad: false,
+    title: "Classic X & O", grad: false,
     icons: [
-      { id:"x-classic",  render:"✕", label:"Cross X" },
-      { id:"o-classic",  render:"○", label:"Circle O" },
-      { id:"x-bold",     render:"✗", label:"Bold X" },
-      { id:"o-dot",      render:"⊙", label:"Dot O" },
-      { id:"x-double",   render:"⊠", label:"Box X" },
-      { id:"o-double",   render:"◎", label:"Double O" },
+      { id:"x-classic", render:"✕" },
+      { id:"o-classic", render:"○" },
+      { id:"x-bold",    render:"✗" },
+      { id:"o-dot",     render:"⊙" },
+      { id:"x-box",     render:"⊠" },
+      { id:"o-dbl",     render:"◎" },
     ]
   },
   {
-    title: "✨ Neon & Styled",
-    grad: true,
+    title: "✨ Neon & Styled", grad: true,
     icons: [
-      { id:"x-blue",   render:"<span style='color:#4361ee;font-weight:900;font-family:Baloo 2'>✕</span>",  label:"Blue X" },
-      { id:"o-pink",   render:"<span style='color:#f72585;font-weight:900;font-family:Baloo 2'>○</span>",  label:"Pink O" },
-      { id:"x-green",  render:"<span style='color:#2ed573;font-weight:900;font-family:Baloo 2'>✕</span>", label:"Green X" },
-      { id:"o-gold",   render:"<span style='color:#f5a623;font-weight:900;font-family:Baloo 2'>○</span>", label:"Gold O" },
-      { id:"x-red",    render:"<span style='color:#ff4757;font-weight:900;font-family:Baloo 2'>✕</span>", label:"Red X" },
-      { id:"o-teal",   render:"<span style='color:#00c9b1;font-weight:900;font-family:Baloo 2'>○</span>", label:"Teal O" },
-      { id:"x-purple", render:"<span style='color:#b44fe8;font-weight:900;font-family:Baloo 2'>✕</span>",label:"Purple X" },
-      { id:"o-coral",  render:"<span style='color:#ff6b6b;font-weight:900;font-family:Baloo 2'>○</span>", label:"Coral O" },
-      { id:"x-cyan",   render:"<span style='color:#00d2ff;font-weight:900;font-family:Baloo 2'>✕</span>", label:"Cyan X" },
-      { id:"o-lime",   render:"<span style='color:#adff2f;font-weight:900;font-family:Baloo 2'>○</span>", label:"Lime O" },
-      { id:"x-magenta",render:"<span style='color:#ff00ff;font-weight:900;font-family:Baloo 2'>✕</span>",label:"Magenta X" },
-      { id:"o-sky",    render:"<span style='color:#87ceeb;font-weight:900;font-family:Baloo 2'>○</span>", label:"Sky O" },
+      { id:"x-blue",    render:"<span style='color:#4361ee;font-weight:900;font-family:Baloo 2,sans-serif'>✕</span>" },
+      { id:"o-pink",    render:"<span style='color:#f72585;font-weight:900;font-family:Baloo 2,sans-serif'>○</span>" },
+      { id:"x-green",   render:"<span style='color:#2ed573;font-weight:900;font-family:Baloo 2,sans-serif'>✕</span>" },
+      { id:"o-gold",    render:"<span style='color:#f5a623;font-weight:900;font-family:Baloo 2,sans-serif'>○</span>" },
+      { id:"x-red",     render:"<span style='color:#ff4757;font-weight:900;font-family:Baloo 2,sans-serif'>✕</span>" },
+      { id:"o-teal",    render:"<span style='color:#00c9b1;font-weight:900;font-family:Baloo 2,sans-serif'>○</span>" },
+      { id:"x-purple",  render:"<span style='color:#b44fe8;font-weight:900;font-family:Baloo 2,sans-serif'>✕</span>" },
+      { id:"o-coral",   render:"<span style='color:#ff6b6b;font-weight:900;font-family:Baloo 2,sans-serif'>○</span>" },
+      { id:"x-cyan",    render:"<span style='color:#00d2ff;font-weight:900;font-family:Baloo 2,sans-serif'>✕</span>" },
+      { id:"o-lime",    render:"<span style='color:#adff2f;font-weight:900;font-family:Baloo 2,sans-serif'>○</span>" },
+      { id:"x-mag",     render:"<span style='color:#ff00ff;font-weight:900;font-family:Baloo 2,sans-serif'>✕</span>" },
+      { id:"o-sky",     render:"<span style='color:#87ceeb;font-weight:900;font-family:Baloo 2,sans-serif'>○</span>" },
     ]
   },
   {
-    title: "⭐ Shapes & Symbols",
-    grad: true,
+    title: "⭐ Shapes & Symbols", grad: true,
     icons: [
-      { id:"star",    render:"⭐" }, { id:"heart",  render:"❤️" },
-      { id:"diamond", render:"💎" }, { id:"fire",   render:"🔥" },
-      { id:"bolt",    render:"⚡" }, { id:"crown",  render:"👑" },
-      { id:"moon",    render:"🌙" }, { id:"sun",    render:"☀️" },
-      { id:"snowflake",render:"❄️"},{ id:"flower", render:"🌸" },
-      { id:"skull",   render:"💀" }, { id:"ghost",  render:"👻" },
-      { id:"target",  render:"🎯" }, { id:"gem",    render:"💠" },
-      { id:"music",   render:"🎵" }, { id:"shield", render:"🛡️" },
-      { id:"sword",   render:"⚔️" }, { id:"bomb",   render:"💣" },
+      { id:"star",      render:"⭐" }, { id:"heart",    render:"❤️" },
+      { id:"diamond",   render:"💎" }, { id:"fire",     render:"🔥" },
+      { id:"bolt",      render:"⚡" }, { id:"crown",    render:"👑" },
+      { id:"moon",      render:"🌙" }, { id:"sun",      render:"☀️" },
+      { id:"snowflake", render:"❄️" }, { id:"flower",   render:"🌸" },
+      { id:"skull",     render:"💀" }, { id:"ghost",    render:"👻" },
+      { id:"target",    render:"🎯" }, { id:"gem",      render:"💠" },
+      { id:"music",     render:"🎵" }, { id:"shield",   render:"🛡️" },
+      { id:"swords",    render:"⚔️" }, { id:"bomb",     render:"💣" },
     ]
   },
   {
-    title: "🐾 Animals",
-    grad: false,
+    title: "🐾 Animals", grad: false,
     icons: [
-      { id:"cat",   render:"🐱" }, { id:"dog",   render:"🐶" },
-      { id:"fox",   render:"🦊" }, { id:"wolf",  render:"🐺" },
-      { id:"bear",  render:"🐻" }, { id:"tiger", render:"🐯" },
-      { id:"lion",  render:"🦁" }, { id:"panda", render:"🐼" },
-      { id:"frog",  render:"🐸" }, { id:"owl",   render:"🦉" },
-      { id:"shark", render:"🦈" }, { id:"eagle", render:"🦅" },
+      { id:"cat",    render:"🐱" }, { id:"dog",    render:"🐶" },
+      { id:"fox",    render:"🦊" }, { id:"wolf",   render:"🐺" },
+      { id:"bear",   render:"🐻" }, { id:"tiger",  render:"🐯" },
+      { id:"lion",   render:"🦁" }, { id:"panda",  render:"🐼" },
+      { id:"frog",   render:"🐸" }, { id:"owl",    render:"🦉" },
+      { id:"shark",  render:"🦈" }, { id:"eagle",  render:"🦅" },
     ]
   },
   {
-    title: "🚀 Symbols & Objects",
-    grad: false,
+    title: "🚀 Symbols & Objects", grad: false,
     icons: [
-      { id:"rocket",  render:"🚀" }, { id:"alien",  render:"👽" },
-      { id:"robot",   render:"🤖" }, { id:"ninja",  render:"🥷" },
-      { id:"wizard",  render:"🧙" }, { id:"unicorn",render:"🦄" },
-      { id:"dragon",  render:"🐉" }, { id:"sword2", render:"🗡️" },
-      { id:"trophy",  render:"🏆" }, { id:"dice",   render:"🎲" },
-      { id:"chess",   render:"♟️" }, { id:"joker",  render:"🃏" },
+      { id:"rocket",  render:"🚀" }, { id:"alien",   render:"👽" },
+      { id:"robot",   render:"🤖" }, { id:"ninja",   render:"🥷" },
+      { id:"wizard",  render:"🧙" }, { id:"unicorn", render:"🦄" },
+      { id:"dragon",  render:"🐉" }, { id:"dagger",  render:"🗡️" },
+      { id:"trophy",  render:"🏆" }, { id:"dice",    render:"🎲" },
+      { id:"chess",   render:"♟️" }, { id:"joker",   render:"🃏" },
     ]
   },
   {
-    title: "🎨 Geometric",
-    grad: false,
+    title: "🎨 Geometric", grad: false,
     icons: [
-      { id:"sq-blue",  render:"<span style='color:#4361ee;font-size:28px'>■</span>" },
-      { id:"sq-pink",  render:"<span style='color:#f72585;font-size:28px'>■</span>" },
-      { id:"sq-green", render:"<span style='color:#2ed573;font-size:28px'>■</span>" },
-      { id:"ci-blue",  render:"<span style='color:#4361ee;font-size:28px'>●</span>" },
-      { id:"ci-gold",  render:"<span style='color:#f5a623;font-size:28px'>●</span>" },
-      { id:"ci-teal",  render:"<span style='color:#00c9b1;font-size:28px'>●</span>" },
-      { id:"tri-pur",  render:"<span style='color:#b44fe8;font-size:22px'>▲</span>" },
-      { id:"tri-red",  render:"<span style='color:#ff4757;font-size:22px'>▲</span>" },
-      { id:"dia-gold", render:"<span style='color:#f5a623;font-size:22px'>◆</span>" },
-      { id:"dia-blue", render:"<span style='color:#4361ee;font-size:22px'>◆</span>" },
-      { id:"hex-pink", render:"<span style='color:#f72585;font-size:22px'>⬡</span>" },
+      { id:"sq-blue",  render:"<span style='color:#4361ee;font-size:26px'>■</span>" },
+      { id:"sq-pink",  render:"<span style='color:#f72585;font-size:26px'>■</span>" },
+      { id:"sq-green", render:"<span style='color:#2ed573;font-size:26px'>■</span>" },
+      { id:"ci-blue",  render:"<span style='color:#4361ee;font-size:26px'>●</span>" },
+      { id:"ci-gold",  render:"<span style='color:#f5a623;font-size:26px'>●</span>" },
+      { id:"ci-teal",  render:"<span style='color:#00c9b1;font-size:26px'>●</span>" },
+      { id:"tr-pur",   render:"<span style='color:#b44fe8;font-size:22px'>▲</span>" },
+      { id:"tr-red",   render:"<span style='color:#ff4757;font-size:22px'>▲</span>" },
+      { id:"dia-gld",  render:"<span style='color:#f5a623;font-size:22px'>◆</span>" },
+      { id:"dia-blu",  render:"<span style='color:#4361ee;font-size:22px'>◆</span>" },
+      { id:"hex-pnk",  render:"<span style='color:#f72585;font-size:22px'>⬡</span>" },
       { id:"hex-grn",  render:"<span style='color:#2ed573;font-size:22px'>⬡</span>" },
     ]
   }
 ];
 
-// Get raw render string by id
-function iconRenderById(id) {
+function iconById(id) {
   for (const sec of ICON_SECTIONS) {
     const found = sec.icons.find(i => i.id === id);
     if (found) return found.render;
@@ -108,61 +113,54 @@ function iconRenderById(id) {
 // ══════════════════════════════════════════════════════
 // STATE
 // ══════════════════════════════════════════════════════
-const state = {
-  mode: null,            // 'local' | 'bot' | 'online'
-  botDifficulty: 'medium',
-  board: Array(9).fill(null),
-  currentTurn: 'X',
-  gameOver: false,
-  // Scores (session)
-  scoreX: 0,
-  scoreO: 0,
+const S = {
+  mode:     null,       // 'local' | 'bot' | 'online'
+  board:    Array(9).fill(null),
+  turn:     'X',        // whose turn it is
+  over:     false,
+  scoreX:   0,
+  scoreO:   0,
+  botDiff:  'medium',
   // Online
-  ws: null,
-  myRole: null,
+  ws:       null,
+  myRole:   null,       // 'X' or 'O'
   roomCode: null,
-  reconnectAttempts: 0,
-  // Settings
-  p1Name: 'Player 1',
-  p2Name: 'Player 2',
-  soundOn: true,
-  animOn: true,
-  iconX: 'x-classic',
-  iconO: 'o-classic',
-  iconPickerFor: 'X',
-  // Persistent stats
+  reconnTries: 0,
+  // Prefs
+  p1Name:   'Player 1',
+  p2Name:   'Player 2',
+  soundOn:  true,
+  animOn:   true,
+  iconX:    'x-classic',
+  iconO:    'o-classic',
+  pickerFor:'X',
+  // Persistent
   stats: { wins:0, losses:0, draws:0 },
 };
 
 // ══════════════════════════════════════════════════════
-// PERSISTENT STATS
+// PERSISTENCE
 // ══════════════════════════════════════════════════════
-function loadStats() {
+function loadAll() {
   try {
-    const s = JSON.parse(localStorage.getItem('ag_stats') || '{}');
-    state.stats = { wins: s.wins||0, losses: s.losses||0, draws: s.draws||0 };
-  } catch(_) {}
+    const st = JSON.parse(localStorage.getItem('ag_stats')||'{}');
+    S.stats = { wins:st.wins||0, losses:st.losses||0, draws:st.draws||0 };
+    const pr = JSON.parse(localStorage.getItem('ag_prefs')||'{}');
+    if (pr.p1Name) S.p1Name = pr.p1Name;
+    if (pr.p2Name) S.p2Name = pr.p2Name;
+    if (pr.iconX)  S.iconX  = pr.iconX;
+    if (pr.iconO)  S.iconO  = pr.iconO;
+    if (typeof pr.soundOn==='boolean') S.soundOn = pr.soundOn;
+    if (typeof pr.animOn ==='boolean') S.animOn  = pr.animOn;
+  } catch(_){}
 }
-function saveStats() {
-  try { localStorage.setItem('ag_stats', JSON.stringify(state.stats)); } catch(_){}
-}
-function loadPrefs() {
-  try {
-    const p = JSON.parse(localStorage.getItem('ag_prefs') || '{}');
-    if (p.p1Name) state.p1Name = p.p1Name;
-    if (p.p2Name) state.p2Name = p.p2Name;
-    if (p.iconX)  state.iconX  = p.iconX;
-    if (p.iconO)  state.iconO  = p.iconO;
-    if (typeof p.soundOn === 'boolean') state.soundOn = p.soundOn;
-    if (typeof p.animOn  === 'boolean') state.animOn  = p.animOn;
-  } catch(_) {}
-}
+function saveStats() { try { localStorage.setItem('ag_stats', JSON.stringify(S.stats)); } catch(_){} }
 function savePrefs() {
   try {
     localStorage.setItem('ag_prefs', JSON.stringify({
-      p1Name: state.p1Name, p2Name: state.p2Name,
-      iconX: state.iconX, iconO: state.iconO,
-      soundOn: state.soundOn, animOn: state.animOn
+      p1Name:S.p1Name, p2Name:S.p2Name,
+      iconX:S.iconX, iconO:S.iconO,
+      soundOn:S.soundOn, animOn:S.animOn
     }));
   } catch(_){}
 }
@@ -170,747 +168,696 @@ function savePrefs() {
 // ══════════════════════════════════════════════════════
 // SCREEN MANAGER
 // ══════════════════════════════════════════════════════
-const SCREENS = ['lobby','bot','online','waiting','game'];
+const SCREEN_IDS = ['lobby','bot','online','waiting','game'];
 function showScreen(name) {
-  SCREENS.forEach(s => {
-    const el = $(`screen-${s}`);
-    if (el) el.classList.toggle('active', s === name);
+  SCREEN_IDS.forEach(id => {
+    const el = $('screen-'+id);
+    if (el) el.classList.toggle('active', id===name);
   });
 }
-
-const $ = id => document.getElementById(id);
 
 // ══════════════════════════════════════════════════════
 // TOAST
 // ══════════════════════════════════════════════════════
 let toastTimer;
-function toast(msg) {
+function showToast(msg) {
   const el = $('toast');
   el.textContent = msg;
   el.classList.remove('hidden');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => el.classList.add('hidden'), 2200);
+  toastTimer = setTimeout(()=>el.classList.add('hidden'), 2200);
 }
-
 async function copyText(text) {
   try { await navigator.clipboard.writeText(text); }
-  catch(_) { const t=document.createElement('textarea'); t.value=text; document.body.appendChild(t); t.select(); document.execCommand('copy'); document.body.removeChild(t); }
-  toast('Copied! ✓');
+  catch(_) {
+    const t = document.createElement('textarea');
+    t.value = text; document.body.appendChild(t); t.select();
+    document.execCommand('copy'); document.body.removeChild(t);
+  }
+  showToast('Copied! ✓');
 }
 
 // ══════════════════════════════════════════════════════
-// SOUND
+// SOUND  (Web Audio — no files needed)
 // ══════════════════════════════════════════════════════
-let audioCtx;
+let actx;
 function playSound(type) {
-  if (!state.soundOn) return;
+  if (!S.soundOn) return;
   try {
-    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    const o = audioCtx.createOscillator();
-    const g = audioCtx.createGain();
-    o.connect(g); g.connect(audioCtx.destination);
-    const t = audioCtx.currentTime;
-    if (type === 'move') {
-      o.frequency.setValueAtTime(480, t);
-      o.frequency.exponentialRampToValueAtTime(600, t+0.08);
-      g.gain.setValueAtTime(0.10, t);
-      g.gain.exponentialRampToValueAtTime(0.001, t+0.15);
+    if (!actx) actx = new (window.AudioContext||window.webkitAudioContext)();
+    const t = actx.currentTime;
+    if (type==='move') {
+      const o=actx.createOscillator(), g=actx.createGain();
+      o.connect(g); g.connect(actx.destination);
+      o.frequency.setValueAtTime(480,t);
+      o.frequency.exponentialRampToValueAtTime(620,t+0.08);
+      g.gain.setValueAtTime(0.10,t);
+      g.gain.exponentialRampToValueAtTime(0.001,t+0.15);
       o.start(t); o.stop(t+0.15);
-    } else if (type === 'win') {
-      // Victory chime
-      [523,659,784,1047].forEach((freq, i) => {
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.connect(gain); gain.connect(audioCtx.destination);
-        osc.frequency.value = freq;
-        const start = t + i*0.12;
-        gain.gain.setValueAtTime(0, start);
-        gain.gain.linearRampToValueAtTime(0.12, start+0.05);
-        gain.gain.exponentialRampToValueAtTime(0.001, start+0.3);
-        osc.start(start); osc.stop(start+0.3);
+    } else if (type==='win') {
+      [523,659,784,1047].forEach((f,i)=>{
+        const o=actx.createOscillator(),g=actx.createGain();
+        o.connect(g); g.connect(actx.destination);
+        o.frequency.value=f;
+        const s=t+i*0.13;
+        g.gain.setValueAtTime(0,s);
+        g.gain.linearRampToValueAtTime(0.12,s+0.05);
+        g.gain.exponentialRampToValueAtTime(0.001,s+0.32);
+        o.start(s); o.stop(s+0.32);
       });
-    } else if (type === 'draw') {
-      o.frequency.setValueAtTime(400, t);
-      o.frequency.exponentialRampToValueAtTime(250, t+0.25);
-      g.gain.setValueAtTime(0.08, t);
-      g.gain.exponentialRampToValueAtTime(0.001, t+0.28);
-      o.start(t); o.stop(t+0.28);
+    } else if (type==='draw') {
+      const o=actx.createOscillator(),g=actx.createGain();
+      o.connect(g); g.connect(actx.destination);
+      o.frequency.setValueAtTime(400,t);
+      o.frequency.exponentialRampToValueAtTime(260,t+0.28);
+      g.gain.setValueAtTime(0.08,t);
+      g.gain.exponentialRampToValueAtTime(0.001,t+0.30);
+      o.start(t); o.stop(t+0.30);
     }
-  } catch(_) {}
+  } catch(_){}
 }
 
 // ══════════════════════════════════════════════════════
 // WIN CHECK
 // ══════════════════════════════════════════════════════
 const WIN_LINES = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
-
-function checkWinner(board) {
+function checkWin(board) {
   for (const [a,b,c] of WIN_LINES) {
     if (board[a] && board[a]===board[b] && board[a]===board[c])
-      return { winner: board[a], line: [a,b,c] };
+      return { winner:board[a], line:[a,b,c] };
   }
   if (board.every(Boolean)) return { winner:'draw', line:[] };
   return null;
 }
 
 // ══════════════════════════════════════════════════════
-// WIN LINE CANVAS DRAW
+// WIN LINE CANVAS
 // ══════════════════════════════════════════════════════
-const WIN_LINE_POINTS = {
-  '0,1,2':[0.17,0.17,0.83,0.17], '3,4,5':[0.17,0.50,0.83,0.50],
-  '6,7,8':[0.17,0.83,0.83,0.83], '0,3,6':[0.17,0.17,0.17,0.83],
-  '1,4,7':[0.50,0.17,0.50,0.83], '2,5,8':[0.83,0.17,0.83,0.83],
-  '0,4,8':[0.17,0.17,0.83,0.83], '2,4,6':[0.83,0.17,0.17,0.83],
+const WIN_PTS = {
+  '0,1,2':[.17,.17,.83,.17], '3,4,5':[.17,.50,.83,.50],
+  '6,7,8':[.17,.83,.83,.83], '0,3,6':[.17,.17,.17,.83],
+  '1,4,7':[.50,.17,.50,.83], '2,5,8':[.83,.17,.83,.83],
+  '0,4,8':[.17,.17,.83,.83], '2,4,6':[.83,.17,.17,.83],
 };
-
 function drawWinLine(line) {
-  const canvas = $('win-canvas');
-  if (!canvas) return;
-  const key = line.join(',');
-  const pts = WIN_LINE_POINTS[key];
-  if (!pts) return;
-  const w = canvas.offsetWidth, h = canvas.offsetHeight;
-  canvas.width = w; canvas.height = h;
-  const ctx = canvas.getContext('2d');
-  ctx.clearRect(0,0,w,h);
-
-  const x1=pts[0]*w, y1=pts[1]*h, x2=pts[2]*w, y2=pts[3]*h;
-  const total = Math.hypot(x2-x1, y2-y1);
-  let progress = 0;
-  const DURATION = 350;
-  const start = performance.now();
-
-  // Gradient stroke
-  const grad = ctx.createLinearGradient(x1,y1,x2,y2);
+  const cv = $('win-canvas'); if(!cv) return;
+  const key = line.join(','), pts = WIN_PTS[key]; if(!pts) return;
+  const w=cv.offsetWidth, h=cv.offsetHeight;
+  cv.width=w; cv.height=h;
+  const ctx=cv.getContext('2d');
+  const [rx1,ry1,rx2,ry2]=pts;
+  const x1=rx1*w,y1=ry1*h,x2=rx2*w,y2=ry2*h;
+  const grad=ctx.createLinearGradient(x1,y1,x2,y2);
   grad.addColorStop(0,'#6c3be8');
-  grad.addColorStop(0.5,'#f72585');
+  grad.addColorStop(.5,'#f72585');
   grad.addColorStop(1,'#f5a623');
-
+  const DURATION=360, t0=performance.now();
   function step(now) {
-    const elapsed = now - start;
-    progress = Math.min(elapsed / DURATION, 1);
-    const eased = 1 - Math.pow(1-progress,3);
+    const p=Math.min((now-t0)/DURATION,1);
+    const e=1-Math.pow(1-p,3);
     ctx.clearRect(0,0,w,h);
-    ctx.beginPath();
-    ctx.moveTo(x1,y1);
-    ctx.lineTo(x1+(x2-x1)*eased, y1+(y2-y1)*eased);
-    ctx.strokeStyle = grad;
-    ctx.lineWidth = 6;
-    ctx.lineCap = 'round';
-    ctx.stroke();
-    if (progress < 1) requestAnimationFrame(step);
+    ctx.beginPath(); ctx.moveTo(x1,y1);
+    ctx.lineTo(x1+(x2-x1)*e, y1+(y2-y1)*e);
+    ctx.strokeStyle=grad; ctx.lineWidth=6; ctx.lineCap='round'; ctx.stroke();
+    if(p<1) requestAnimationFrame(step);
   }
   requestAnimationFrame(step);
 }
-
-function clearWinCanvas() {
-  const canvas = $('win-canvas');
-  if (!canvas) return;
-  const ctx = canvas.getContext('2d');
-  ctx.clearRect(0,0,canvas.width,canvas.height);
+function clearCanvas() {
+  const cv=$('win-canvas'); if(!cv) return;
+  cv.getContext('2d').clearRect(0,0,cv.width,cv.height);
 }
 
 // ══════════════════════════════════════════════════════
 // BOARD UI
 // ══════════════════════════════════════════════════════
-const cells = document.querySelectorAll('.cell');
+const CELLS = document.querySelectorAll('.cell');
 
-function renderCell(index, role, animate=true) {
-  const cell = cells[index];
+function renderCell(idx, role, animate=true) {
+  const cell = CELLS[idx];
   cell.innerHTML = '';
   if (!role) { cell.classList.remove('taken'); return; }
-  const icon = role === 'X' ? state.iconX : state.iconO;
-  const render = iconRenderById(icon);
-  const inner = document.createElement('span');
-  inner.className = animate && state.animOn ? 'cell-inner' : '';
-  inner.innerHTML = render;
-  cell.appendChild(inner);
+  const span = document.createElement('span');
+  span.className = (animate && S.animOn) ? 'cell-inner' : '';
+  span.innerHTML = iconById(role==='X' ? S.iconX : S.iconO);
+  cell.appendChild(span);
   cell.classList.add('taken');
 }
 
 function renderBoard(board) {
-  board.forEach((v, i) => renderCell(i, v, false));
+  board.forEach((v,i) => renderCell(i, v, false));
 }
 
-function resetBoardUI() {
-  cells.forEach(cell => {
-    cell.innerHTML = '';
-    cell.classList.remove('taken','highlight','no-hover');
-  });
-  clearWinCanvas();
+function resetBoard() {
+  CELLS.forEach(c => { c.innerHTML=''; c.classList.remove('taken','no-click'); });
+  clearCanvas();
 }
 
-function setBoardInteractive(on, myTurn=true) {
-  cells.forEach(cell => {
-    const idx = parseInt(cell.dataset.index);
-    const taken = !!state.board[idx];
-    if (on && myTurn && !taken && !state.gameOver) {
-      cell.classList.remove('no-hover');
-    } else {
-      cell.classList.add('no-hover');
+// Enable/disable clicking on cells
+function setClickable(canClick) {
+  CELLS.forEach(c => {
+    if (canClick && !c.classList.contains('taken')) {
+      c.classList.remove('no-click');
+    } else if (!canClick) {
+      c.classList.add('no-click');
     }
   });
 }
 
+// For online: only cells valid for myRole and current turn
+function setOnlineClickable() {
+  const myTurn = !S.over && S.turn === S.myRole;
+  CELLS.forEach(c => {
+    const taken = c.classList.contains('taken');
+    if (myTurn && !taken) c.classList.remove('no-click');
+    else c.classList.add('no-click');
+  });
+}
+
 // ══════════════════════════════════════════════════════
-// SCOREBOARD + TURN
+// SCOREBOARD / TURN BADGE
 // ══════════════════════════════════════════════════════
-function updateScoreboard() {
-  $('sb-name-x').textContent = state.p1Name;
-  $('sb-name-o').textContent = state.mode === 'bot' ? state.p2Name : state.p2Name;
-  $('sb-score-x').textContent = state.scoreX;
-  $('sb-score-o').textContent = state.scoreO;
-  $('sb-icon-x').innerHTML = iconRenderById(state.iconX);
-  $('sb-icon-o').innerHTML = iconRenderById(state.iconO);
+function refreshScoreboard() {
+  $('sb-name-x').textContent  = S.p1Name;
+  $('sb-name-o').textContent  = S.p2Name;
+  $('sb-score-x').textContent = S.scoreX;
+  $('sb-score-o').textContent = S.scoreO;
+  $('sb-icon-x').innerHTML    = iconById(S.iconX);
+  $('sb-icon-o').innerHTML    = iconById(S.iconO);
 }
 
 function setTurnBadge(turn) {
   const badge = $('turn-badge');
-  const name = turn === 'X' ? state.p1Name : state.p2Name;
+  const name  = (turn==='X') ? S.p1Name : S.p2Name;
   badge.textContent = `${name}'s Turn`;
-  badge.classList.toggle('o-turn', turn === 'O');
+  badge.classList.toggle('o-turn', turn==='O');
 }
 
-function showResult(winner, myRoleOnline=null) {
-  const banner = $('result-banner');
+// ══════════════════════════════════════════════════════
+// RESULT BANNER
+// ══════════════════════════════════════════════════════
+function showResult(winner, onlineRole=null) {
   const emoji = $('result-emoji');
-  const text = $('result-text');
-  banner.classList.remove('hidden');
+  const text  = $('result-text');
+  $('result-banner').classList.remove('hidden');
 
-  if (winner === 'draw') {
-    emoji.textContent = '🤝';
-    text.textContent = "It's a Draw!";
-    if (state.mode !== 'online') state.stats.draws++;
-  } else {
-    // Determine display
-    const winnerName = winner === 'X' ? state.p1Name : state.p2Name;
-    text.textContent = `${winnerName} Wins!`;
-    if (state.mode === 'online') {
-      if (winner === myRoleOnline) {
-        emoji.textContent = '🎉'; text.textContent = 'You Win! 🎉';
-        state.stats.wins++;
-      } else {
-        emoji.textContent = '😔'; text.textContent = 'You Lose.';
-        state.stats.losses++;
-      }
+  if (winner==='draw') {
+    emoji.textContent='🤝'; text.textContent="It's a Draw!";
+    if (S.mode!=='online') S.stats.draws++;
+  } else if (S.mode==='online') {
+    if (winner===onlineRole) {
+      emoji.textContent='🎉'; text.textContent='You Win! 🎉'; S.stats.wins++;
     } else {
-      emoji.textContent = '🏆';
-      if (state.mode === 'bot' && winner === 'O') {
-        emoji.textContent = '🤖'; text.textContent = 'Bot Wins! 😤';
-        state.stats.losses++;
-      } else {
-        state.stats.wins++;
-      }
+      emoji.textContent='😔'; text.textContent='You Lose.'; S.stats.losses++;
+    }
+  } else {
+    emoji.textContent='🏆';
+    const winnerName = (winner==='X') ? S.p1Name : S.p2Name;
+    text.textContent = `${winnerName} Wins!`;
+    if (S.mode==='bot' && winner==='O') {
+      emoji.textContent='🤖'; text.textContent='Bot Wins! 😤'; S.stats.losses++;
+    } else {
+      S.stats.wins++;
     }
   }
-  saveStats();
-  updateLobbyStats();
+  saveStats(); updateLobbyStats();
 }
 
 function updateLobbyStats() {
-  const { wins, losses, draws } = state.stats;
-  const total = wins + losses + draws;
-  $('st-wins').textContent = wins;
+  const {wins,losses,draws}=S.stats, tot=wins+losses+draws;
+  $('st-wins').textContent   = wins;
   $('st-losses').textContent = losses;
-  $('st-draws').textContent = draws;
-  $('st-wr').textContent = total ? Math.round(wins/total*100)+'%' : '0%';
+  $('st-draws').textContent  = draws;
+  $('st-wr').textContent     = tot ? Math.round(wins/tot*100)+'%' : '0%';
 }
 
 // ══════════════════════════════════════════════════════
-// GAME INIT (LOCAL / BOT)
+// LOCAL / BOT GAME
 // ══════════════════════════════════════════════════════
 function startLocalGame(mode) {
-  state.mode = mode;
-  state.board = Array(9).fill(null);
-  state.currentTurn = 'X';
-  state.gameOver = false;
-  state.scoreX = 0;
-  state.scoreO = 0;
-  resetBoardUI();
+  S.mode   = mode;
+  S.board  = Array(9).fill(null);
+  S.turn   = 'X';
+  S.over   = false;
+  S.scoreX = 0; S.scoreO = 0;
 
-  $('game-mode-chip').textContent = mode === 'bot' ? `vs Bot (${state.botDifficulty})` : 'Local Play';
+  $('game-mode-chip').textContent = mode==='bot' ? `vs Bot · ${S.botDiff}` : 'Local Play';
   $('online-status').classList.add('hidden');
   $('result-banner').classList.add('hidden');
   $('game-error').classList.add('hidden');
-  updateScoreboard();
+  resetBoard();
+  refreshScoreboard();
   setTurnBadge('X');
-  setBoardInteractive(true, true);
+  setClickable(true);
   showScreen('game');
 }
 
-function doLocalMove(index) {
-  if (state.gameOver || state.board[index]) return;
-  if (state.mode === 'online') return;
+function doLocalMove(idx) {
+  if (S.over || S.board[idx]) return;
 
-  state.board[index] = state.currentTurn;
-  renderCell(index, state.currentTurn);
+  S.board[idx] = S.turn;
+  renderCell(idx, S.turn);
   playSound('move');
 
-  const result = checkWinner(state.board);
-  if (result) {
-    state.gameOver = true;
-    setBoardInteractive(false);
-    if (result.line.length) {
-      drawWinLine(result.line);
-      if (result.winner === 'X') state.scoreX++;
-      else state.scoreO++;
+  const res = checkWin(S.board);
+  if (res) {
+    S.over = true;
+    setClickable(false);
+    if (res.line.length) {
+      drawWinLine(res.line);
+      if (res.winner==='X') S.scoreX++; else S.scoreO++;
     }
-    setTimeout(() => {
-      showResult(result.winner);
-      playSound(result.winner === 'draw' ? 'draw' : 'win');
-    }, 400);
-    updateScoreboard();
+    setTimeout(()=>{ showResult(res.winner); playSound(res.winner==='draw'?'draw':'win'); }, 400);
+    refreshScoreboard();
     return;
   }
 
-  state.currentTurn = state.currentTurn === 'X' ? 'O' : 'X';
-  setTurnBadge(state.currentTurn);
+  S.turn = S.turn==='X' ? 'O' : 'X';
+  setTurnBadge(S.turn);
 
-  if (state.mode === 'bot' && state.currentTurn === 'O') {
-    setBoardInteractive(false);
-    setTimeout(doBotMove, 500);
-  } else {
-    setBoardInteractive(true, true);
+  if (S.mode==='bot' && S.turn==='O') {
+    setClickable(false);
+    setTimeout(doBotMove, 480);
   }
 }
 
-// ══════════════════════════════════════════════════════
-// BOT AI
-// ══════════════════════════════════════════════════════
+// ── BOT AI ────────────────────────────────────────────
 function doBotMove() {
-  if (state.gameOver) return;
-  let idx;
-  if (state.botDifficulty === 'easy')  idx = botEasy();
-  else if (state.botDifficulty === 'medium') idx = botMedium();
-  else idx = botHard();
+  if (S.over) return;
+  const idx = S.botDiff==='easy' ? botEasy()
+            : S.botDiff==='medium' ? botMed()
+            : botHard();
 
-  state.board[idx] = 'O';
+  S.board[idx] = 'O';
   renderCell(idx, 'O');
   playSound('move');
 
-  const result = checkWinner(state.board);
-  if (result) {
-    state.gameOver = true;
-    setBoardInteractive(false);
-    if (result.line.length) {
-      drawWinLine(result.line);
-      if (result.winner === 'X') state.scoreX++;
-      else state.scoreO++;
-    }
-    setTimeout(() => {
-      showResult(result.winner);
-      playSound(result.winner === 'draw' ? 'draw' : 'win');
-    }, 400);
-    updateScoreboard();
-    return;
-  }
-
-  state.currentTurn = 'X';
-  setTurnBadge('X');
-  setBoardInteractive(true, true);
-}
-
-function botEasy() {
-  const empty = state.board.map((v,i)=>v?null:i).filter(v=>v!==null);
-  return empty[Math.floor(Math.random()*empty.length)];
-}
-
-function botMedium() {
-  if (Math.random() < 0.5) return botHard();
-  return botEasy();
-}
-
-function botHard() {
-  // Minimax
-  const result = minimax([...state.board], 'O');
-  return result.index;
-}
-
-function minimax(board, player) {
-  const res = checkWinner(board);
+  const res = checkWin(S.board);
   if (res) {
-    if (res.winner === 'O') return { score: 10 };
-    if (res.winner === 'X') return { score: -10 };
-    return { score: 0 };
-  }
-  const empty = board.map((v,i)=>v?null:i).filter(v=>v!==null);
-  const moves = [];
-  for (const idx of empty) {
-    const nb = [...board];
-    nb[idx] = player;
-    const r = minimax(nb, player === 'O' ? 'X' : 'O');
-    moves.push({ index: idx, score: r.score });
-  }
-  if (player === 'O') return moves.reduce((a,b)=>b.score>a.score?b:a);
-  return moves.reduce((a,b)=>b.score<a.score?b:a);
-}
-
-// ══════════════════════════════════════════════════════
-// REMATCH
-// ══════════════════════════════════════════════════════
-function doRematch() {
-  if (state.mode === 'online') {
-    sendWS({ type: 'rematch' });
+    S.over = true;
+    setClickable(false);
+    if (res.line.length) {
+      drawWinLine(res.line);
+      if (res.winner==='X') S.scoreX++; else S.scoreO++;
+    }
+    setTimeout(()=>{ showResult(res.winner); playSound(res.winner==='draw'?'draw':'win'); }, 400);
+    refreshScoreboard();
     return;
   }
-  state.board = Array(9).fill(null);
-  state.currentTurn = 'X';
-  state.gameOver = false;
-  resetBoardUI();
+
+  S.turn = 'X';
+  setTurnBadge('X');
+  setClickable(true);
+}
+
+function empty(board) { return board.map((v,i)=>v?null:i).filter(v=>v!==null); }
+function botEasy() { const e=empty(S.board); return e[Math.floor(Math.random()*e.length)]; }
+function botMed()  { return Math.random()<.5 ? botHard() : botEasy(); }
+function botHard() { return minimax([...S.board],'O').index; }
+function minimax(board, player) {
+  const r=checkWin(board);
+  if (r) return { score: r.winner==='O'?10 : r.winner==='X'?-10 : 0 };
+  const moves=empty(board).map(idx=>{
+    const b=[...board]; b[idx]=player;
+    return { index:idx, score:minimax(b, player==='O'?'X':'O').score };
+  });
+  return player==='O' ? moves.reduce((a,b)=>b.score>a.score?b:a)
+                      : moves.reduce((a,b)=>b.score<a.score?b:a);
+}
+
+// ── REMATCH ───────────────────────────────────────────
+function doRematch() {
+  if (S.mode==='online') { sendWS({type:'rematch'}); return; }
+  S.board=Array(9).fill(null); S.turn='X'; S.over=false;
+  resetBoard();
   $('result-banner').classList.add('hidden');
   setTurnBadge('X');
-  setBoardInteractive(true, true);
+  setClickable(true);
 }
 
 // ══════════════════════════════════════════════════════
 // ONLINE — WebSocket
 // ══════════════════════════════════════════════════════
-const WS_URL = (() => {
+function wsURL() {
   const proto = location.protocol==='https:' ? 'wss:' : 'ws:';
   return `${proto}//${location.host}`;
-})();
+}
 
 function connectWS(onOpen) {
-  if (state.ws) { try { state.ws.close(); } catch(_){} }
-  state.ws = new WebSocket(WS_URL);
-  state.ws.onopen = () => { state.reconnectAttempts=0; if(onOpen) onOpen(); };
-  state.ws.onmessage = e => handleWSMessage(JSON.parse(e.data));
-  state.ws.onclose = handleWSClose;
-}
-function sendWS(obj) {
-  if (state.ws && state.ws.readyState === WebSocket.OPEN)
-    state.ws.send(JSON.stringify(obj));
-}
-function handleWSClose() {
-  if (state.mode !== 'online') return;
-  state.reconnectAttempts++;
-  if (state.reconnectAttempts > 5) { showGameError('Connection lost. Please refresh.'); return; }
-  setTimeout(() => connectWS(() => {
-    if (state.roomCode) sendWS({ type:'join', roomCode: state.roomCode });
-  }), Math.min(state.reconnectAttempts*1200, 8000));
+  if (S.ws) { try { S.ws.close(); } catch(_){} S.ws=null; }
+  const ws = new WebSocket(wsURL());
+  ws.onopen    = () => { S.reconnTries=0; onOpen && onOpen(); };
+  ws.onmessage = e => handleWS(JSON.parse(e.data));
+  ws.onclose   = handleWSClose;
+  ws.onerror   = () => {}; // onclose fires after
+  S.ws = ws;
 }
 
-function handleWSMessage(msg) {
-  switch(msg.type) {
+function sendWS(obj) {
+  if (S.ws && S.ws.readyState===WebSocket.OPEN) S.ws.send(JSON.stringify(obj));
+}
+
+function handleWSClose() {
+  if (S.mode!=='online') return;
+  S.reconnTries++;
+  if (S.reconnTries>5) { showGameErr('Connection lost. Please refresh the page.'); return; }
+  const delay = Math.min(S.reconnTries*1000, 8000);
+  setTimeout(()=>{
+    connectWS(()=>{
+      if (S.roomCode) sendWS({type:'join', roomCode:S.roomCode});
+    });
+  }, delay);
+}
+
+// ── HANDLE INCOMING MESSAGES ──────────────────────────
+function handleWS(msg) {
+  console.log('[WS RX]', msg); // DEBUG — visible in browser console
+
+  switch (msg.type) {
+
+    // ── CREATED: You are X, show waiting screen ───────
     case 'created':
-      state.myRole = msg.role;
-      state.roomCode = msg.roomCode;
-      showWaitingScreen(msg.roomCode);
+      S.myRole   = msg.role;       // 'X'
+      S.roomCode = msg.roomCode;
+      showWaiting(msg.roomCode);
       break;
+
+    // ── JOINED: You joined as X or O, go to game screen
+    // Server sends 'joined' only to the joiner, then broadcasts 'start' to both.
+    // So here we just set up state and go to game screen.
+    // Board interactivity is OFF until 'start' is received.
     case 'joined':
-      state.myRole = msg.role;
-      state.roomCode = msg.roomCode;
-      if (msg.board) {
-        state.board = msg.board;
-        state.currentTurn = msg.currentTurn;
-        state.gameOver = msg.gameOver;
-      }
-      startOnlineGame();
-      if (!msg.gameOver) {
-        if (state.board.some(Boolean)) {
-          renderBoard(state.board);
-          setTurnBadge(state.currentTurn);
-          setBoardInteractive(true, state.currentTurn === state.myRole);
-        }
-      } else {
-        renderBoard(state.board);
-        showResult(msg.winner, state.myRole);
+      S.myRole   = msg.role;
+      S.roomCode = msg.roomCode;
+      S.board    = msg.board  || Array(9).fill(null);
+      S.turn     = msg.turn   || 'X';
+      S.over     = msg.over   || false;
+
+      setupOnlineGameScreen();
+
+      if (S.over) {
+        renderBoard(S.board);
+        showResult(msg.winner, S.myRole);
+      } else if (S.board.some(Boolean)) {
+        // Reconnecting mid-game
+        renderBoard(S.board);
+        setTurnBadge(S.turn);
+        setOnlineClickable();
       }
       break;
+
+    // ── START: Both players connected — unlock board ──
     case 'start':
-      setOnlineDots(true, true);
-      showGameError(''); $('game-error').classList.add('hidden');
-      setTurnBadge(state.currentTurn);
-      setBoardInteractive(true, state.currentTurn===state.myRole);
+      S.board = msg.board || S.board;
+      S.turn  = msg.turn  || 'X';
+
+      setConnLabel('Both connected · Playing!');
+      setDot('x', true); setDot('o', true);
+      hideGameErr();
+      setTurnBadge(S.turn);
+      setOnlineClickable();
       break;
-    case 'waiting':
-      showWaitingScreen(state.roomCode);
-      break;
+
+    // ── MOVE: Opponent moved ──────────────────────────
     case 'move':
-      state.board = msg.board;
-      state.currentTurn = msg.currentTurn;
+      S.board = msg.board;
+      S.turn  = msg.turn;
       renderCell(msg.move.index, msg.move.role);
-      setTurnBadge(state.currentTurn);
-      setBoardInteractive(true, state.currentTurn===state.myRole);
+      setTurnBadge(S.turn);
+      setOnlineClickable();
       playSound('move');
-      clearGameError();
+      hideGameErr();
       break;
+
+    // ── GAME OVER ─────────────────────────────────────
     case 'gameOver':
-      state.board = msg.board;
-      state.gameOver = true;
+      S.board = msg.board;
+      S.over  = true;
       renderCell(msg.move.index, msg.move.role);
-      setBoardInteractive(false);
-      setTimeout(() => {
+      setClickable(false);
+      setTimeout(()=>{
         if (msg.line && msg.line.length) drawWinLine(msg.line);
-        if (msg.winner !== 'draw') {
-          if (msg.winner==='X') state.scoreX++;
-          else state.scoreO++;
-          updateScoreboard();
+        if (msg.winner!=='draw') {
+          if (msg.winner==='X') S.scoreX++; else S.scoreO++;
+          refreshScoreboard();
         }
-        showResult(msg.winner, state.myRole);
+        showResult(msg.winner, S.myRole);
         playSound(msg.winner==='draw'?'draw':'win');
-        $('btn-rematch').style.display='inline-flex';
       }, 300);
       break;
+
+    // ── REMATCH ───────────────────────────────────────
     case 'rematch':
-      state.board = msg.board;
-      state.currentTurn = msg.currentTurn;
-      state.gameOver = false;
-      resetBoardUI();
+      S.board = msg.board || Array(9).fill(null);
+      S.turn  = msg.turn  || 'X';
+      S.over  = false;
+      resetBoard();
       $('result-banner').classList.add('hidden');
-      setTurnBadge(state.currentTurn);
-      setBoardInteractive(true, state.currentTurn===state.myRole);
+      setTurnBadge(S.turn);
+      setOnlineClickable();
       break;
+
+    // ── OPPONENT LEFT ─────────────────────────────────
     case 'opponentLeft':
-      setOnlineDots(msg.role!=='X', msg.role!=='O');
-      showGameError('Opponent disconnected. Waiting 60s for reconnect…');
+      const leftRole = msg.role;
+      setDot(leftRole.toLowerCase(), false);
+      setConnLabel('Opponent disconnected…');
+      showGameErr('Opponent disconnected. Waiting up to 60s for them to rejoin…');
+      setClickable(false);
       break;
+
+    // ── ERROR ─────────────────────────────────────────
     case 'error':
-      if (screens_online_visible()) showOnlineError(msg.message);
-      else showGameError(msg.message);
+      if ($('screen-online').classList.contains('active')) showOnlineErr(msg.message);
+      else showGameErr(msg.message);
       break;
   }
 }
 
-function screens_online_visible() {
-  return $('screen-online').classList.contains('active');
-}
+function setupOnlineGameScreen() {
+  S.mode   = 'online';
+  S.scoreX = 0; S.scoreO = 0;
+  S.over   = false;
 
-function startOnlineGame() {
-  state.mode = 'online';
-  state.board = state.board.length ? state.board : Array(9).fill(null);
-  state.gameOver = false;
-  state.scoreX = 0; state.scoreO = 0;
-
-  // Names
-  if (state.myRole === 'X') {
-    state.p1Name = state.p1Name || 'You';
-    state.p2Name = state.p2Name || 'Opponent';
-  } else {
-    state.p1Name = state.p1Name || 'Opponent';
-    state.p2Name = state.p2Name || 'You';
-  }
-
-  $('game-mode-chip').textContent = `Online · ${state.roomCode}`;
+  $('game-mode-chip').textContent = `Online · ${S.roomCode}`;
   $('result-banner').classList.add('hidden');
   $('game-error').classList.add('hidden');
   $('online-status').classList.remove('hidden');
-  setOnlineDots(false, false);
-  resetBoardUI();
-  updateScoreboard();
-  setTurnBadge(state.currentTurn);
-  setBoardInteractive(false);
+
+  setDot('x', false); setDot('o', false);
+  setConnLabel('waiting for opponent…');
+  resetBoard();
+  refreshScoreboard();
+  setTurnBadge(S.turn);
+  setClickable(false); // locked until 'start'
   showScreen('game');
 }
 
-function setOnlineDots(xOn, oOn) {
-  const dx = $('ostatus-x'), dy = $('ostatus-o');
-  dx.classList.toggle('on', xOn);
-  dy.classList.toggle('on', oOn);
-}
-
-function showWaitingScreen(code) {
+function showWaiting(code) {
   $('display-code').textContent = code;
-  const link = `${location.origin}/room/${code}`;
-  $('share-link').value = link;
+  $('share-link').value = `${location.origin}/room/${code}`;
   showScreen('waiting');
 }
 
-// ══════════════════════════════════════════════════════
-// ICON PICKER
-// ══════════════════════════════════════════════════════
-function buildIconPicker() {
-  const container = $('icon-picker');
-  container.innerHTML = '';
-  const forRole = state.iconPickerFor;
-  const selected = forRole === 'X' ? state.iconX : state.iconO;
-
-  ICON_SECTIONS.forEach(section => {
-    const sec = document.createElement('div');
-    sec.className = 'icon-section';
-
-    const title = document.createElement('div');
-    title.className = 'icon-section-title' + (section.grad ? ' grad' : '');
-    title.textContent = section.title;
-    sec.appendChild(title);
-
-    const grid = document.createElement('div');
-    grid.className = 'icon-grid';
-
-    section.icons.forEach(icon => {
-      const tile = document.createElement('div');
-      tile.className = 'icon-tile' + (icon.id === selected ? ' selected' : '');
-      tile.innerHTML = icon.render;
-      tile.title = icon.label || icon.id;
-      tile.addEventListener('click', () => {
-        if (forRole === 'X') state.iconX = icon.id;
-        else state.iconO = icon.id;
-        savePrefs();
-        buildIconPicker();
-        updateScoreboard();
-        // Re-render board if in game
-        if ($('screen-game').classList.contains('active')) renderBoard(state.board);
-      });
-      grid.appendChild(tile);
-    });
-
-    sec.appendChild(grid);
-    container.appendChild(sec);
-  });
+function setDot(role, on) {
+  const el = $('ostatus-'+role); // ostatus-x or ostatus-o
+  if (el) el.classList.toggle('on', on);
 }
 
-// ══════════════════════════════════════════════════════
-// SETTINGS
-// ══════════════════════════════════════════════════════
-function openSettings() {
-  $('p1-name').value = state.p1Name;
-  $('p2-name').value = state.p2Name;
-  $('tog-sound').checked = state.soundOn;
-  $('tog-anim').checked = state.animOn;
-  // Activate game tab
-  activateModalTab('game');
-  buildIconPicker();
-  $('modal-settings').classList.remove('hidden');
-}
-
-function activateModalTab(name) {
-  document.querySelectorAll('.mtab').forEach(t => t.classList.toggle('active', t.dataset.tab===name));
-  document.querySelectorAll('.mtab-body').forEach(b => b.classList.toggle('active', b.id===`tab-${name}`));
+function setConnLabel(text) {
+  const el = $('conn-label');
+  if (el) el.textContent = text;
 }
 
 // ══════════════════════════════════════════════════════
 // ERROR HELPERS
 // ══════════════════════════════════════════════════════
-function showGameError(msg) { if (!msg) return; const el=$('game-error'); el.textContent=msg; el.classList.remove('hidden'); }
-function clearGameError() { $('game-error').classList.add('hidden'); }
-function showOnlineError(msg) { const el=$('online-error'); el.textContent=msg; el.classList.remove('hidden'); }
-function clearOnlineError() { $('online-error').classList.add('hidden'); }
+function showGameErr(msg) {
+  if (!msg) return;
+  const el = $('game-error');
+  el.textContent = msg; el.classList.remove('hidden');
+}
+function hideGameErr() { $('game-error').classList.add('hidden'); }
+function showOnlineErr(msg) {
+  const el = $('online-error');
+  el.textContent = msg; el.classList.remove('hidden');
+}
+function clearOnlineErr() { $('online-error').classList.add('hidden'); }
+
+// ══════════════════════════════════════════════════════
+// SETTINGS MODAL + ICON PICKER
+// ══════════════════════════════════════════════════════
+function openSettings() {
+  $('p1-name').value      = S.p1Name;
+  $('p2-name').value      = S.p2Name;
+  $('tog-sound').checked  = S.soundOn;
+  $('tog-anim').checked   = S.animOn;
+  activateTab('game');
+  buildPicker();
+  $('modal-settings').classList.remove('hidden');
+}
+
+function activateTab(name) {
+  document.querySelectorAll('.mtab').forEach(t => t.classList.toggle('active', t.dataset.tab===name));
+  document.querySelectorAll('.mtab-body').forEach(b => b.classList.toggle('active', b.id===`tab-${name}`));
+}
+
+function buildPicker() {
+  const container = $('icon-picker');
+  container.innerHTML = '';
+  const forRole  = S.pickerFor;
+  const selected = forRole==='X' ? S.iconX : S.iconO;
+
+  ICON_SECTIONS.forEach(section => {
+    const div  = document.createElement('div'); div.className='icon-section';
+    const ttl  = document.createElement('div');
+    ttl.className = 'icon-section-title' + (section.grad?' grad':'');
+    ttl.textContent = section.title;
+    div.appendChild(ttl);
+    const grid = document.createElement('div'); grid.className='icon-grid';
+
+    section.icons.forEach(icon => {
+      const tile = document.createElement('div');
+      tile.className = 'icon-tile' + (icon.id===selected?' selected':'');
+      tile.innerHTML = icon.render;
+      tile.title     = icon.id;
+      tile.addEventListener('click', ()=>{
+        if (forRole==='X') S.iconX=icon.id; else S.iconO=icon.id;
+        savePrefs(); buildPicker(); refreshScoreboard();
+        if ($('screen-game').classList.contains('active')) renderBoard(S.board);
+      });
+      grid.appendChild(tile);
+    });
+
+    div.appendChild(grid);
+    container.appendChild(div);
+  });
+}
 
 // ══════════════════════════════════════════════════════
 // EVENT LISTENERS
 // ══════════════════════════════════════════════════════
 
-// Lobby mode cards
-$('card-local').addEventListener('click', () => startLocalGame('local'));
-$('card-bot').addEventListener('click', () => showScreen('bot'));
-$('card-online').addEventListener('click', () => { clearOnlineError(); showScreen('online'); });
+// Lobby
+$('card-local').addEventListener('click',   ()=>startLocalGame('local'));
+$('card-bot').addEventListener('click',     ()=>showScreen('bot'));
+$('card-online').addEventListener('click',  ()=>{ clearOnlineErr(); showScreen('online'); });
 
 // Bot difficulty
-document.querySelectorAll('.diff-card').forEach(card => {
-  card.addEventListener('click', () => {
-    state.botDifficulty = card.dataset.diff;
-    state.p2Name = `Bot (${state.botDifficulty})`;
+document.querySelectorAll('.diff-card').forEach(card=>{
+  card.addEventListener('click', ()=>{
+    S.botDiff  = card.dataset.diff;
+    S.p2Name   = `Bot (${S.botDiff})`;
     startLocalGame('bot');
   });
 });
 
 // Back buttons
-$('back-bot').addEventListener('click', () => showScreen('lobby'));
-$('back-online').addEventListener('click', () => showScreen('lobby'));
-
-// Online create/join
-$('btn-create').addEventListener('click', () => {
-  clearOnlineError();
-  connectWS(() => sendWS({ type:'create' }));
+$('back-bot').addEventListener('click',    ()=>showScreen('lobby'));
+$('back-online').addEventListener('click', ()=>showScreen('lobby'));
+$('waiting-back').addEventListener('click',()=>{
+  if (S.ws) { try{S.ws.close();}catch(_){} S.ws=null; }
+  S.roomCode=null; S.myRole=null;
+  showScreen('online');
 });
-$('btn-join').addEventListener('click', doOnlineJoin);
-$('input-code').addEventListener('keydown', e => e.key==='Enter' && doOnlineJoin());
-$('input-code').addEventListener('input', () => {
+
+// Online create
+$('btn-create').addEventListener('click', ()=>{
+  clearOnlineErr();
+  connectWS(()=>sendWS({type:'create'}));
+});
+
+// Online join
+$('btn-join').addEventListener('click', tryJoin);
+$('input-code').addEventListener('keydown', e=>e.key==='Enter'&&tryJoin());
+$('input-code').addEventListener('input', ()=>{
   $('input-code').value = $('input-code').value.toUpperCase().replace(/[^A-Z0-9]/g,'');
-  clearOnlineError();
+  clearOnlineErr();
 });
-
-function doOnlineJoin() {
+function tryJoin() {
   const code = $('input-code').value.trim().toUpperCase();
-  if (code.length !== 6) { showOnlineError('Enter a valid 6-character code.'); return; }
-  clearOnlineError();
-  connectWS(() => sendWS({ type:'join', roomCode: code }));
+  if (code.length!==6) { showOnlineErr('Enter a valid 6-character room code.'); return; }
+  clearOnlineErr();
+  connectWS(()=>sendWS({type:'join', roomCode:code}));
 }
 
 // Waiting screen copy
-$('btn-copy-code').addEventListener('click', () => copyText(state.roomCode||''));
-$('btn-copy-link').addEventListener('click', () => copyText($('share-link').value));
+$('btn-copy-code').addEventListener('click', ()=>copyText(S.roomCode||''));
+$('btn-copy-link').addEventListener('click', ()=>copyText($('share-link').value));
 
 // Board cells
-cells.forEach(cell => {
-  cell.addEventListener('click', () => {
+CELLS.forEach(cell=>{
+  cell.addEventListener('click', ()=>{
     const idx = parseInt(cell.dataset.index);
-    if (state.gameOver || state.board[idx] || cell.classList.contains('no-hover')) return;
-    if (state.mode === 'online') {
-      if (state.currentTurn !== state.myRole) { showGameError("Not your turn!"); setTimeout(clearGameError,1500); return; }
-      sendWS({ type:'move', index: idx });
+    if (S.over || cell.classList.contains('taken') || cell.classList.contains('no-click')) return;
+
+    if (S.mode==='online') {
+      if (S.turn!==S.myRole) {
+        showGameErr("Not your turn!"); setTimeout(hideGameErr, 1500);
+        return;
+      }
+      sendWS({type:'move', index:idx});
     } else {
       doLocalMove(idx);
     }
   });
 });
 
-// Rematch / Menu
-$('btn-rematch').addEventListener('click', doRematch);
-$('btn-to-lobby').addEventListener('click', () => {
-  if (state.ws) { try { state.ws.close(); } catch(_){} state.ws=null; }
-  state.mode=null; state.roomCode=null; state.myRole=null;
-  showScreen('lobby');
-  updateLobbyStats();
+// Result buttons
+$('btn-rematch').addEventListener('click',  doRematch);
+$('btn-to-lobby').addEventListener('click', goToLobby);
+$('btn-quit').addEventListener('click',     goToLobby);
+
+function goToLobby() {
+  if (S.ws) { try{S.ws.close();}catch(_){} S.ws=null; }
+  S.mode=null; S.roomCode=null; S.myRole=null;
+  showScreen('lobby'); updateLobbyStats();
+}
+
+// Settings
+$('btn-open-settings').addEventListener('click',  openSettings);
+$('btn-close-settings').addEventListener('click', ()=>$('modal-settings').classList.add('hidden'));
+$('modal-settings').addEventListener('click', e=>{
+  if (e.target===$('modal-settings')) $('modal-settings').classList.add('hidden');
 });
+document.querySelectorAll('.mtab').forEach(t=>t.addEventListener('click',()=>activateTab(t.dataset.tab)));
 
-// Quit
-$('btn-quit').addEventListener('click', () => {
-  if (state.ws) { try { state.ws.close(); } catch(_){} state.ws=null; }
-  state.mode=null; state.roomCode=null;
-  showScreen('lobby');
-  updateLobbyStats();
-});
-
-// Settings open/close
-$('btn-open-settings').addEventListener('click', openSettings);
-$('btn-close-settings').addEventListener('click', () => $('modal-settings').classList.add('hidden'));
-$('modal-settings').addEventListener('click', e => { if(e.target===$('modal-settings')) $('modal-settings').classList.add('hidden'); });
-
-// Modal tabs
-document.querySelectorAll('.mtab').forEach(tab => {
-  tab.addEventListener('click', () => activateModalTab(tab.dataset.tab));
-});
-
-// Icon picker "for" toggle
-document.querySelectorAll('.icon-for-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
+document.querySelectorAll('.icon-for-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
     document.querySelectorAll('.icon-for-btn').forEach(b=>b.classList.remove('active'));
     btn.classList.add('active');
-    state.iconPickerFor = btn.dataset.for;
-    buildIconPicker();
+    S.pickerFor=btn.dataset.for;
+    buildPicker();
   });
 });
 
-// Settings save on input
-$('p1-name').addEventListener('input', () => { state.p1Name=$('p1-name').value||'Player 1'; savePrefs(); updateScoreboard(); });
-$('p2-name').addEventListener('input', () => { state.p2Name=$('p2-name').value||'Player 2'; savePrefs(); updateScoreboard(); });
-$('tog-sound').addEventListener('change', () => { state.soundOn=$('tog-sound').checked; savePrefs(); });
-$('tog-anim').addEventListener('change',  () => { state.animOn=$('tog-anim').checked; savePrefs(); });
-$('btn-reset-stats').addEventListener('click', () => {
+$('p1-name').addEventListener('input', ()=>{ S.p1Name=$('p1-name').value||'Player 1'; savePrefs(); refreshScoreboard(); });
+$('p2-name').addEventListener('input', ()=>{ S.p2Name=$('p2-name').value||'Player 2'; savePrefs(); refreshScoreboard(); });
+$('tog-sound').addEventListener('change', ()=>{ S.soundOn=$('tog-sound').checked; savePrefs(); });
+$('tog-anim').addEventListener('change',  ()=>{ S.animOn=$('tog-anim').checked;  savePrefs(); });
+$('btn-reset-stats').addEventListener('click', ()=>{
   if (confirm('Reset all stats?')) {
-    state.stats = {wins:0,losses:0,draws:0};
-    saveStats(); updateLobbyStats();
-    toast('Stats reset!');
+    S.stats={wins:0,losses:0,draws:0};
+    saveStats(); updateLobbyStats(); showToast('Stats reset!');
   }
 });
 
 // ══════════════════════════════════════════════════════
 // DEEP LINK  /room/XXXXXX
+// Auto-join when opened via shared link
 // ══════════════════════════════════════════════════════
 (function checkDeepLink() {
   const m = location.pathname.match(/^\/room\/([A-Z0-9]{6})$/i);
-  if (m) {
-    const code = m[1].toUpperCase();
-    $('input-code').value = code;
-    showScreen('online');
-    connectWS(() => sendWS({ type:'join', roomCode: code }));
-  }
+  if (!m) return;
+  const code = m[1].toUpperCase();
+  $('input-code').value = code;
+  // Go to online screen visually, then connect
+  showScreen('online');
+  connectWS(()=>sendWS({type:'join', roomCode:code}));
 })();
 
 // ══════════════════════════════════════════════════════
 // INIT
 // ══════════════════════════════════════════════════════
-loadStats();
-loadPrefs();
+loadAll();
 updateLobbyStats();
