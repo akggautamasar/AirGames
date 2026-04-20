@@ -1,188 +1,180 @@
 /**
  * AirGames by WorksBeyond — Multiplayer Tic Tac Toe Server
  * Node.js + Express + WebSocket (ws)
+ * Fixed: clean join/start flow, proper reconnect, static asset serving
  */
 
 const express = require("express");
-const http = require("http");
+const http    = require("http");
 const WebSocket = require("ws");
-const path = require("path");
+const path    = require("path");
 
-const app = express();
+const app    = express();
 const server = http.createServer(app);
-const wss = new WebSocket.Server({ server });
+const wss    = new WebSocket.Server({ server });
 
-// ─── In-Memory Room Store ────────────────────────────────────────────────────
-const rooms = new Map(); // roomCode → RoomState
+// ── Static files (public/) ────────────────────────────────────────────────────
+// MUST be before any route so CSS/JS are served correctly even from /room/* URLs
+app.use(express.static(path.join(__dirname, "public")));
 
-function generateRoomCode() {
+// ── In-Memory Room Store ──────────────────────────────────────────────────────
+const rooms = new Map(); // code → RoomState
+
+function generateCode() {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   let code = "";
   for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
-  return rooms.has(code) ? generateRoomCode() : code;
+  return rooms.has(code) ? generateCode() : code;
 }
 
-function createRoom(code) {
+function newRoom(code) {
   return {
     code,
-    players: {}, // { X: ws, O: ws }
+    players: { X: null, O: null },   // ws references
     board: Array(9).fill(null),
-    currentTurn: "X",
-    gameOver: false,
+    turn: "X",
+    over: false,
     winner: null,
-    cleanupTimer: null,
+    killTimer: null,
   };
 }
 
-function getBoardStatus(board) {
-  const lines = [
-    [0, 1, 2], [3, 4, 5], [6, 7, 8],
-    [0, 3, 6], [1, 4, 7], [2, 5, 8],
-    [0, 4, 8], [2, 4, 6],
-  ];
-  for (const [a, b, c] of lines) {
+function winCheck(board) {
+  const L = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+  for (const [a,b,c] of L) {
     if (board[a] && board[a] === board[b] && board[a] === board[c])
-      return { winner: board[a], line: [a, b, c] };
+      return { winner: board[a], line: [a,b,c] };
   }
   if (board.every(Boolean)) return { winner: "draw", line: [] };
   return null;
 }
 
-function broadcast(room, message) {
-  const data = JSON.stringify(message);
-  Object.values(room.players).forEach((ws) => {
-    if (ws && ws.readyState === WebSocket.OPEN) ws.send(data);
+function send(ws, obj) {
+  if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(obj));
+}
+
+function broadcast(room, obj) {
+  const raw = JSON.stringify(obj);
+  ["X","O"].forEach(r => {
+    const ws = room.players[r];
+    if (ws && ws.readyState === WebSocket.OPEN) ws.send(raw);
   });
 }
 
-function sendTo(ws, message) {
-  if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(message));
+function cancelKill(room) {
+  if (room.killTimer) { clearTimeout(room.killTimer); room.killTimer = null; }
 }
 
-function scheduleCleanup(room) {
-  if (room.cleanupTimer) clearTimeout(room.cleanupTimer);
-  const activePlayers = Object.values(room.players).filter(
-    (ws) => ws && ws.readyState === WebSocket.OPEN
-  ).length;
-  if (activePlayers === 0) {
-    room.cleanupTimer = setTimeout(() => {
+function scheduleKill(room) {
+  cancelKill(room);
+  const xAlive = room.players.X && room.players.X.readyState === WebSocket.OPEN;
+  const oAlive = room.players.O && room.players.O.readyState === WebSocket.OPEN;
+  if (!xAlive && !oAlive) {
+    room.killTimer = setTimeout(() => {
       rooms.delete(room.code);
-      console.log(`[Room ${room.code}] Deleted after inactivity.`);
+      console.log(`[${room.code}] Room deleted.`);
     }, 60_000);
   }
 }
 
-// ─── WebSocket Handler ────────────────────────────────────────────────────────
-wss.on("connection", (ws) => {
+// ── WebSocket Handler ─────────────────────────────────────────────────────────
+wss.on("connection", ws => {
   ws.roomCode = null;
-  ws.role = null;
+  ws.role     = null;
 
-  ws.on("message", (raw) => {
+  ws.on("message", raw => {
     let msg;
     try { msg = JSON.parse(raw); } catch { return; }
-
     const { type, roomCode, index } = msg;
 
-    // ── CREATE ROOM ──────────────────────────────────────────────────────────
+    // ── CREATE ────────────────────────────────────────────────────────────────
     if (type === "create") {
-      const code = generateRoomCode();
-      const room = createRoom(code);
-      room.players["X"] = ws;
+      const code = generateCode();
+      const room = newRoom(code);
+      room.players.X = ws;
       ws.roomCode = code;
-      ws.role = "X";
+      ws.role     = "X";
       rooms.set(code, room);
-      console.log(`[Room ${code}] Created.`);
-      sendTo(ws, { type: "created", roomCode: code, role: "X" });
+      console.log(`[${code}] Created by X.`);
+      send(ws, { type: "created", roomCode: code, role: "X" });
       return;
     }
 
-    // ── JOIN ROOM ────────────────────────────────────────────────────────────
+    // ── JOIN ──────────────────────────────────────────────────────────────────
     if (type === "join") {
       const code = (roomCode || "").toUpperCase().trim();
       const room = rooms.get(code);
 
       if (!room) {
-        sendTo(ws, { type: "error", message: "Room not found. Check the code." });
+        send(ws, { type: "error", message: "Room not found. Double-check the code." });
         return;
       }
 
-      // Reconnection logic
-      const xAlive = room.players["X"] && room.players["X"].readyState === WebSocket.OPEN;
-      const oAlive = room.players["O"] && room.players["O"].readyState === WebSocket.OPEN;
+      // Figure out which slot to assign (supports reconnect)
+      const xAlive = room.players.X && room.players.X.readyState === WebSocket.OPEN;
+      const oAlive = room.players.O && room.players.O.readyState === WebSocket.OPEN;
 
-      let role = null;
-      if (!xAlive) role = "X";
+      let role;
+      if      (!xAlive) role = "X";
       else if (!oAlive) role = "O";
       else {
-        sendTo(ws, { type: "error", message: "Room is full." });
+        send(ws, { type: "error", message: "Room is full." });
         return;
       }
 
       room.players[role] = ws;
       ws.roomCode = code;
-      ws.role = role;
+      ws.role     = role;
+      cancelKill(room);
 
-      if (room.cleanupTimer) { clearTimeout(room.cleanupTimer); room.cleanupTimer = null; }
+      console.log(`[${code}] ${role} joined.`);
 
-      console.log(`[Room ${code}] Player ${role} joined.`);
-
-      sendTo(ws, {
-        type: "joined",
+      // Send current game state to the joining player
+      send(ws, {
+        type:    "joined",
         roomCode: code,
         role,
-        board: room.board,
-        currentTurn: room.currentTurn,
-        gameOver: room.gameOver,
-        winner: room.winner,
+        board:   room.board,
+        turn:    room.turn,
+        over:    room.over,
+        winner:  room.winner,
       });
 
-      const bothOnline =
-        room.players["X"] && room.players["X"].readyState === WebSocket.OPEN &&
-        room.players["O"] && room.players["O"].readyState === WebSocket.OPEN;
+      // Check if both seats are now filled
+      const xNow = room.players.X && room.players.X.readyState === WebSocket.OPEN;
+      const oNow = room.players.O && room.players.O.readyState === WebSocket.OPEN;
 
-      if (bothOnline) {
-        broadcast(room, { type: "start", message: "Both players connected. Game on!" });
-      } else {
-        sendTo(ws, { type: "waiting", message: "Waiting for opponent…" });
+      if (xNow && oNow) {
+        // Broadcast "start" to BOTH players
+        broadcast(room, {
+          type:  "start",
+          board: room.board,
+          turn:  room.turn,
+        });
+        console.log(`[${code}] Game started.`);
       }
       return;
     }
 
-    // ── MOVE ─────────────────────────────────────────────────────────────────
+    // ── MOVE ──────────────────────────────────────────────────────────────────
     if (type === "move") {
       const room = rooms.get(ws.roomCode);
-      if (!room) return;
-      if (room.gameOver) return;
-      if (ws.role !== room.currentTurn) {
-        sendTo(ws, { type: "error", message: "Not your turn." });
-        return;
-      }
+      if (!room || room.over) return;
+      if (ws.role !== room.turn) { send(ws, { type: "error", message: "Not your turn." }); return; }
       if (typeof index !== "number" || index < 0 || index > 8 || room.board[index]) {
-        sendTo(ws, { type: "error", message: "Invalid move." });
-        return;
+        send(ws, { type: "error", message: "Invalid move." }); return;
       }
 
       room.board[index] = ws.role;
-      const result = getBoardStatus(room.board);
+      const result = winCheck(room.board);
 
       if (result) {
-        room.gameOver = true;
+        room.over   = true;
         room.winner = result.winner;
-        broadcast(room, {
-          type: "gameOver",
-          board: room.board,
-          winner: result.winner,
-          line: result.line,
-          move: { index, role: ws.role },
-        });
+        broadcast(room, { type: "gameOver", board: room.board, winner: result.winner, line: result.line, move: { index, role: ws.role } });
       } else {
-        room.currentTurn = room.currentTurn === "X" ? "O" : "X";
-        broadcast(room, {
-          type: "move",
-          board: room.board,
-          currentTurn: room.currentTurn,
-          move: { index, role: ws.role },
-        });
+        room.turn = room.turn === "X" ? "O" : "X";
+        broadcast(room, { type: "move", board: room.board, turn: room.turn, move: { index, role: ws.role } });
       }
       return;
     }
@@ -191,11 +183,11 @@ wss.on("connection", (ws) => {
     if (type === "rematch") {
       const room = rooms.get(ws.roomCode);
       if (!room) return;
-      room.board = Array(9).fill(null);
-      room.currentTurn = "X";
-      room.gameOver = false;
+      room.board  = Array(9).fill(null);
+      room.turn   = "X";
+      room.over   = false;
       room.winner = null;
-      broadcast(room, { type: "rematch", board: room.board, currentTurn: "X" });
+      broadcast(room, { type: "rematch", board: room.board, turn: "X" });
       return;
     }
   });
@@ -203,37 +195,33 @@ wss.on("connection", (ws) => {
   ws.on("close", () => {
     const room = rooms.get(ws.roomCode);
     if (!room) return;
-    console.log(`[Room ${ws.roomCode}] Player ${ws.role} disconnected.`);
+    console.log(`[${ws.roomCode}] ${ws.role} disconnected.`);
     broadcast(room, { type: "opponentLeft", role: ws.role });
-    scheduleCleanup(room);
+    scheduleKill(room);
   });
 });
 
-// ─── HTTP Routes ──────────────────────────────────────────────────────────────
-app.use(express.static(path.join(__dirname, "public")));
-
-// Health check for UptimeRobot / Render
+// ── HTTP Routes ───────────────────────────────────────────────────────────────
+// Health check — fast, no game logic
 app.get("/health", (_req, res) => res.send("AirGames server running"));
-app.get("/", (_req, res) => res.sendFile(path.join(__dirname, "public", "index.html")));
 
-// Room deep-link — SPA fallback
-app.get("/room/:code", (_req, res) =>
-  res.sendFile(path.join(__dirname, "public", "index.html"))
-);
+// SPA fallback — any /room/* deep link returns index.html
+// CSS/JS are found because express.static() runs first
+app.get("*", (_req, res) => {
+  res.sendFile(path.join(__dirname, "public", "index.html"));
+});
 
-// ─── Periodic room cleanup (every 5 min) ─────────────────────────────────────
+// ── Periodic cleanup (sweep every 5 min) ──────────────────────────────────────
 setInterval(() => {
   for (const [code, room] of rooms) {
-    const alive = Object.values(room.players).filter(
-      (ws) => ws && ws.readyState === WebSocket.OPEN
-    ).length;
-    if (alive === 0 && !room.cleanupTimer) {
+    const alive = ["X","O"].filter(r => room.players[r] && room.players[r].readyState === WebSocket.OPEN).length;
+    if (alive === 0 && !room.killTimer) {
       rooms.delete(code);
-      console.log(`[Room ${code}] Cleaned up by sweep.`);
+      console.log(`[${code}] Swept.`);
     }
   }
 }, 5 * 60_000);
 
-// ─── Start ────────────────────────────────────────────────────────────────────
+// ── Listen ────────────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log(`AirGames listening on port ${PORT}`));
+server.listen(PORT, () => console.log(`AirGames running on port ${PORT}`));
