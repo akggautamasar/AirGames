@@ -1,407 +1,204 @@
 <!DOCTYPE html>
-
 <html lang="en">
-
 <head>
-
   <meta charset="UTF-8" />
-
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
   <title>AirGames — Tic Tac Toe</title>
-
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Baloo+2:wght@500;700;800&display=swap" rel="stylesheet" />
-
   <link rel="stylesheet" href="style.css" />
-
 </head>
-
 <body>
 
-
-
 <!-- ░░ LOBBY ░░ -->
-
 <div id="screen-lobby" class="screen active">
-
   <div class="orb orb1"></div><div class="orb orb2"></div><div class="orb orb3"></div>
-
   <div class="brand">
-
     <div class="brand-badge">WorksBeyond</div>
-
     <h1 class="brand-title">AirGames</h1>
-
     <p class="brand-tag">Tic Tac Toe · No signup. Just play.</p>
-
   </div>
-
   <div class="mode-grid">
-
     <div class="mode-card" id="card-local">
-
       <div class="mode-card-bg"></div>
-
       <div class="mode-emoji">🎮</div>
-
       <div class="mode-name">Local Play</div>
-
       <div class="mode-desc">2 players · one device</div>
-
     </div>
-
     <div class="mode-card" id="card-bot">
-
       <div class="mode-card-bg"></div>
-
       <div class="mode-emoji">🤖</div>
-
       <div class="mode-name">vs AI Bot</div>
-
       <div class="mode-desc">Challenge the computer</div>
-
     </div>
-
     <div class="mode-card" id="card-online">
-
       <div class="mode-card-bg"></div>
-
       <div class="mode-emoji">🌐</div>
-
       <div class="mode-name">Online</div>
-
       <div class="mode-desc">Real-time multiplayer</div>
-
     </div>
-
   </div>
-
   <div class="lobby-stats-bar">
-
     <div class="lstat"><div class="lstat-val" id="st-wins">0</div><div class="lstat-key">Wins</div></div>
-
     <div class="lstat-div"></div>
-
     <div class="lstat"><div class="lstat-val" id="st-losses">0</div><div class="lstat-key">Losses</div></div>
-
     <div class="lstat-div"></div>
-
     <div class="lstat"><div class="lstat-val" id="st-draws">0</div><div class="lstat-key">Draws</div></div>
-
     <div class="lstat-div"></div>
-
     <div class="lstat"><div class="lstat-val" id="st-wr">0%</div><div class="lstat-key">Win Rate</div></div>
-
   </div>
-
 </div>
-
-
 
 <!-- ░░ BOT DIFFICULTY ░░ -->
-
 <div id="screen-bot" class="screen">
-
   <button class="back-btn" id="back-bot">‹ Back</button>
-
   <h2 class="screen-title">Pick Difficulty</h2>
-
   <div class="diff-list">
-
     <div class="diff-card" data-diff="easy"><span class="diff-em">😊</span><div><b>Easy</b><p>Random moves</p></div></div>
-
     <div class="diff-card" data-diff="medium"><span class="diff-em">🧠</span><div><b>Medium</b><p>Plays smart sometimes</p></div></div>
-
     <div class="diff-card" data-diff="hard"><span class="diff-em">💀</span><div><b>Hard</b><p>Unbeatable AI</p></div></div>
-
   </div>
-
 </div>
-
-
 
 <!-- ░░ ONLINE LOBBY ░░ -->
-
 <div id="screen-online" class="screen">
-
   <button class="back-btn" id="back-online">‹ Back</button>
-
   <h2 class="screen-title">Online Multiplayer</h2>
-
   <div class="online-panel">
-
     <button id="btn-create" class="btn btn-grad btn-lg">✨ Create Room</button>
-
     <div class="or-divider"><span>or join existing</span></div>
-
     <div class="join-row">
-
       <input id="input-code" class="code-input" type="text" maxlength="6" placeholder="ENTER CODE" autocomplete="off" spellcheck="false"/>
-
       <button id="btn-join" class="btn btn-outline">Join</button>
-
     </div>
-
   </div>
-
   <div id="online-error" class="err-msg hidden"></div>
-
 </div>
-
-
 
 <!-- ░░ WAITING ░░ -->
-
 <div id="screen-waiting" class="screen">
-
   <div class="waiting-wrap">
-
     <div class="waiting-spinner"></div>
-
     <div class="waiting-spinner s2"></div>
-
     <p class="waiting-label">Waiting for opponent…</p>
-
     <div class="code-card">
-
       <span class="code-card-label">Room Code</span>
-
       <span id="display-code" class="code-card-val">——</span>
-
       <button id="btn-copy-code" class="chip-btn">Copy</button>
-
     </div>
-
     <div class="link-card">
-
       <input id="share-link" class="share-inp" readonly />
-
       <button id="btn-copy-link" class="chip-btn">Copy Link</button>
-
     </div>
-
     <p class="share-note">Share the code or link with a friend</p>
-
   </div>
-
 </div>
-
-
 
 <!-- ░░ GAME ░░ -->
-
 <div id="screen-game" class="screen">
-
   <div class="game-bar">
-
     <button class="quit-btn" id="btn-quit">✕ Quit</button>
-
     <span class="game-bar-title" id="game-mode-chip">Local Play</span>
-
     <button class="settings-btn" id="btn-open-settings">⚙️</button>
-
   </div>
-
-
 
   <div class="scoreboard">
-
     <div class="sb-player" id="sb-x">
-
       <div class="sb-icon" id="sb-icon-x">✕</div>
-
       <div class="sb-name" id="sb-name-x">Player 1</div>
-
       <div class="sb-score" id="sb-score-x">0</div>
-
     </div>
-
     <div class="sb-mid">
-
       <div class="turn-badge" id="turn-badge">X's Turn</div>
-
       <div class="sb-sep">VS</div>
-
     </div>
-
     <div class="sb-player right" id="sb-o">
-
       <div class="sb-icon" id="sb-icon-o">○</div>
-
       <div class="sb-name" id="sb-name-o">Player 2</div>
-
       <div class="sb-score" id="sb-score-o">0</div>
-
     </div>
-
   </div>
-
-
 
   <div class="online-status hidden" id="online-status">
-
     <span class="ostatus-dot" id="ostatus-x"></span>X
-
     &nbsp;·&nbsp;
-
     <span class="ostatus-dot" id="ostatus-o"></span>O
-
   </div>
-
-
 
   <div class="board-wrap">
-
     <div id="board" class="board">
-
       <div class="cell" data-index="0"></div>
-
       <div class="cell" data-index="1"></div>
-
       <div class="cell" data-index="2"></div>
-
       <div class="cell" data-index="3"></div>
-
       <div class="cell" data-index="4"></div>
-
       <div class="cell" data-index="5"></div>
-
       <div class="cell" data-index="6"></div>
-
       <div class="cell" data-index="7"></div>
-
       <div class="cell" data-index="8"></div>
-
       <canvas id="win-canvas" class="win-canvas"></canvas>
-
     </div>
-
   </div>
-
-
 
   <div id="result-banner" class="result-banner hidden">
-
     <div id="result-emoji" class="res-emoji">🎉</div>
-
     <div id="result-text" class="res-text">Player X Wins!</div>
-
     <div class="res-actions">
-
       <button id="btn-rematch" class="btn btn-grad">🔄 Rematch</button>
-
       <button id="btn-to-lobby" class="btn btn-outline">🏠 Menu</button>
-
     </div>
-
   </div>
-
-
 
   <div id="game-error" class="err-msg hidden" style="margin-top:10px;max-width:380px;text-align:center;"></div>
-
 </div>
-
-
 
 <!-- ░░ SETTINGS MODAL ░░ -->
-
 <div id="modal-settings" class="modal-overlay hidden">
-
   <div class="modal">
-
     <div class="modal-head">
-
       <span class="modal-title">⚙️ Settings</span>
-
       <button id="btn-close-settings" class="modal-x">✕</button>
-
     </div>
-
     <div class="modal-tabs">
-
       <button class="mtab active" data-tab="game">Game</button>
-
       <button class="mtab" data-tab="icons">Player Icons</button>
-
     </div>
-
     <div class="mtab-body active" id="tab-game">
-
       <div class="srow">
-
         <label>Player 1 Name</label>
-
         <input id="p1-name" class="sinput" type="text" maxlength="12" placeholder="Player 1"/>
-
       </div>
-
       <div class="srow">
-
         <label>Player 2 / Bot Name</label>
-
         <input id="p2-name" class="sinput" type="text" maxlength="12" placeholder="Player 2"/>
-
       </div>
-
       <div class="srow">
-
         <label>Sound</label>
-
         <label class="tog"><input type="checkbox" id="tog-sound" checked/><span class="tog-sl"></span></label>
-
       </div>
-
       <div class="srow">
-
         <label>Animations</label>
-
         <label class="tog"><input type="checkbox" id="tog-anim" checked/><span class="tog-sl"></span></label>
-
       </div>
-
       <div class="srow" style="margin-top:12px;">
-
         <label style="color:#ff6b6b;font-weight:700;">Danger Zone</label>
-
         <button id="btn-reset-stats" class="btn-danger">Reset Stats</button>
-
       </div>
-
     </div>
-
     <div class="mtab-body" id="tab-icons">
-
       <div class="icon-for-row">
-
         <span style="font-size:13px;color:#888;margin-right:8px;">Choosing for:</span>
-
         <button class="icon-for-btn active" data-for="X">Player X</button>
-
         <button class="icon-for-btn" data-for="O">Player O</button>
-
       </div>
-
       <div id="icon-picker" class="icon-picker-scroll"></div>
-
     </div>
-
   </div>
-
 </div>
 
-
-
 <!-- ░░ TOAST ░░ -->
-
 <div id="toast" class="toast hidden"></div>
 
-
-
 <script src="script.js"></script>
-
 </body>
-
 </html>
