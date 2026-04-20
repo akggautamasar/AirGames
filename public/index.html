@@ -6,7 +6,8 @@
   <title>AirGames — Tic Tac Toe</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Baloo+2:wght@500;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css" />
+  <!-- Absolute paths so /room/XXXXXX deep links still load CSS/JS correctly -->
+  <link rel="stylesheet" href="/style.css" />
 </head>
 <body>
 
@@ -54,9 +55,18 @@
   <button class="back-btn" id="back-bot">‹ Back</button>
   <h2 class="screen-title">Pick Difficulty</h2>
   <div class="diff-list">
-    <div class="diff-card" data-diff="easy"><span class="diff-em">😊</span><div><b>Easy</b><p>Random moves</p></div></div>
-    <div class="diff-card" data-diff="medium"><span class="diff-em">🧠</span><div><b>Medium</b><p>Plays smart sometimes</p></div></div>
-    <div class="diff-card" data-diff="hard"><span class="diff-em">💀</span><div><b>Hard</b><p>Unbeatable AI</p></div></div>
+    <div class="diff-card" data-diff="easy">
+      <span class="diff-em">😊</span>
+      <div><b>Easy</b><p>Random moves — chill game</p></div>
+    </div>
+    <div class="diff-card" data-diff="medium">
+      <span class="diff-em">🧠</span>
+      <div><b>Medium</b><p>Plays smart sometimes</p></div>
+    </div>
+    <div class="diff-card" data-diff="hard">
+      <span class="diff-em">💀</span>
+      <div><b>Hard</b><p>Unbeatable minimax AI</p></div>
+    </div>
   </div>
 </div>
 
@@ -68,8 +78,9 @@
     <button id="btn-create" class="btn btn-grad btn-lg">✨ Create Room</button>
     <div class="or-divider"><span>or join existing</span></div>
     <div class="join-row">
-      <input id="input-code" class="code-input" type="text" maxlength="6" placeholder="ENTER CODE" autocomplete="off" spellcheck="false"/>
-      <button id="btn-join" class="btn btn-outline">Join</button>
+      <input id="input-code" class="code-input" type="text" maxlength="6"
+             placeholder="ENTER CODE" autocomplete="off" spellcheck="false" />
+      <button id="btn-join" class="btn btn-outline">Join →</button>
     </div>
   </div>
   <div id="online-error" class="err-msg hidden"></div>
@@ -78,8 +89,8 @@
 <!-- ░░ WAITING ░░ -->
 <div id="screen-waiting" class="screen">
   <div class="waiting-wrap">
-    <div class="waiting-spinner"></div>
-    <div class="waiting-spinner s2"></div>
+    <div class="spinner-ring"></div>
+    <div class="spinner-ring s2"></div>
     <p class="waiting-label">Waiting for opponent…</p>
     <div class="code-card">
       <span class="code-card-label">Room Code</span>
@@ -91,6 +102,7 @@
       <button id="btn-copy-link" class="chip-btn">Copy Link</button>
     </div>
     <p class="share-note">Share the code or link with a friend</p>
+    <button class="back-btn-sm" id="waiting-back">‹ Cancel</button>
   </div>
 </div>
 
@@ -99,7 +111,7 @@
   <div class="game-bar">
     <button class="quit-btn" id="btn-quit">✕ Quit</button>
     <span class="game-bar-title" id="game-mode-chip">Local Play</span>
-    <button class="settings-btn" id="btn-open-settings">⚙️</button>
+    <button class="settings-btn" id="btn-open-settings" title="Settings">⚙️</button>
   </div>
 
   <div class="scoreboard">
@@ -119,10 +131,13 @@
     </div>
   </div>
 
+  <!-- Online connection status -->
   <div class="online-status hidden" id="online-status">
-    <span class="ostatus-dot" id="ostatus-x"></span>X
+    <span class="ostatus-dot" id="ostatus-x"></span><span>X</span>
     &nbsp;·&nbsp;
-    <span class="ostatus-dot" id="ostatus-o"></span>O
+    <span class="ostatus-dot" id="ostatus-o"></span><span>O</span>
+    &nbsp;·&nbsp;
+    <span id="conn-label" style="color:#9999bb;">waiting…</span>
   </div>
 
   <div class="board-wrap">
@@ -180,14 +195,14 @@
         <label>Animations</label>
         <label class="tog"><input type="checkbox" id="tog-anim" checked/><span class="tog-sl"></span></label>
       </div>
-      <div class="srow" style="margin-top:12px;">
+      <div class="srow" style="margin-top:8px;">
         <label style="color:#ff6b6b;font-weight:700;">Danger Zone</label>
         <button id="btn-reset-stats" class="btn-danger">Reset Stats</button>
       </div>
     </div>
     <div class="mtab-body" id="tab-icons">
       <div class="icon-for-row">
-        <span style="font-size:13px;color:#888;margin-right:8px;">Choosing for:</span>
+        <span style="font-size:13px;color:#888;margin-right:8px;">Icon for:</span>
         <button class="icon-for-btn active" data-for="X">Player X</button>
         <button class="icon-for-btn" data-for="O">Player O</button>
       </div>
@@ -199,6 +214,7 @@
 <!-- ░░ TOAST ░░ -->
 <div id="toast" class="toast hidden"></div>
 
-<script src="script.js"></script>
+<!-- Absolute path so deep links don't break -->
+<script src="/script.js"></script>
 </body>
 </html>
