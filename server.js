@@ -8,6 +8,7 @@ const express = require("express");
 const http    = require("http");
 const WebSocket = require("ws");
 const path    = require("path");
+const crypto = require("crypto");
 
 const app    = express();
 const server = http.createServer(app);
@@ -23,7 +24,7 @@ const rooms = new Map(); // code → RoomState
 function generateCode() {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   let code = "";
-  for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
+  for (let i = 0; i < 6; i++) code += chars[crypto.randomInt(chars.length)];
   return rooms.has(code) ? generateCode() : code;
 }
 
@@ -36,6 +37,7 @@ function newRoom(code) {
     over: false,
     winner: null,
     killTimer: null,
+    rematchVotes: new Set(),
   };
 }
 
@@ -89,6 +91,7 @@ wss.on("connection", ws => {
 
     // ── CREATE ────────────────────────────────────────────────────────────────
     if (type === "create") {
+      if (ws.roomCode) return send(ws, { type: "error", message: "Leave your current room first." });
       const code = generateCode();
       const room = newRoom(code);
       room.players.X = ws;
@@ -102,7 +105,8 @@ wss.on("connection", ws => {
 
     // ── JOIN ──────────────────────────────────────────────────────────────────
     if (type === "join") {
-      const code = (roomCode || "").toUpperCase().trim();
+      if (ws.roomCode) return send(ws, { type: "error", message: "Already in a room." });
+      const code = typeof roomCode === "string" ? roomCode.toUpperCase().trim() : "";
       const room = rooms.get(code);
 
       if (!room) {
@@ -160,11 +164,14 @@ wss.on("connection", ws => {
     if (type === "move") {
       const room = rooms.get(ws.roomCode);
       if (!room || room.over) return;
+      if (room.players.X?.readyState !== WebSocket.OPEN || room.players.O?.readyState !== WebSocket.OPEN) { send(ws, { type: "error", message: "Wait for your opponent to reconnect." }); return; }
+      if (room.players[ws.role] !== ws) return;
       if (ws.role !== room.turn) { send(ws, { type: "error", message: "Not your turn." }); return; }
-      if (typeof index !== "number" || index < 0 || index > 8 || room.board[index]) {
+      if (!Number.isInteger(index) || index < 0 || index > 8 || room.board[index]) {
         send(ws, { type: "error", message: "Invalid move." }); return;
       }
 
+      room.rematchVotes.clear();
       room.board[index] = ws.role;
       const result = winCheck(room.board);
 
@@ -182,20 +189,31 @@ wss.on("connection", ws => {
     // ── REMATCH ───────────────────────────────────────────────────────────────
     if (type === "rematch") {
       const room = rooms.get(ws.roomCode);
-      if (!room) return;
-      room.board  = Array(9).fill(null);
-      room.turn   = "X";
-      room.over   = false;
+      if (!room || room.players[ws.role] !== ws || !room.over) return;
+      if (room.players.X?.readyState !== WebSocket.OPEN || room.players.O?.readyState !== WebSocket.OPEN) return;
+      room.rematchVotes.add(ws.role);
+      if (room.rematchVotes.size < 2) {
+        send(ws, { type: "rematchPending", message: "Waiting for opponent to accept rematch." });
+        return;
+      }
+      room.rematchVotes.clear();
+      room.board = Array(9).fill(null);
+      room.turn = "X";
+      room.over = false;
       room.winner = null;
       broadcast(room, { type: "rematch", board: room.board, turn: "X" });
       return;
     }
+
   });
 
   ws.on("close", () => {
     const room = rooms.get(ws.roomCode);
     if (!room) return;
     console.log(`[${ws.roomCode}] ${ws.role} disconnected.`);
+    if (room.players[ws.role] !== ws) return;
+    room.players[ws.role] = null;
+    room.rematchVotes.clear();
     broadcast(room, { type: "opponentLeft", role: ws.role });
     scheduleKill(room);
   });
