@@ -16,7 +16,7 @@ const wss    = new WebSocket.Server({ server });
 
 // ── Static files (public/) ────────────────────────────────────────────────────
 // MUST be before any route so CSS/JS are served correctly even from /room/* URLs
-app.use(express.static(path.join(__dirname, "public")));
+app.use(express.static(path.join(__dirname, "public"), { index: false }));
 
 // ── In-Memory Room Store ──────────────────────────────────────────────────────
 const rooms = new Map(); // code → RoomState
