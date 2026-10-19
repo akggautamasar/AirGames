@@ -8,8 +8,9 @@
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Baloo+2:wght@500;700;800&display=swap" rel="stylesheet" />
   <!-- Absolute paths so /room/XXXXXX deep links still load CSS/JS correctly -->
   <link rel="stylesheet" href="/style.css" />
-</head>
+<style>.arcade-back{position:fixed;top:12px;left:12px;z-index:999;color:#ecfaff;background:#172640dd;border:1px solid #62cdd866;border-radius:30px;padding:9px 14px;text-decoration:none;font:700 13px system-ui;backdrop-filter:blur(8px)}.airbot-mini{display:grid;place-items:center}.airbot-face{display:flex;flex-direction:column;justify-content:center;align-items:center;width:75px;height:63px;border-radius:23px;background:linear-gradient(140deg,#d8f9ff,#83ade9);border:5px solid #496a9c;box-shadow:0 7px 25px #38e6ec44}.airbot-eyes{font-size:20px;color:#166f91;letter-spacing:5px;line-height:20px}.airbot-smile{font-size:21px;color:#166f91;line-height:18px}#screen-lobby .brand{padding-top:25px}</style></head>
 <body>
+<a href="/" class="arcade-back" aria-label="Back to all games">← Explore all games</a>
 
 <!-- ░░ LOBBY ░░ -->
 <div id="screen-lobby" class="screen active">
@@ -28,9 +29,9 @@
     </div>
     <div class="mode-card" id="card-bot">
       <div class="mode-card-bg"></div>
-      <div class="mode-emoji">🤖</div>
-      <div class="mode-name">vs AI Bot</div>
-      <div class="mode-desc">Challenge the computer</div>
+      <div class="mode-emoji airbot-mini" aria-label="AirBot robot"><span class="airbot-face"><span class="airbot-eyes">● ●</span><span class="airbot-smile">⌣</span></span></div>
+      <div class="mode-name">vs AirBot</div>
+      <div class="mode-desc">Challenge our friendly robot</div>
     </div>
     <div class="mode-card" id="card-online">
       <div class="mode-card-bg"></div>
