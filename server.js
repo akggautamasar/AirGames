@@ -223,6 +223,11 @@ wss.on("connection", ws => {
 // Health check — fast, no game logic
 app.get("/health", (_req, res) => res.send("AirGames server running"));
 
+// Game discovery hub and individual game routes
+app.get("/", (_req, res) => res.sendFile(path.join(__dirname, "public", "games.html")));
+app.get("/tic-tac-toe", (_req, res) => res.sendFile(path.join(__dirname, "public", "index.html")));
+app.get("/2048", (_req, res) => res.sendFile(path.join(__dirname, "public", "2048.html")));
+
 // SPA fallback — any /room/* deep link returns index.html
 // CSS/JS are found because express.static() runs first
 app.get("*", (_req, res) => {
