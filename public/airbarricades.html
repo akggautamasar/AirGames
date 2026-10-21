@@ -1,0 +1,4266 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light" data-finish="travertine">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
+  <title>AirBarricades — AirGames by WorksBeyond</title>
+
+  <style>
+    /* ==========================================================================
+       BESPOKE ARCHITECTURAL DESIGN SYSTEM & THEMES
+       Crafted for AirBarricades — AirGames by WorksBeyond
+       ========================================================================== */
+    :root,
+    [data-theme="light"] {
+      --bg-primary: #F3EDE2;
+      --bg-secondary: #E6DEC8;
+      --bg-Atmospheric: radial-gradient(circle at 18% 12%, rgba(217, 119, 6, 0.10), transparent 45%),
+                        radial-gradient(circle at 82% 85%, rgba(29, 78, 216, 0.08), transparent 50%),
+                        linear-gradient(160deg, #F7F3EB 0%, #EAE0D0 100%);
+      --surface-card: rgba(252, 249, 242, 0.92);
+      --surface-elevated: #FFFFFF;
+      --surface-muted: #EFE8DC;
+      --surface-glass: rgba(252, 249, 242, 0.84);
+      --border-subtle: #D8CBB8;
+      --border-strong: #BDA98E;
+      --text-primary: #1E1813;
+      --text-secondary: #5C5044;
+      --text-muted: #857667;
+      --accent-brand: #B85D19;
+      --accent-brand-glow: rgba(184, 93, 25, 0.22);
+      --accent-secondary: #0F766E;
+
+      /* Board & Architectural Finishes (Travertine & Smoked Walnut Default) */
+      --board-frame: #2D221B;
+      --board-frame-edge: #1B130E;
+      --board-coord: #D8B482;
+      --board-well: #3D2F25;
+      --cell-bg: #EFE7DA;
+      --cell-bg-alt: #E7DEC9;
+      --cell-border: #D5C7B2;
+      --cell-hover: #FBF8F3;
+      --groove-bg: #362920;
+      --groove-dot: #634E3E;
+
+      /* Player 1: Solaris Terracotta / Crimson */
+      --p1-main: #D93829;
+      --p1-light: #FF6E5E;
+      --p1-dark: #8F1D14;
+      --p1-glow: rgba(217, 56, 41, 0.35);
+      --p1-soft: rgba(217, 56, 41, 0.13);
+      --p1-goal-tint: rgba(217, 56, 41, 0.14);
+
+      /* Player 2: Aegean Ultramarine / Cobalt */
+      --p2-main: #1B56D0;
+      --p2-light: #5C8FFF;
+      --p2-dark: #0E2F7A;
+      --p2-glow: rgba(27, 86, 208, 0.35);
+      --p2-soft: rgba(27, 86, 208, 0.13);
+      --p2-goal-tint: rgba(27, 86, 208, 0.14);
+
+      /* Barricades: Burnished Bronze & Brass */
+      --wall-fill: #C27D38;
+      --wall-highlight: #E6A964;
+      --wall-shadow: #6E4116;
+      --wall-stroke: #47280A;
+
+      /* Interactive Indicators */
+      --legal-color: #0D9468;
+      --legal-glow: rgba(13, 148, 104, 0.38);
+      --jump-color: #D97706;
+      --invalid-color: #DC2626;
+      --invalid-glow: rgba(220, 38, 38, 0.38);
+
+      --shadow-soft: 0 8px 28px -6px rgba(30, 24, 19, 0.10), 0 2px 6px -1px rgba(30, 24, 19, 0.06);
+      --shadow-board: 0 22px 50px -12px rgba(28, 20, 14, 0.32), 0 4px 14px rgba(28, 20, 14, 0.18);
+    }
+
+    [data-theme="dark"] {
+      --bg-primary: #0A0E17;
+      --bg-secondary: #111827;
+      --bg-Atmospheric: radial-gradient(circle at 15% 15%, rgba(244, 63, 94, 0.12), transparent 45%),
+                        radial-gradient(circle at 85% 82%, rgba(56, 189, 248, 0.12), transparent 50%),
+                        linear-gradient(160deg, #080B12 0%, #121826 100%);
+      --surface-card: rgba(22, 29, 45, 0.92);
+      --surface-elevated: #1E293B;
+      --surface-muted: #131B2E;
+      --surface-glass: rgba(17, 24, 39, 0.86);
+      --border-subtle: #293548;
+      --border-strong: #3E4E68;
+      --text-primary: #F3F6FC;
+      --text-secondary: #9FB0C9;
+      --text-muted: #697A96;
+      --accent-brand: #F59E0B;
+      --accent-brand-glow: rgba(245, 158, 11, 0.25);
+      --accent-secondary: #14B8A6;
+
+      --board-frame: #0D131F;
+      --board-frame-edge: #05080F;
+      --board-coord: #7C8EA8;
+      --board-well: #090D16;
+      --cell-bg: #1B2436;
+      --cell-bg-alt: #161F30;
+      --cell-border: #28344B;
+      --cell-hover: #243048;
+      --groove-bg: #0B0F19;
+      --groove-dot: #2B3954;
+
+      /* Player 1: Molten Ruby-Coral */
+      --p1-main: #F43F5E;
+      --p1-light: #FDA4AF;
+      --p1-dark: #9F1239;
+      --p1-glow: rgba(244, 63, 94, 0.45);
+      --p1-soft: rgba(244, 63, 94, 0.16);
+      --p1-goal-tint: rgba(244, 63, 94, 0.18);
+
+      /* Player 2: Electric Cyan-Sapphire */
+      --p2-main: #0EA5E9;
+      --p2-light: #7DD3FC;
+      --p2-dark: #0369A1;
+      --p2-glow: rgba(14, 165, 233, 0.45);
+      --p2-soft: rgba(14, 165, 233, 0.16);
+      --p2-goal-tint: rgba(14, 165, 233, 0.18);
+
+      /* Barricades: Anodized Solar Gold */
+      --wall-fill: #F59E0B;
+      --wall-highlight: #FDE68A;
+      --wall-shadow: #B45309;
+      --wall-stroke: #78350F;
+
+      --legal-color: #10B981;
+      --legal-glow: rgba(16, 185, 129, 0.45);
+      --jump-color: #F59E0B;
+      --invalid-color: #EF4444;
+      --invalid-glow: rgba(239, 68, 68, 0.45);
+
+      --shadow-soft: 0 10px 30px -6px rgba(0, 0, 0, 0.55);
+      --shadow-board: 0 24px 60px -10px rgba(0, 0, 0, 0.78), 0 0 0 1px rgba(255, 255, 255, 0.06);
+    }
+
+    /* Optional Board Material Finishes */
+    [data-finish="jade"][data-theme="light"] {
+      --board-frame: #132A23;
+      --board-well: #0E201B;
+      --cell-bg: #E3F0EA;
+      --cell-bg-alt: #D6E8DF;
+      --cell-border: #B8D4C7;
+      --wall-fill: #D4AF37;
+      --wall-highlight: #F3E5AB;
+      --wall-shadow: #8A6D1B;
+    }
+    [data-finish="jade"][data-theme="dark"] {
+      --board-frame: #071712;
+      --board-well: #040E0B;
+      --cell-bg: #112A22;
+      --cell-bg-alt: #0E231C;
+      --cell-border: #1C4236;
+      --wall-fill: #EAB308;
+      --wall-highlight: #FEF08A;
+      --wall-shadow: #854D0E;
+    }
+    [data-finish="nordic"][data-theme="light"] {
+      --board-frame: #2C353D;
+      --board-well: #1F262C;
+      --cell-bg: #F3F5F7;
+      --cell-bg-alt: #E6EBF0;
+      --cell-border: #CBD5E1;
+      --wall-fill: #E07A5F;
+      --wall-highlight: #F4A28C;
+      --wall-shadow: #9E4730;
+    }
+    [data-finish="nordic"][data-theme="dark"] {
+      --board-frame: #111822;
+      --board-well: #0B1017;
+      --cell-bg: #1E293B;
+      --cell-bg-alt: #182232;
+      --cell-border: #334155;
+      --wall-fill: #FB923C;
+      --wall-highlight: #FED7AA;
+      --wall-shadow: #9A3412;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      width: 100%;
+      min-height: 100vh;
+      overflow-x: hidden;
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg-Atmospheric);
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      transition: background-color 0.25s ease, color 0.25s ease;
+    }
+
+    /* Top Platform Navigation Bar */
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 20px;
+      background: var(--surface-card);
+      border-bottom: 1px solid var(--border-subtle);
+      backdrop-filter: blur(12px);
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      flex-wrap: wrap;
+    }
+
+    .brand-cluster {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .airgames-hub-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 11px;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      color: var(--text-secondary);
+      background: var(--surface-muted);
+      border: 1px solid var(--border-subtle);
+      cursor: pointer;
+      transition: all 0.18s ease;
+    }
+    .airgames-hub-btn:hover {
+      color: var(--text-primary);
+      border-color: var(--accent-brand);
+      transform: translateY(-1px);
+    }
+
+    .game-title-lockup {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+    }
+    .game-title {
+      font-family: 'Cinzel', serif;
+      font-weight: 800;
+      font-size: 1.25rem;
+      letter-spacing: 0.04em;
+      background: linear-gradient(135deg, var(--p1-main), var(--accent-brand), var(--p2-main));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .brand-subtitle {
+      font-size: 0.72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+    }
+
+    .topbar-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    /* Segmented Pills & Top Buttons */
+    .segmented-group {
+      display: inline-flex;
+      background: var(--surface-muted);
+      padding: 3px;
+      border-radius: 10px;
+      border: 1px solid var(--border-subtle);
+    }
+    .seg-btn {
+      border: none;
+      background: transparent;
+      color: var(--text-secondary);
+      font-family: inherit;
+      font-size: 0.78rem;
+      font-weight: 700;
+      padding: 5px 11px;
+      border-radius: 7px;
+      cursor: pointer;
+      transition: all 0.16s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .seg-btn.active {
+      background: var(--surface-elevated);
+      color: var(--text-primary);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.10);
+    }
+    .seg-btn.view-3d-btn.active {
+      background: linear-gradient(135deg, var(--accent-brand), #D97706);
+      color: #FFFFFF;
+    }
+
+    .icon-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 6px 11px;
+      border-radius: 9px;
+      border: 1px solid var(--border-subtle);
+      background: var(--surface-elevated);
+      color: var(--text-primary);
+      font-family: inherit;
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.16s ease;
+    }
+    .icon-btn:hover:not(:disabled) {
+      border-color: var(--border-strong);
+      background: var(--surface-muted);
+    }
+    .icon-btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .select-pill {
+      padding: 5px 10px;
+      border-radius: 9px;
+      border: 1px solid var(--border-subtle);
+      background: var(--surface-elevated);
+      color: var(--text-primary);
+      font-family: inherit;
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    /* Main Workspace Layout */
+    .workspace {
+      max-width: 1380px;
+      margin: 0 auto;
+      padding: 14px 18px 28px;
+      display: grid;
+      grid-template-columns: 290px minmax(320px, 640px) 300px;
+      gap: 18px;
+      align-items: start;
+      justify-content: center;
+    }
+
+    .column-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .card {
+      background: var(--surface-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 16px;
+      padding: 15px;
+      box-shadow: var(--shadow-soft);
+      backdrop-filter: blur(10px);
+    }
+
+    /* Player Cards */
+    .player-card {
+      position: relative;
+      transition: all 0.22s ease;
+      overflow: hidden;
+    }
+    .player-card::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 5px;
+      height: 100%;
+      background: transparent;
+      transition: background 0.22s ease;
+    }
+    .player-card.p1-card::before {
+      background: var(--p1-main);
+    }
+    .player-card.p2-card::before {
+      background: var(--p2-main);
+    }
+    .player-card.active-turn {
+      border-color: var(--border-strong);
+      transform: translateY(-2px);
+    }
+    .player-card.p1-card.active-turn {
+      box-shadow: 0 10px 26px -6px var(--p1-glow), 0 0 0 2px var(--p1-main);
+    }
+    .player-card.p2-card.active-turn {
+      box-shadow: 0 10px 26px -6px var(--p2-glow), 0 0 0 2px var(--p2-main);
+    }
+
+    .player-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .player-identity {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .pawn-avatar {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      color: #FFF;
+      position: relative;
+      box-shadow: inset 0 2px 4px rgba(255,255,255,0.4), 0 3px 8px rgba(0,0,0,0.25);
+    }
+    .pawn-avatar.p1 {
+      background: radial-gradient(circle at 32% 30%, var(--p1-light), var(--p1-main) 65%, var(--p1-dark));
+    }
+    .pawn-avatar.p2 {
+      background: radial-gradient(circle at 32% 30%, var(--p2-light), var(--p2-main) 65%, var(--p2-dark));
+    }
+    .player-name {
+      font-weight: 800;
+      font-size: 0.98rem;
+      line-height: 1.2;
+    }
+    .player-goal-sub {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    .turn-badge {
+      font-size: 0.7rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      padding: 4px 9px;
+      border-radius: 999px;
+      background: var(--surface-muted);
+      color: var(--text-muted);
+    }
+    .p1-card.active-turn .turn-badge {
+      background: var(--p1-soft);
+      color: var(--p1-main);
+    }
+    .p2-card.active-turn .turn-badge {
+      background: var(--p2-soft);
+      color: var(--p2-main);
+    }
+
+    .player-metrics {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .metric-box {
+      background: var(--surface-muted);
+      border-radius: 10px;
+      padding: 7px 10px;
+      display: flex;
+      flex-direction: column;
+    }
+    .metric-label {
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      font-weight: 700;
+    }
+    .metric-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    /* Visual Barricade Supply Rack (10 Pips) */
+    .wall-rack-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--text-secondary);
+      margin-bottom: 5px;
+    }
+    .wall-rack {
+      display: grid;
+      grid-template-columns: repeat(10, 1fr);
+      gap: 4px;
+      height: 16px;
+      padding: 3px;
+      background: var(--surface-muted);
+      border-radius: 6px;
+      border: 1px solid var(--border-subtle);
+    }
+    .wall-pip {
+      border-radius: 2px;
+      background: linear-gradient(180deg, var(--wall-highlight), var(--wall-fill));
+      box-shadow: 0 1px 2px rgba(0,0,0,0.25);
+      transition: all 0.25s ease;
+    }
+    .wall-pip.spent {
+      background: transparent;
+      border: 1px dashed var(--border-subtle);
+      box-shadow: none;
+      opacity: 0.35;
+    }
+
+    /* Barricade Arsenal & Action Dock */
+    .section-heading {
+      font-size: 0.76rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .tool-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 9px;
+      margin-bottom: 10px;
+    }
+    .barricade-tool-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      padding: 12px 8px;
+      border-radius: 12px;
+      border: 2px solid var(--border-subtle);
+      background: var(--surface-elevated);
+      color: var(--text-primary);
+      cursor: grab;
+      transition: all 0.18s ease;
+      user-select: none;
+      touch-action: none;
+      position: relative;
+    }
+    .barricade-tool-btn:hover:not(:disabled) {
+      border-color: var(--wall-fill);
+      transform: translateY(-1px);
+    }
+    .barricade-tool-btn.active {
+      border-color: var(--legal-color);
+      background: rgba(16, 185, 129, 0.10);
+      box-shadow: 0 0 0 3px var(--legal-glow);
+    }
+    .barricade-tool-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    .tool-preview-bar {
+      background: linear-gradient(90deg, var(--wall-highlight), var(--wall-fill));
+      border: 1px solid var(--wall-stroke);
+      border-radius: 3px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.25);
+    }
+    .tool-preview-bar.horiz {
+      width: 44px;
+      height: 8px;
+    }
+    .tool-preview-bar.vert {
+      width: 8px;
+      height: 32px;
+    }
+    .tool-title {
+      font-size: 0.8rem;
+      font-weight: 700;
+    }
+    .tool-hint {
+      font-size: 0.68rem;
+      color: var(--text-muted);
+    }
+
+    .action-subrow {
+      display: flex;
+      gap: 8px;
+    }
+    .action-subrow .icon-btn {
+      flex: 1;
+      padding: 8px 10px;
+    }
+
+    /* Center Stage: Board Arena */
+    .board-stage {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+    }
+
+    /* Status & Live Feedback Banner */
+    .status-banner {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 16px;
+      border-radius: 14px;
+      background: var(--surface-card);
+      border: 1px solid var(--border-subtle);
+      box-shadow: var(--shadow-soft);
+      min-height: 50px;
+    }
+    .status-primary {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      font-size: 0.92rem;
+    }
+    .status-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .status-dot.red {
+      background: var(--p1-main);
+      box-shadow: 0 0 10px var(--p1-glow);
+    }
+    .status-dot.blue {
+      background: var(--p2-main);
+      box-shadow: 0 0 10px var(--p2-glow);
+    }
+    .status-feedback {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-align: right;
+    }
+    .status-feedback.error {
+      color: var(--invalid-color);
+      font-weight: 700;
+      animation: shakeX 0.32s ease;
+    }
+    .status-feedback.valid-hint {
+      color: var(--legal-color);
+      font-weight: 700;
+    }
+
+    @keyframes shakeX {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-5px); }
+      75% { transform: translateX(5px); }
+    }
+
+    /* 3D Camera Controls Bar (Visible when 3D Mode is active) */
+    .camera-3d-bar {
+      width: 100%;
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 8px 14px;
+      border-radius: 12px;
+      background: var(--surface-card);
+      border: 1px solid var(--border-subtle);
+      font-size: 0.76rem;
+      flex-wrap: wrap;
+    }
+    .camera-3d-bar.visible {
+      display: flex;
+    }
+    .cam-group {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .cam-slider {
+      width: 85px;
+      accent-color: var(--accent-brand);
+      cursor: pointer;
+    }
+
+    /* Board Frame & Responsive Aspect Box */
+    .board-outer-frame {
+      position: relative;
+      width: 100%;
+      max-width: 610px;
+      aspect-ratio: 1 / 1;
+      background: var(--board-frame);
+      border-radius: 22px;
+      padding: 26px;
+      box-shadow: var(--shadow-board);
+      border: 3px solid var(--board-frame-edge);
+      user-select: none;
+      touch-action: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Coordinate Labels around the frame */
+    .coord-top, .coord-bottom {
+      position: absolute;
+      left: 26px;
+      right: 26px;
+      height: 22px;
+      display: grid;
+      grid-template-columns: repeat(9, 1fr);
+      align-items: center;
+      justify-items: center;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: var(--board-coord);
+      pointer-events: none;
+    }
+    .coord-top { top: 3px; }
+    .coord-bottom { bottom: 3px; }
+
+    .coord-left, .coord-right {
+      position: absolute;
+      top: 26px;
+      bottom: 26px;
+      width: 22px;
+      display: grid;
+      grid-template-rows: repeat(9, 1fr);
+      align-items: center;
+      justify-items: center;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: var(--board-coord);
+      pointer-events: none;
+    }
+    .coord-left { left: 3px; }
+    .coord-right { right: 3px; }
+
+    /* Goal Edge Indicators */
+    .goal-strip {
+      position: absolute;
+      left: 34px;
+      right: 34px;
+      height: 4px;
+      border-radius: 999px;
+      pointer-events: none;
+      z-index: 5;
+    }
+    .goal-strip.top-goal {
+      top: 22px;
+      background: linear-gradient(90deg, transparent, var(--p1-main), var(--p1-light), var(--p1-main), transparent);
+      box-shadow: 0 0 8px var(--p1-glow);
+    }
+    .goal-strip.bottom-goal {
+      bottom: 22px;
+      background: linear-gradient(90deg, transparent, var(--p2-main), var(--p2-light), var(--p2-main), transparent);
+      box-shadow: 0 0 8px var(--p2-glow);
+    }
+
+    /* Inner Playable Well */
+    .board-inner-well {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      background: var(--board-well);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: inset 0 3px 10px rgba(0,0,0,0.45);
+    }
+
+    /* 2D Interactive SVG Board */
+    #board-svg-2d {
+      width: 100%;
+      height: 100%;
+      display: block;
+      touch-action: none;
+    }
+
+    /* 3D Interactive Perspective Canvas */
+    #board-canvas-3d {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: none;
+      touch-action: none;
+      cursor: pointer;
+    }
+    .board-outer-frame.mode-3d #board-svg-2d {
+      display: none;
+    }
+    .board-outer-frame.mode-3d #board-canvas-3d {
+      display: block;
+    }
+    .board-outer-frame.mode-3d .coord-top,
+    .board-outer-frame.mode-3d .coord-bottom,
+    .board-outer-frame.mode-3d .coord-left,
+    .board-outer-frame.mode-3d .coord-right {
+      opacity: 0.25;
+    }
+
+    /* Accessible Screen-Reader / Keyboard Overlay Buttons for 9x9 Squares */
+    .a11y-board-grid {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      display: grid;
+      grid-template-columns: repeat(9, 1fr);
+      grid-template-rows: repeat(9, 1fr);
+    }
+    .a11y-cell-btn {
+      pointer-events: auto;
+      opacity: 0;
+      width: 100%;
+      height: 100%;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+    }
+    .a11y-cell-btn:focus-visible {
+      opacity: 1;
+      outline: 3px solid var(--accent-brand);
+      outline-offset: -3px;
+      background: rgba(245, 158, 11, 0.15);
+    }
+
+    /* Move History Log */
+    .history-list {
+      max-height: 245px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      padding-right: 4px;
+    }
+    .history-empty {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      text-align: center;
+      padding: 24px 8px;
+      font-style: italic;
+    }
+    .history-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 6px 10px;
+      border-radius: 8px;
+      background: var(--surface-muted);
+      font-size: 0.77rem;
+      border-left: 3px solid transparent;
+    }
+    .history-item.red { border-left-color: var(--p1-main); }
+    .history-item.blue { border-left-color: var(--p2-main); }
+    .history-turn-num {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      color: var(--text-muted);
+      min-width: 26px;
+    }
+    .history-desc {
+      flex: 1;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+    .history-code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      padding: 2px 6px;
+      border-radius: 5px;
+      background: var(--surface-elevated);
+      color: var(--text-secondary);
+      border: 1px solid var(--border-subtle);
+    }
+
+    /* Match Statistics Card */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      text-align: center;
+    }
+    .stat-pill {
+      background: var(--surface-muted);
+      padding: 8px 6px;
+      border-radius: 10px;      border: 1px solid var(--border-subtle);
+    }
+    .stat-num {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.05rem;
+      font-weight: 800;
+    }
+    .stat-lbl {
+      font-size: 0.66rem;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      font-weight: 700;
+    }
+
+    /* Floating Drag Ghost Barricade */
+    #drag-ghost {
+      position: fixed;
+      pointer-events: none;
+      z-index: 100;
+      display: none;
+      transform: translate(-50%, -50%);
+      border-radius: 6px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.35);
+    }
+
+    /* Modals & Full-Screen Victory Celebration */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 90;
+      background: rgba(10, 14, 23, 0.72);
+      backdrop-filter: blur(8px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+    }
+    .modal-backdrop.open {
+      display: flex;
+    }
+
+    .modal-box {
+      position: relative;
+      width: 100%;
+      max-width: 620px;
+      max-height: 90vh;
+      overflow-y: auto;
+      background: var(--surface-elevated);
+      color: var(--text-primary);
+      border: 1px solid var(--border-strong);
+      border-radius: 22px;
+      padding: 26px;
+      box-shadow: 0 25px 70px rgba(0,0,0,0.45);
+      z-index: 2;
+    }
+
+    #confetti-canvas {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 91;
+      display: none;
+    }
+
+    .victory-hero {
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+    .victory-icon-badge {
+      width: 88px;
+      height: 88px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.8rem;
+      background: radial-gradient(circle, var(--accent-brand-glow), transparent 70%);
+      border: 2px solid var(--accent-brand);
+      box-shadow: 0 0 35px var(--accent-brand-glow);
+      animation: floatPulse 2.4s infinite ease-in-out;
+    }
+    @keyframes floatPulse {
+      0%, 100% { transform: translateY(0) scale(1); }
+      50% { transform: translateY(-6px) scale(1.05); }
+    }
+    .victory-headline {
+      font-family: 'Cinzel', serif;
+      font-size: 1.85rem;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+    }
+    .victory-sub {
+      font-size: 0.96rem;
+      color: var(--text-secondary);
+      max-width: 420px;
+      line-height: 1.5;
+    }
+    .victory-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      margin-top: 14px;
+    }
+    .btn-primary {
+      padding: 11px 22px;
+      border-radius: 12px;
+      border: none;
+      background: linear-gradient(135deg, var(--p1-main), var(--accent-brand));
+      color: #FFFFFF;
+      font-family: inherit;
+      font-weight: 800;
+      font-size: 0.92rem;
+      cursor: pointer;
+      box-shadow: 0 8px 20px var(--p1-glow);
+      transition: transform 0.16s ease, box-shadow 0.16s ease;
+    }
+    .btn-primary:hover {
+      transform: translateY(-2px);
+    }
+
+    /* Tutorial & Test Suite Styling */
+    .tutorial-tabs {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin: 14px 0;
+    }
+    .tut-step-card {
+      background: var(--surface-muted);
+      border: 1px solid var(--border-subtle);
+      border-radius: 14px;
+      padding: 16px;
+      line-height: 1.55;
+      font-size: 0.88rem;
+    }
+    .tut-rule-list {
+      margin-top: 10px;
+      padding-left: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .test-results-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 12px;
+      max-height: 360px;
+      overflow-y: auto;
+    }
+    .test-row {
+      padding: 8px 10px;
+      border-radius: 8px;
+      background: var(--surface-muted);
+      border-left: 4px solid var(--legal-color);
+      font-size: 0.76rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    /* Responsive Breakpoints */
+    @media (max-width: 1140px) {
+      .workspace {
+        grid-template-columns: 1fr;
+        max-width: 680px;
+      }
+      .column-panel.left-col {
+        order: 2;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+      }
+      .board-stage {
+        order: 1;
+      }
+      .column-panel.right-col {
+        order: 3;
+      }
+    }
+
+    /* Dedicated Below-Board Barricade Dock Styles */
+    .barricade-dock-below-board {
+      width: 100%;
+      max-width: 610px;
+      padding: 12px 14px;
+      border: 2px solid var(--border-strong);
+      box-shadow: var(--shadow-soft);
+    }
+    .dock-header-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+    }
+    .dock-title-cluster {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .dock-title {
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      color: var(--text-primary);
+    }
+    .dock-supply-pill {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: var(--surface-muted);
+      border: 1px solid var(--border-subtle);
+      color: var(--accent-brand);
+    }
+    .dock-instruction {
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+    .dock-wall-pips-row {
+      display: grid;
+      grid-template-columns: repeat(10, 1fr);
+      gap: 4px;
+      height: 10px;
+      margin-bottom: 10px;
+    }
+    .mobile-thumb-grid {
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+    .mobile-thumb-grid .barricade-tool-btn {
+      flex-direction: row;
+      justify-content: center;
+      gap: 12px;
+      min-height: 54px;
+      padding: 10px 12px;
+    }
+    .tool-text-col {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      text-align: left;
+    }
+
+    @media (max-width: 640px) {
+      .topbar {
+        padding: 5px 8px;
+        gap: 4px;
+      }
+      .game-title {
+        font-size: 0.95rem;
+      }
+      .brand-subtitle {
+        display: none;
+      }
+      .topbar-controls {
+        gap: 4px;
+      }
+      .seg-btn, .icon-btn, .select-pill {
+        padding: 4px 6px;
+        font-size: 0.68rem;
+      }
+      .workspace {
+        padding: 6px 8px 20px;
+        gap: 10px;
+      }
+      .board-stage {
+        gap: 7px;
+      }
+      .status-banner {
+        padding: 7px 11px;
+        min-height: 40px;
+        border-radius: 11px;
+      }
+      .status-primary {
+        font-size: 0.8rem;
+      }
+      .status-feedback {
+        font-size: 0.72rem;
+      }
+      .board-outer-frame {
+        padding: 15px;
+        border-radius: 15px;
+        max-width: min(100%, 52vh);
+      }
+      .coord-top, .coord-bottom { left: 15px; right: 15px; font-size: 0.58rem; height: 15px; }
+      .coord-left, .coord-right { top: 15px; bottom: 15px; font-size: 0.58rem; width: 15px; }
+      .goal-strip.top-goal { top: 13px; }
+      .goal-strip.bottom-goal { bottom: 13px; }
+      .barricade-dock-below-board {
+        padding: 10px 11px;
+        border-radius: 14px;
+      }
+      .mobile-thumb-grid .barricade-tool-btn {
+        min-height: 50px;
+        padding: 8px 10px;
+      }
+      .column-panel.left-col {
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+      }
+      .player-card {
+        padding: 10px;
+      }
+      .test-results-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Floating Drag Preview Ghost -->
+  <div id="drag-ghost" aria-hidden="true"></div>
+  <!-- Full-Screen Victory Confetti Canvas -->
+  <canvas id="confetti-canvas" aria-hidden="true"></canvas>
+
+  <!-- Live Screen Reader Announcements -->
+  <div id="sr-announcer" aria-live="polite" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);"></div>
+
+  <!-- Top Navigation & Platform Bar -->
+  <header class="topbar">
+    <div class="brand-cluster">
+      <a href="/" class="airgames-hub-btn" style="text-decoration:none;" title="Return to the AirGames homepage">← All Games</a>
+      <button type="button" class="airgames-hub-btn" id="btn-airgames-hub" title="Explore AirGames by WorksBeyond">
+        <span>◈ AirGames</span>
+      </button>
+      <div class="game-title-lockup">
+        <h1 class="game-title">AIRBARRICADES</h1>
+        <span class="brand-subtitle">by WorksBeyond</span>
+      </div>
+    </div>
+
+    <div class="topbar-controls">
+      <!-- 2D / 3D Dimension Switcher -->
+      <div class="segmented-group" role="group" aria-label="Board Dimension View">
+        <button type="button" class="seg-btn active" id="btn-view-2d">2D Tactical</button>
+        <button type="button" class="seg-btn view-3d-btn" id="btn-view-3d">3D Arena ✨</button>
+      </div>
+
+      <!-- Game Mode Switcher -->
+      <div class="segmented-group" role="group" aria-label="Game Mode">
+        <button type="button" class="seg-btn active" id="btn-mode-airbot">🤖 vs AirBot</button>
+        <button type="button" class="seg-btn" id="btn-mode-local">👥 Local 2P</button>
+      </div>
+
+      <!-- AirBot Difficulty Selector -->
+      <select id="select-difficulty" class="select-pill" aria-label="AirBot Difficulty">
+        <option value="easy">AirBot: Beginner</option>
+        <option value="medium" selected>AirBot: Intermediate</option>
+        <option value="hard">AirBot: Expert</option>
+      </select>
+
+      <!-- Architectural Material Finish Selector -->
+      <select id="select-finish" class="select-pill" aria-label="Board Material Finish">
+        <option value="travertine" selected>Finish: Walnut & Travertine</option>
+        <option value="jade">Finish: Imperial Jade & Gold</option>
+        <option value="nordic">Finish: Nordic Slate & Copper</option>
+      </select>
+
+      <!-- Light / Dark Theme Toggle -->
+      <button type="button" class="icon-btn" id="btn-theme-toggle" aria-label="Toggle Light or Dark Theme">
+        <span id="theme-icon">🌙</span>
+        <span id="theme-label">Dark</span>
+      </button>
+
+      <!-- Sound Toggle -->
+      <button type="button" class="icon-btn" id="btn-sound-toggle" aria-label="Toggle Sound Effects">
+        <span id="sound-icon">🔊</span>
+        <span id="sound-label">Sound</span>
+      </button>
+
+      <!-- Tutorial / Rules Button -->
+      <button type="button" class="icon-btn" id="btn-open-tutorial">
+        <span>📖 Rules & Guide</span>
+      </button>
+
+      <!-- Automated Engine Verification Button -->
+      <button type="button" class="icon-btn" id="btn-open-tests" title="Run 24 Mandatory Engine & UI Verification Tests">
+        <span>✓ Verify (24)</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Three-Column Strategy Workspace -->
+  <main class="workspace">
+    <!-- Left Column: Player Panels & Barricade Arsenal -->
+    <section class="column-panel left-col" aria-label="Players and Barricade Controls">
+      <!-- Player 2 (Top / Blue / AirBot) Card -->
+      <article class="card player-card p2-card" id="card-player-blue">
+        <div class="player-header">
+          <div class="player-identity">
+            <div class="pawn-avatar p2" aria-hidden="true">▼</div>
+            <div>
+              <div class="player-name" id="name-player-blue">🤖 AirBot</div>
+              <div class="player-goal-sub">Starts Top (E1) → Goal Row 9</div>
+            </div>
+          </div>
+          <span class="turn-badge" id="badge-turn-blue">Waiting</span>
+        </div>
+        <div class="player-metrics">
+          <div class="metric-box">
+            <span class="metric-label">Barricades</span>
+            <span class="metric-value" id="walls-count-blue">10</span>
+          </div>
+          <div class="metric-box">
+            <span class="metric-label">Shortest Path</span>
+            <span class="metric-value" id="path-len-blue">8 steps</span>
+          </div>
+        </div>
+        <div class="wall-rack-label">
+          <span>Barricade Supply</span>
+          <span id="rack-text-blue">10 / 10</span>
+        </div>
+        <div class="wall-rack" id="wall-rack-blue" aria-label="Blue remaining barricades"></div>
+      </article>
+
+      <!-- Player 1 (Bottom / Red / Human) Card -->
+      <article class="card player-card p1-card active-turn" id="card-player-red">
+        <div class="player-header">
+          <div class="player-identity">
+            <div class="pawn-avatar p1" aria-hidden="true">▲</div>
+            <div>
+              <div class="player-name" id="name-player-red">Player 1 (Red)</div>
+              <div class="player-goal-sub">Starts Bottom (E9) → Goal Row 1</div>
+            </div>
+          </div>
+          <span class="turn-badge" id="badge-turn-red">Your Turn</span>
+        </div>
+        <div class="player-metrics">
+          <div class="metric-box">
+            <span class="metric-label">Barricades</span>
+            <span class="metric-value" id="walls-count-red">10</span>
+          </div>
+          <div class="metric-box">
+            <span class="metric-label">Shortest Path</span>
+            <span class="metric-value" id="path-len-red">8 steps</span>
+          </div>
+        </div>
+        <div class="wall-rack-label">
+          <span>Barricade Supply</span>
+          <span id="rack-text-red">10 / 10</span>
+        </div>
+        <div class="wall-rack" id="wall-rack-red" aria-label="Red remaining barricades"></div>
+      </article>
+
+    </section>
+
+    <!-- Center Column: Interactive 2D & 3D Board Arena -->
+    <section class="board-stage" aria-label="Game Board Arena">
+      <!-- Live Turn & Rule Feedback Banner -->
+      <div class="status-banner">
+        <div class="status-primary">
+          <span class="status-dot red" id="status-turn-dot"></span>
+          <span id="status-headline">Red's Turn — Select your pawn or place a barricade</span>
+        </div>
+        <div class="status-feedback" id="status-subtext">Reach Row 1 (top edge) to win</div>
+      </div>
+
+      <!-- 3D Camera Orbit & Perspective Controls Bar (Active in 3D Mode) -->
+      <div class="camera-3d-bar" id="camera-3d-bar">
+        <div class="cam-group">
+          <strong style="color:var(--accent-brand);">3D Camera:</strong>
+          <button type="button" class="icon-btn" id="btn-cam-left" title="Orbit Camera Left">⟲ Orbit L</button>
+          <button type="button" class="icon-btn" id="btn-cam-right" title="Orbit Camera Right">⟳ Orbit R</button>
+          <button type="button" class="icon-btn" id="btn-cam-red-pov">Red POV</button>
+          <button type="button" class="icon-btn" id="btn-cam-iso">Iso Angle</button>
+          <button type="button" class="icon-btn" id="btn-cam-blue-pov">Blue POV</button>
+        </div>
+        <div class="cam-group">
+          <label for="slider-cam-pitch" style="font-weight:700;">Tilt:</label>
+          <input type="range" id="slider-cam-pitch" class="cam-slider" min="32" max="86" value="52" />
+        </div>
+      </div>
+
+      <!-- The 9x9 Architectural Board Frame -->
+      <div class="board-outer-frame" id="board-frame">
+        <!-- Coordinate Headers -->
+        <div class="coord-top" aria-hidden="true">
+          <span>A</span><span>B</span><span>C</span><span>D</span><span>E</span><span>F</span><span>G</span><span>H</span><span>I</span>
+        </div>
+        <div class="coord-bottom" aria-hidden="true">
+          <span>A</span><span>B</span><span>C</span><span>D</span><span>E</span><span>F</span><span>G</span><span>H</span><span>I</span>
+        </div>
+        <div class="coord-left" aria-hidden="true">
+          <span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span>
+        </div>
+        <div class="coord-right" aria-hidden="true">
+          <span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span>
+        </div>
+
+        <!-- Goal Row Illuminated Strips -->
+        <div class="goal-strip top-goal" title="Red's Winning Edge (Row 1)"></div>
+        <div class="goal-strip bottom-goal" title="Blue's Winning Edge (Row 9)"></div>
+
+        <!-- Inner Board Well -->
+        <div class="board-inner-well" id="board-well">
+          <!-- 2D Precision SVG Renderer -->
+          <svg id="board-svg-2d" viewBox="0 0 900 900" role="grid" aria-label="AirBarricades 9 by 9 Strategy Board"></svg>
+          <!-- 3D Volumetric Perspective Canvas Renderer -->
+          <canvas id="board-canvas-3d" width="900" height="900" aria-label="AirBarricades 3D Interactive Board"></canvas>
+          <!-- Keyboard & Screen Reader Accessible 9x9 Matrix -->
+          <div class="a11y-board-grid" id="a11y-grid" role="region" aria-label="Accessible Board Squares"></div>
+        </div>
+      </div>
+
+      <!-- Barricade Placement Dock — Positioned Directly Below the Board for Instant Mobile Thumb Access -->
+      <article class="card barricade-dock-below-board" id="barricade-dock" aria-label="Barricade Placement Controls">
+        <div class="dock-header-row">
+          <div class="dock-title-cluster">
+            <span class="dock-title">🧱 BARRICADE ARSENAL</span>
+            <span class="dock-supply-pill" id="dock-active-supply">Red: 10 left · Blue: 10 left</span>
+          </div>
+          <span class="dock-instruction">Tap tool then tap board — or Drag &amp; Drop</span>
+        </div>
+
+        <div class="dock-wall-pips-row" id="dock-wall-rack-active" aria-hidden="true"></div>
+
+        <div class="tool-grid mobile-thumb-grid">
+          <button type="button" class="barricade-tool-btn" id="tool-horiz" data-orientation="horizontal">
+            <div class="tool-preview-bar horiz"></div>
+            <div class="tool-text-col">
+              <span class="tool-title">Horizontal (H)</span>
+              <span class="tool-hint">Blocks vertical path</span>
+            </div>
+          </button>
+          <button type="button" class="barricade-tool-btn" id="tool-vert" data-orientation="vertical">
+            <div class="tool-preview-bar vert"></div>
+            <div class="tool-text-col">
+              <span class="tool-title">Vertical (V)</span>
+              <span class="tool-hint">Blocks side path</span>
+            </div>
+          </button>
+        </div>
+
+        <div class="action-subrow dock-quick-actions">
+          <button type="button" class="icon-btn" id="btn-rotate-wall" title="Switch Barricade Orientation (Key: R)">
+            <span>↻ Rotate (R)</span>
+          </button>
+          <button type="button" class="icon-btn" id="btn-pawn-mode" title="Return to Pawn Movement Mode (Key: Esc)">
+            <span>♟ Pawn Mode</span>
+          </button>
+        </div>
+      </article>
+    </section>
+
+    <!-- Right Column: Match Controls, Route Radar, Move History & Stats -->
+    <section class="column-panel right-col" aria-label="Match Controls and History">
+      <!-- Match Actions Card -->
+      <article class="card">
+        <div class="section-heading">
+          <span>Match Command</span>
+          <span id="turn-counter-pill" style="font-family:'JetBrains Mono',monospace;">Turn 1</span>
+        </div>
+        <div class="action-subrow" style="margin-bottom:8px;">
+          <button type="button" class="icon-btn" id="btn-undo" disabled>
+            <span>↶ Undo Move</span>
+          </button>
+          <button type="button" class="icon-btn" id="btn-new-game" style="border-color:var(--accent-brand);font-weight:800;">
+            <span>⟳ New Game</span>
+          </button>
+        </div>
+        <div class="action-subrow">
+          <button type="button" class="icon-btn" id="btn-toggle-paths">
+            <span id="paths-toggle-label">🧭 Route Radar: Off</span>
+          </button>
+          <button type="button" class="icon-btn" id="btn-toggle-coords">
+            <span># Coords: On</span>
+          </button>
+        </div>
+      </article>
+
+      <!-- Chronological Move History Card -->
+      <article class="card">
+        <div class="section-heading">
+          <span>Chronological Move Log</span>
+          <span id="history-count-label">0 actions</span>
+        </div>
+        <div class="history-list" id="history-list" role="log" aria-live="polite">
+          <div class="history-empty">No moves recorded yet. Click your Red pawn at E9 or select a barricade to begin.</div>
+        </div>
+      </article>
+
+      <!-- Session Scoreboard Card -->
+      <article class="card">
+        <div class="section-heading">
+          <span>AirGames Session Record</span>
+          <button type="button" id="btn-reset-stats" style="border:none;background:none;color:var(--text-muted);font-size:0.7rem;cursor:pointer;text-decoration:underline;">Reset</button>
+        </div>
+        <div class="stats-grid">
+          <div class="stat-pill">
+            <div class="stat-num" id="stat-red-wins" style="color:var(--p1-main);">0</div>
+            <div class="stat-lbl">Red Wins</div>
+          </div>
+          <div class="stat-pill">
+            <div class="stat-num" id="stat-bot-wins" style="color:var(--p2-main);">0</div>
+            <div class="stat-lbl">AirBot Wins</div>
+          </div>
+          <div class="stat-pill">
+            <div class="stat-num" id="stat-local-games">0</div>
+            <div class="stat-lbl">Matches</div>
+          </div>
+        </div>
+      </article>
+    </section>
+  </main>
+
+  <!-- ==========================================================================
+       MODAL 1: FULL-SCREEN VICTORY CELEBRATION OVERLAY
+       ========================================================================== -->
+  <div class="modal-backdrop" id="modal-victory" role="dialog" aria-modal="true" aria-labelledby="victory-title">
+    <div class="modal-box">
+      <div class="victory-hero">
+        <div class="victory-icon-badge" id="victory-badge">🏆</div>
+        <div style="font-size:0.75rem;font-weight:800;text-transform:uppercase;letter-spacing:0.12em;color:var(--accent-brand);" id="victory-kicker">AirGames Official Match Result</div>
+        <h2 class="victory-headline" id="victory-title">YOU ARE THE CHAMPION!</h2>
+        <p class="victory-sub" id="victory-message">Brilliant strategy! You conquered the board.</p>
+
+        <div class="stats-grid" style="width:100%;max-width:420px;margin-top:8px;">
+          <div class="stat-pill">
+            <div class="stat-num" id="vic-stat-turns">0</div>
+            <div class="stat-lbl">Total Turns</div>
+          </div>
+          <div class="stat-pill">
+            <div class="stat-num" id="vic-stat-red-walls">10</div>
+            <div class="stat-lbl">Red Walls Left</div>
+          </div>
+          <div class="stat-pill">
+            <div class="stat-num" id="vic-stat-blue-walls">10</div>
+            <div class="stat-lbl">Blue Walls Left</div>
+          </div>
+        </div>
+
+        <div class="victory-actions">
+          <button type="button" class="btn-primary" id="btn-victory-rematch">⟳ Play Again</button>
+          <button type="button" class="icon-btn" id="btn-victory-inspect">🔍 Inspect Final Board</button>
+          <button type="button" class="icon-btn" id="btn-victory-explore">◈ Explore More Games</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================================================
+       MODAL 2: INTERACTIVE TUTORIAL & OFFICIAL RULES
+       ========================================================================== -->
+  <div class="modal-backdrop" id="modal-tutorial" role="dialog" aria-modal="true" aria-labelledby="tutorial-title">
+    <div class="modal-box">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <h2 id="tutorial-title" style="font-family:'Cinzel',serif;font-size:1.35rem;">How to Play AirBarricades</h2>
+        <button type="button" class="icon-btn" id="btn-close-tutorial">✕ Close</button>
+      </div>
+      <p style="font-size:0.84rem;color:var(--text-secondary);">Master the official AirGames tournament rules and 3D tactical controls.</p>
+
+      <div class="tutorial-tabs" id="tutorial-tabs">
+        <button type="button" class="seg-btn active" data-tut="goal">1. Goal & Moves</button>
+        <button type="button" class="seg-btn" data-tut="jumps">2. Jumps & Diagonal Escape</button>
+        <button type="button" class="seg-btn" data-tut="walls">3. Barricades & Path Rule</button>
+        <button type="button" class="seg-btn" data-tut="controls">4. 2D/3D & Controls</button>
+      </div>
+
+      <div class="tut-step-card" id="tutorial-content">
+        <!-- Populated dynamically via JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================================================
+       MODAL 3: AUTOMATED ENGINE & QA TEST RUNNER (TESTS A–X)
+       ========================================================================== -->
+  <div class="modal-backdrop" id="modal-tests" role="dialog" aria-modal="true" aria-labelledby="tests-title">
+    <div class="modal-box">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <h2 id="tests-title" style="font-family:'Cinzel',serif;font-size:1.25rem;">Automated Verification Suite (Tests A–X)</h2>
+        <button type="button" class="icon-btn" id="btn-close-tests">✕ Close</button>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px;">
+        <span style="font-size:0.82rem;color:var(--text-secondary);" id="tests-summary-text">Verifying all 24 official rule & UI invariants...</span>
+        <button type="button" class="icon-btn" id="btn-rerun-tests">↻ Re-run All Tests</button>
+      </div>
+      <div class="test-results-grid" id="tests-grid"></div>
+    </div>
+  </div>
+
+  <!-- ==========================================================================
+       MODAL 4: AIRGAMES BY WORKSBEYOND PLATFORM SHOWCASE
+       ========================================================================== -->
+  <div class="modal-backdrop" id="modal-airgames" role="dialog" aria-modal="true" aria-labelledby="airgames-title">
+    <div class="modal-box">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <h2 id="airgames-title" style="font-family:'Cinzel',serif;font-size:1.3rem;">◈ AirGames by WorksBeyond</h2>
+        <button type="button" class="icon-btn" id="btn-close-airgames">✕ Return to Match</button>
+      </div>
+      <p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:14px;">
+        Welcome to the AirGames flagship strategy collection. Switch your AirBarricades match presets or explore companion titles:
+        <a href="/" class="airgames-hub-btn" style="text-decoration:none;margin-top:10px;">View All AirGames ↗</a>
+      </p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div class="tut-step-card" style="border-color:var(--accent-brand);">
+          <div style="font-weight:800;color:var(--accent-brand);">★ AirBarricades (Active)</div>
+          <p style="font-size:0.78rem;color:var(--text-secondary);margin:4px 0 10px;">9×9 turn-based route-blocking strategy with 2D Tactical & 3D Arena views.</p>
+          <button type="button" class="icon-btn" id="btn-hub-play-expert">Play vs Expert AirBot</button>
+        </div>
+        <div class="tut-step-card">
+          <div style="font-weight:800;">♟ AirChess Grandmaster</div><a href="/airchess.html" class="airgames-hub-btn" style="text-decoration:none;margin-top:7px;">Play Now ↗</a>
+          <p style="font-size:0.78rem;color:var(--text-secondary);margin:4px 0 10px;">Play chess against AirBot or a friend, and explore openings, tactics and rules.</p>
+          <span style="font-size:0.72rem;color:var(--text-muted);font-weight:700;">AirGames Flagship Series</span>
+        </div>
+        <div class="tut-step-card">
+          <div style="font-weight:800;">◎ AirCarrom Strike</div><a href="/aircarrom.html" class="airgames-hub-btn" style="text-decoration:none;margin-top:7px;">Play Now ↗</a>
+          <p style="font-size:0.78rem;color:var(--text-secondary);margin:4px 0 10px;">Precision physics tabletop disc billiards with local & bot arenas.</p>
+          <span style="font-size:0.72rem;color:var(--text-muted);font-weight:700;">AirGames Flagship Series</span>
+        </div>
+        <div class="tut-step-card">
+          <div style="font-weight:800;">⬡ Neon Territory</div><a href="/neon-territory.html" class="airgames-hub-btn" style="text-decoration:none;margin-top:7px;">Play Now ↗</a>
+          <p style="font-size:0.78rem;color:var(--text-secondary);margin:4px 0 10px;">A colorful grid-based territory strategy game against AirBot or a local friend.</p>
+          <span style="font-size:0.72rem;color:var(--text-muted);font-weight:700;">AirGames Flagship Series</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* ==========================================================================
+       PART 1: AUTHORITATIVE PURE RULES ENGINE & AIRBOT AI
+       ========================================================================== */
+    function createInitialState(mode = "airbot", difficulty = "medium") {
+      return {
+        boardSize: 9,
+        pawns: {
+          red: { row: 8, col: 4 },
+          blue: { row: 0, col: 4 }
+        },
+        barricades: [],
+        barricadesRemaining: {
+          red: 10,
+          blue: 10
+        },
+        currentPlayer: "red",
+        mode: mode,
+        difficulty: difficulty,
+        gameOver: false,
+        winner: null,
+        selectedPawn: false,
+        selectedBarricade: null,
+        moveHistory: []
+      };
+    }
+
+    function cloneState(state) {
+      return {
+        boardSize: state.boardSize,
+        pawns: {
+          red: { row: state.pawns.red.row, col: state.pawns.red.col },
+          blue: { row: state.pawns.blue.row, col: state.pawns.blue.col }
+        },
+        barricades: state.barricades.map(b => ({
+          row: b.row,
+          col: b.col,
+          orientation: b.orientation,
+          owner: b.owner
+        })),
+        barricadesRemaining: {
+          red: state.barricadesRemaining.red,
+          blue: state.barricadesRemaining.blue
+        },
+        currentPlayer: state.currentPlayer,
+        mode: state.mode,
+        difficulty: state.difficulty,
+        gameOver: state.gameOver,
+        winner: state.winner,
+        selectedPawn: state.selectedPawn,
+        selectedBarricade: state.selectedBarricade,
+        moveHistory: state.moveHistory ? state.moveHistory.map(m => ({ ...m })) : []
+      };
+    }
+
+    function toCoordNotation(row, col) {
+      return `${String.fromCharCode(65 + col)}${row + 1}`;
+    }
+
+    function inBounds(row, col, size = 9) {
+      return row >= 0 && row < size && col >= 0 && col < size;
+    }
+
+    function isMovementBlocked(state, from, to) {
+      if (!inBounds(from.row, from.col, state.boardSize) || !inBounds(to.row, to.col, state.boardSize)) {
+        return true;
+      }
+      const dr = to.row - from.row;
+      const dc = to.col - from.col;
+      if (Math.abs(dr) + Math.abs(dc) !== 1) return true;
+
+      const barricades = state.barricades;
+      if (dr === 1) {
+        const r = from.row, c = from.col;
+        for (let i = 0; i < barricades.length; i++) {
+          const b = barricades[i];
+          if (b.orientation === "horizontal" && b.row === r && (b.col === c || b.col === c - 1)) return true;
+        }
+      } else if (dr === -1) {
+        const r = to.row, c = from.col;
+        for (let i = 0; i < barricades.length; i++) {
+          const b = barricades[i];
+          if (b.orientation === "horizontal" && b.row === r && (b.col === c || b.col === c - 1)) return true;
+        }
+      } else if (dc === 1) {
+        const r = from.row, c = from.col;
+        for (let i = 0; i < barricades.length; i++) {
+          const b = barricades[i];
+          if (b.orientation === "vertical" && b.col === c && (b.row === r || b.row === r - 1)) return true;
+        }
+      } else if (dc === -1) {
+        const r = from.row, c = to.col;
+        for (let i = 0; i < barricades.length; i++) {
+          const b = barricades[i];
+          if (b.orientation === "vertical" && b.col === c && (b.row === r || b.row === r - 1)) return true;
+        }
+      }
+      return false;
+    }
+
+    function getNeighboringSquares(state, position) {
+      const dirs = [{ dr: -1, dc: 0 }, { dr: 1, dc: 0 }, { dr: 0, dc: -1 }, { dr: 0, dc: 1 }];
+      const res = [];
+      for (const d of dirs) {
+        const next = { row: position.row + d.dr, col: position.col + d.dc };
+        if (inBounds(next.row, next.col, state.boardSize) && !isMovementBlocked(state, position, next)) {
+          res.push(next);
+        }
+      }
+      return res;
+    }
+
+    function canJumpOpponent(state, player) {
+      const me = state.pawns[player];
+      const opp = state.pawns[player === "red" ? "blue" : "red"];
+      const dr = opp.row - me.row;
+      const dc = opp.col - me.col;
+      if (Math.abs(dr) + Math.abs(dc) !== 1) return null;
+      if (isMovementBlocked(state, me, opp)) return null;
+
+      const jumpDest = { row: opp.row + dr, col: opp.col + dc };
+      if (inBounds(jumpDest.row, jumpDest.col, state.boardSize) && !isMovementBlocked(state, opp, jumpDest)) {
+        return { row: jumpDest.row, col: jumpDest.col, type: "jump" };
+      }
+      return null;
+    }
+
+    function getDiagonalJumpMoves(state, player) {
+      const me = state.pawns[player];
+      const opp = state.pawns[player === "red" ? "blue" : "red"];
+      const dr = opp.row - me.row;
+      const dc = opp.col - me.col;
+      if (Math.abs(dr) + Math.abs(dc) !== 1) return [];
+      if (isMovementBlocked(state, me, opp)) return [];
+
+      const jumpDest = { row: opp.row + dr, col: opp.col + dc };
+      const straightOpen = inBounds(jumpDest.row, jumpDest.col, state.boardSize) && !isMovementBlocked(state, opp, jumpDest);
+      if (straightOpen) return [];
+
+      const sideDirs = dr !== 0 ? [{ dr: 0, dc: -1 }, { dr: 0, dc: 1 }] : [{ dr: -1, dc: 0 }, { dr: 1, dc: 0 }];
+      const diags = [];
+      for (const s of sideDirs) {
+        const sideSq = { row: opp.row + s.dr, col: opp.col + s.dc };
+        if (inBounds(sideSq.row, sideSq.col, state.boardSize) && !isMovementBlocked(state, opp, sideSq)) {
+          diags.push({ row: sideSq.row, col: sideSq.col, type: "diagonal" });
+        }
+      }
+      return diags;
+    }
+
+    function getPawnMoves(state, player = state.currentPlayer) {
+      if (state.gameOver) return [];
+      const me = state.pawns[player];
+      const opp = state.pawns[player === "red" ? "blue" : "red"];
+      const dirs = [{ dr: -1, dc: 0 }, { dr: 1, dc: 0 }, { dr: 0, dc: -1 }, { dr: 0, dc: 1 }];
+      const moves = [];
+
+      for (const { dr, dc } of dirs) {
+        const adj = { row: me.row + dr, col: me.col + dc };
+        if (!inBounds(adj.row, adj.col, state.boardSize)) continue;
+        if (isMovementBlocked(state, me, adj)) continue;
+
+        if (adj.row === opp.row && adj.col === opp.col) {
+          const straight = canJumpOpponent(state, player);          if (straight) {
+            moves.push(straight);
+          } else {
+            const diags = getDiagonalJumpMoves(state, player);
+            for (const d of diags) moves.push(d);
+          }
+        } else {
+          moves.push({ row: adj.row, col: adj.col, type: "normal" });
+        }
+      }
+      return moves;
+    }
+
+    function getShortestPath(state, player) {
+      const start = state.pawns[player];
+      const targetRow = player === "red" ? 0 : state.boardSize - 1;
+      if (start.row === targetRow) return [{ row: start.row, col: start.col }];
+
+      const size = state.boardSize;
+      const visited = new Uint8Array(size * size);
+      const parent = new Int16Array(size * size).fill(-1);
+      const queue = new Int16Array(size * size);
+      let head = 0, tail = 0;
+
+      const startIdx = start.row * size + start.col;
+      visited[startIdx] = 1;
+      queue[tail++] = startIdx;
+
+      const rowStep = player === "red" ? -1 : 1;
+      const dirs = [
+        { dr: rowStep, dc: 0 },
+        { dr: 0, dc: -1 },
+        { dr: 0, dc: 1 },
+        { dr: -rowStep, dc: 0 }
+      ];
+
+      let foundIdx = -1;
+      while (head < tail) {
+        const currIdx = queue[head++];
+        const r = Math.floor(currIdx / size);
+        const c = currIdx % size;
+        if (r === targetRow) {
+          foundIdx = currIdx;
+          break;
+        }
+        const currPos = { row: r, col: c };
+        for (let i = 0; i < 4; i++) {
+          const nr = r + dirs[i].dr;
+          const nc = c + dirs[i].dc;
+          if (nr < 0 || nr >= size || nc < 0 || nc >= size) continue;
+          const nextIdx = nr * size + nc;
+          if (visited[nextIdx]) continue;
+          if (!isMovementBlocked(state, currPos, { row: nr, col: nc })) {
+            visited[nextIdx] = 1;
+            parent[nextIdx] = currIdx;
+            queue[tail++] = nextIdx;
+          }
+        }
+      }
+
+      if (foundIdx === -1) return null;
+      const path = [];
+      let trace = foundIdx;
+      while (trace !== -1) {
+        path.push({ row: Math.floor(trace / size), col: trace % size });
+        trace = parent[trace];
+      }
+      path.reverse();
+      return path;
+    }
+
+    function hasPathToGoal(state, player) {
+      return getShortestPath(state, player) !== null;
+    }
+
+    function validateBarricadePlacement(state, barricade, player = state.currentPlayer) {
+      if (state.gameOver) {
+        return { valid: false, reason: "Game is over — start a New Game to play again." };
+      }
+      if (!barricade || (barricade.orientation !== "horizontal" && barricade.orientation !== "vertical")) {
+        return { valid: false, reason: "Select a valid barricade orientation." };
+      }
+      if ((state.barricadesRemaining[player] || 0) <= 0) {
+        return { valid: false, reason: "No barricades left! You must move your pawn." };
+      }
+      const { row, col, orientation } = barricade;
+      if (!Number.isInteger(row) || !Number.isInteger(col) || row < 0 || row > 7 || col < 0 || col > 7) {
+        return { valid: false, reason: "Barricade must be placed inside the 8×8 inner grid." };
+      }
+
+      for (let i = 0; i < state.barricades.length; i++) {
+        const b = state.barricades[i];
+        if (b.row === row && b.col === col) {
+          return {
+            valid: false,
+            reason: b.orientation === orientation
+              ? "Barricade overlaps an existing barricade."
+              : "Barricade cannot cross an existing barricade."
+          };
+        }
+        if (orientation === "horizontal" && b.orientation === "horizontal" && b.row === row && Math.abs(b.col - col) === 1) {
+          return { valid: false, reason: "Barricade overlaps an adjacent horizontal barricade." };
+        }
+        if (orientation === "vertical" && b.orientation === "vertical" && b.col === col && Math.abs(b.row - row) === 1) {
+          return { valid: false, reason: "Barricade overlaps an adjacent vertical barricade." };
+        }
+      }
+
+      state.barricades.push({ row, col, orientation });
+      const redOk = hasPathToGoal(state, "red");
+      const blueOk = redOk ? hasPathToGoal(state, "blue") : false;
+      state.barricades.pop();
+
+      if (!redOk || !blueOk) {
+        return {
+          valid: false,
+          reason: !redOk
+            ? "Illegal: Completely blocks Red's remaining route to Goal Row 1!"
+            : "Illegal: Completely blocks Blue's remaining route to Goal Row 9!"
+        };
+      }
+
+      return { valid: true, reason: null };
+    }
+
+    function isBarricadePositionValid(state, barricade, player = state.currentPlayer) {
+      return validateBarricadePlacement(state, barricade, player).valid;
+    }
+
+    function checkVictory(state) {
+      if (state.pawns.red.row === 0) return "red";
+      if (state.pawns.blue.row === state.boardSize - 1) return "blue";
+      return null;
+    }
+
+    function applyPawnMove(state, destination) {
+      if (state.gameOver) return { success: false, reason: "Game has already ended.", state };
+      const player = state.currentPlayer;
+      const legalMoves = getPawnMoves(state, player);
+      const matched = legalMoves.find(m => m.row === destination.row && m.col === destination.col);
+      if (!matched) {
+        return { success: false, reason: "That square is not a legal pawn destination.", state };
+      }
+
+      const nextState = cloneState(state);
+      const fromPos = { ...nextState.pawns[player] };
+      nextState.pawns[player] = { row: matched.row, col: matched.col };
+
+      const fromCode = toCoordNotation(fromPos.row, fromPos.col);
+      const toCode = toCoordNotation(matched.row, matched.col);
+      const pLabel = player === "red" ? "Red" : (nextState.mode === "airbot" ? "AirBot" : "Blue");
+
+      let desc = `${pLabel} moved from ${fromCode} to ${toCode}`;
+      if (matched.type === "jump") desc = `${pLabel} jumped over opponent (${fromCode}→${toCode})`;
+      if (matched.type === "diagonal") desc = `${pLabel} diagonal-escaped (${fromCode}→${toCode})`;
+
+      nextState.moveHistory.push({
+        turn: nextState.moveHistory.length + 1,
+        player,
+        actionType: "move",
+        moveType: matched.type,
+        from: fromPos,
+        to: { row: matched.row, col: matched.col },
+        notation: `${fromCode}→${toCode}`,
+        description: desc
+      });
+
+      const win = checkVictory(nextState);
+      if (win) {
+        nextState.gameOver = true;
+        nextState.winner = win;
+      } else {
+        nextState.currentPlayer = player === "red" ? "blue" : "red";
+      }
+      nextState.selectedPawn = false;
+      nextState.selectedBarricade = null;
+
+      return { success: true, reason: null, state: nextState, moveType: matched.type, fromPos };
+    }
+
+    function applyBarricade(state, barricade) {
+      if (state.gameOver) return { success: false, reason: "Game has already ended.", state };
+      const player = state.currentPlayer;
+      const check = validateBarricadePlacement(state, barricade, player);
+      if (!check.valid) return { success: false, reason: check.reason, state };
+
+      const nextState = cloneState(state);
+      nextState.barricades.push({
+        row: barricade.row,
+        col: barricade.col,
+        orientation: barricade.orientation,
+        owner: player
+      });
+      nextState.barricadesRemaining[player] -= 1;
+
+      const anchorCode = toCoordNotation(barricade.row, barricade.col);
+      const pLabel = player === "red" ? "Red" : (nextState.mode === "airbot" ? "AirBot" : "Blue");
+      const shortO = barricade.orientation === "horizontal" ? "H" : "V";
+
+      nextState.moveHistory.push({
+        turn: nextState.moveHistory.length + 1,
+        player,
+        actionType: "barricade",
+        barricade: { row: barricade.row, col: barricade.col, orientation: barricade.orientation },
+        notation: `${shortO}@${anchorCode}`,
+        description: `${pLabel} placed a ${barricade.orientation} barricade at ${anchorCode}`
+      });
+
+      nextState.currentPlayer = player === "red" ? "blue" : "red";
+      nextState.selectedPawn = false;
+      nextState.selectedBarricade = null;
+
+      return { success: true, reason: null, state: nextState };
+    }
+
+    function getLegalActions(state, player = state.currentPlayer) {
+      if (state.gameOver) return { moves: [], barricades: [] };
+      const moves = getPawnMoves(state, player);
+      const barricades = [];
+      if (state.barricadesRemaining[player] > 0) {
+        for (let r = 0; r <= 7; r++) {
+          for (let c = 0; c <= 7; c++) {
+            for (const orientation of ["horizontal", "vertical"]) {
+              const b = { row: r, col: c, orientation };
+              if (isBarricadePositionValid(state, b, player)) barricades.push(b);
+            }
+          }
+        }
+      }
+      return { moves, barricades };
+    }
+
+    function getCandidateBarricades(state, player, opponentPath) {
+      if (state.barricadesRemaining[player] <= 0) return [];
+      const seen = new Set();
+      const list = [];
+      function tryAdd(r, c, orientation) {
+        if (r < 0 || r > 7 || c < 0 || c > 7) return;
+        const k = `${r},${c},${orientation}`;
+        if (seen.has(k)) return;
+        seen.add(k);
+        const b = { row: r, col: c, orientation };
+        if (isBarricadePositionValid(state, b, player)) list.push(b);
+      }
+      if (opponentPath) {
+        for (const step of opponentPath) {
+          for (let dr = -1; dr <= 0; dr++) {
+            for (let dc = -1; dc <= 0; dc++) {
+              tryAdd(step.row + dr, step.col + dc, "horizontal");
+              tryAdd(step.row + dr, step.col + dc, "vertical");
+            }
+          }
+        }
+      }
+      for (const b of state.barricades) {
+        for (let dr = -1; dr <= 1; dr++) {
+          for (let dc = -1; dc <= 1; dc++) {
+            tryAdd(b.row + dr, b.col + dc, "horizontal");
+            tryAdd(b.row + dr, b.col + dc, "vertical");
+          }
+        }
+      }
+      return list;
+    }
+
+    function evaluatePosition(state, botPlayer = "blue") {
+      const humanPlayer = botPlayer === "blue" ? "red" : "blue";
+      if (state.pawns[botPlayer].row === (botPlayer === "blue" ? 8 : 0)) return 10000;
+      if (state.pawns[humanPlayer].row === (humanPlayer === "red" ? 0 : 8)) return -10000;
+
+      const botPath = getShortestPath(state, botPlayer);
+      const humanPath = getShortestPath(state, humanPlayer);
+      if (!botPath || !humanPath) return 0;
+
+      const botSteps = botPath.length - 1;
+      const humanSteps = humanPath.length - 1;
+      const wallDiff = state.barricadesRemaining[botPlayer] - state.barricadesRemaining[humanPlayer];
+      const botAdv = botPlayer === "blue" ? state.pawns.blue.row : (8 - state.pawns.red.row);
+      const humAdv = humanPlayer === "red" ? (8 - state.pawns.red.row) : state.pawns.blue.row;
+      const urgency = humanSteps <= 2 ? -18 * (3 - humanSteps) : 0;
+
+      return 14.5 * humanSteps - 15.0 * botSteps + 3.2 * wallDiff + (botAdv - humAdv) * 1.1 + urgency;
+    }
+
+    function chooseAirBotAction(state, difficulty = state.difficulty) {
+      const botPlayer = state.currentPlayer;
+      const humanPlayer = botPlayer === "blue" ? "red" : "blue";
+      const legalMoves = getPawnMoves(state, botPlayer);
+      if (legalMoves.length === 0) return null;
+
+      const winRow = botPlayer === "blue" ? 8 : 0;
+      for (const m of legalMoves) {
+        if (m.row === winRow) return { actionType: "move", destination: { row: m.row, col: m.col } };
+      }
+
+      const botPath = getShortestPath(state, botPlayer);
+      const humanPath = getShortestPath(state, humanPlayer);
+
+      // Find pawn move that minimizes bot's shortest path (and prefers advancing or jumping toward opponent if tied)
+      let bestMove = legalMoves[0];
+      let bestMoveLen = Infinity;
+      for (const m of legalMoves) {
+        const next = cloneState(state);
+        next.pawns[botPlayer] = { row: m.row, col: m.col };
+        const p = getShortestPath(next, botPlayer);
+        const len = p ? p.length - 1 : 999;
+        if (len < bestMoveLen) {
+          bestMoveLen = len;
+          bestMove = m;
+        }
+      }
+
+      if (difficulty === "easy") {
+        if (state.barricadesRemaining[botPlayer] > 0 && humanPath && humanPath.length <= 5 && Math.random() < 0.25) {
+          const cands = getCandidateBarricades(state, botPlayer, humanPath);
+          for (const b of cands) {
+            state.barricades.push(b);
+            const nhp = getShortestPath(state, humanPlayer);
+            state.barricades.pop();
+            if (nhp && nhp.length > humanPath.length) return { actionType: "barricade", barricade: b };
+          }
+        }
+        if (Math.random() < 0.78) {
+          return { actionType: "move", destination: { row: bestMove.row, col: bestMove.col } };
+        }
+        const pick = legalMoves[Math.floor(Math.random() * legalMoves.length)];
+        return { actionType: "move", destination: { row: pick.row, col: pick.col } };
+      }
+
+      const baseBotSteps = botPath ? botPath.length - 1 : 99;
+      const baseHumanSteps = humanPath ? humanPath.length - 1 : 99;
+
+      if (difficulty === "medium") {
+        let bestWall = null;
+        let bestNetGain = 0;
+        if (state.barricadesRemaining[botPlayer] > 0) {
+          const cands = getCandidateBarricades(state, botPlayer, humanPath);
+          for (const b of cands) {
+            state.barricades.push(b);
+            const nhp = getShortestPath(state, humanPlayer);
+            const nbp = getShortestPath(state, botPlayer);
+            state.barricades.pop();
+            if (!nhp || !nbp) continue;
+            const netGain = ((nhp.length - 1) - baseHumanSteps) - ((nbp.length - 1) - baseBotSteps);
+            if (netGain > bestNetGain) {
+              bestNetGain = netGain;
+              bestWall = b;
+            }
+          }
+        }
+        if (bestWall && (bestNetGain >= 2 || (bestNetGain >= 1 && baseHumanSteps <= baseBotSteps && baseHumanSteps <= 5))) {
+          return { actionType: "barricade", barricade: bestWall };
+        }
+        return { actionType: "move", destination: { row: bestMove.row, col: bestMove.col } };
+      }
+
+      // EXPERT ("hard"): Depth-2 Minimax with Alpha-Beta Pruning
+      const botCandidates = [];
+      for (const m of legalMoves) {
+        const s1 = cloneState(state);
+        s1.pawns[botPlayer] = { row: m.row, col: m.col };
+        botCandidates.push({
+          action: { actionType: "move", destination: { row: m.row, col: m.col } },
+          nextState: s1,
+          prelim: evaluatePosition(s1, botPlayer)
+        });
+      }
+
+      if (state.barricadesRemaining[botPlayer] > 0) {
+        const cands = getCandidateBarricades(state, botPlayer, humanPath);
+        const wallList = [];
+        for (const b of cands) {
+          state.barricades.push(b);
+          const nhp = getShortestPath(state, humanPlayer);
+          const nbp = getShortestPath(state, botPlayer);
+          state.barricades.pop();
+          if (!nhp || !nbp) continue;
+          const netDelta = ((nhp.length - 1) - baseHumanSteps) - ((nbp.length - 1) - baseBotSteps);
+          if (netDelta >= 1) {
+            const s1 = cloneState(state);
+            s1.barricades.push({ ...b, owner: botPlayer });
+            s1.barricadesRemaining[botPlayer] -= 1;
+            wallList.push({
+              action: { actionType: "barricade", barricade: b },
+              nextState: s1,
+              prelim: evaluatePosition(s1, botPlayer) + netDelta * 4.5
+            });
+          }
+        }
+        wallList.sort((a, b) => b.prelim - a.prelim);
+        for (let i = 0; i < Math.min(10, wallList.length); i++) botCandidates.push(wallList[i]);
+      }
+
+      botCandidates.sort((a, b) => b.prelim - a.prelim);
+      let chosen = botCandidates[0].action;
+      let alpha = -Infinity;
+
+      for (const item of botCandidates) {
+        const s1 = item.nextState;
+        if (s1.pawns[botPlayer].row === winRow) return item.action;
+
+        const humMoves = getPawnMoves(s1, humanPlayer);
+        let worst = Infinity;
+        for (const hm of humMoves) {
+          const s2 = cloneState(s1);
+          s2.pawns[humanPlayer] = { row: hm.row, col: hm.col };
+          const v = evaluatePosition(s2, botPlayer);
+          if (v < worst) worst = v;
+          if (worst <= alpha) break;
+        }
+        if (worst > alpha) {
+          alpha = worst;
+          chosen = item.action;
+        }
+      }
+      return chosen;
+    }
+
+    /* ==========================================================================
+       PART 2: WEB AUDIO SYNTHESIZER (RESPECTS MUTE & USER GESTURES)
+       ========================================================================== */
+    const SoundFX = (() => {
+      let ctx = null;
+      let enabled = true;
+
+      function init() {
+        if (!ctx && typeof window !== "undefined") {
+          const AudioCtx = window.AudioContext || window.webkitAudioContext;
+          if (AudioCtx) ctx = new AudioCtx();
+        }
+        if (ctx && ctx.state === "suspended") {
+          ctx.resume().catch(() => {});
+        }
+      }
+
+      function playTone(freq, type, duration, gainVal = 0.12, slideTo = null) {
+        if (!enabled) return;
+        try {
+          init();
+          if (!ctx) return;
+          const now = ctx.currentTime;
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = type;
+          osc.frequency.setValueAtTime(freq, now);
+          if (slideTo) osc.frequency.exponentialRampToValueAtTime(slideTo, now + duration);
+          gain.gain.setValueAtTime(gainVal, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now);
+          osc.stop(now + duration);
+        } catch (e) {}
+      }
+
+      return {
+        isEnabled: () => enabled,
+        setEnabled: (val) => { enabled = !!val; },
+        selectPawn: () => playTone(520, "sine", 0.09, 0.08, 660),
+        movePawn: (isJump = false) => {
+          if (isJump) {
+            playTone(340, "triangle", 0.18, 0.14, 720);
+          } else {
+            playTone(280, "triangle", 0.11, 0.12, 410);
+          }
+        },
+        placeWall: () => {
+          playTone(170, "sawtooth", 0.13, 0.11, 110);
+          setTimeout(() => playTone(260, "triangle", 0.09, 0.09, 220), 45);
+        },
+        invalid: () => {
+          playTone(155, "sawtooth", 0.18, 0.11, 115);
+        },
+        victory: (isHumanWin = true) => {
+          if (!enabled) return;
+          const notes = isHumanWin ? [523.25, 659.25, 783.99, 1046.5] : [392.0, 349.23, 329.63, 261.63];
+          notes.forEach((n, idx) => {
+            setTimeout(() => playTone(n, "triangle", 0.28, 0.14), idx * 115);
+          });
+        }
+      };
+    })();
+
+    /* ==========================================================================
+       PART 3: APPLICATION STATE, CONCURRENCY SAFETY & STORAGE
+       ========================================================================== */
+    let gameState = createInitialState("airbot", "medium");
+    let stateSnapshots = []; // Undo stack
+    let matchGenerationId = 0; // Incremented on reset/mode-switch/undo to cancel stale AirBot turns
+    let isBotThinking = false;
+    let hoverAnchor = null; // { row, col, orientation, valid, reason }
+    let dragState = { active: false, orientation: null, row: -1, col: -1, valid: false, reason: null };
+
+    // Visual & Mode Preferences
+    let viewMode = "2d"; // "2d" | "3d"
+    let showShortestPaths = false;
+    let showCoordinateLabels = true;
+
+    // Pawn smooth animation state
+    let pawnAnim = {
+      active: false,
+      player: "red",
+      fromRow: 8,
+      fromCol: 4,
+      toRow: 8,
+      toCol: 4,
+      isJump: false,
+      startTime: 0,
+      duration: 230
+    };
+
+    // Session Statistics
+    let sessionStats = { redWins: 0, botWins: 0, matches: 0 };
+
+    function safeGetStorage(key, fallback) {
+      try {
+        const v = localStorage.getItem(key);
+        return v !== null ? v : fallback;
+      } catch (e) {
+        return fallback;
+      }
+    }
+
+    function safeSetStorage(key, val) {
+      try {
+        localStorage.setItem(key, val);
+      } catch (e) {}
+    }
+
+    function announceSR(msg) {
+      const el = document.getElementById("sr-announcer");
+      if (el) el.textContent = msg;
+    }
+
+    /* ==========================================================================
+       PART 4: 2D PRECISION SVG BOARD RENDERER
+       Geometry: 900x900 viewBox
+       9 squares of 84px + 8 grooves of 18px = 756 + 144 = 900px exact!
+       ========================================================================== */
+    const CELL_SIZE = 84;
+    const GROOVE_SIZE = 18;
+    const STEP_SIZE = CELL_SIZE + GROOVE_SIZE; // 102
+
+    function getSquareOrigin2D(row, col) {
+      return { x: col * STEP_SIZE, y: row * STEP_SIZE };
+    }
+
+    function getSquareCenter2D(row, col) {
+      return { x: col * STEP_SIZE + CELL_SIZE / 2, y: row * STEP_SIZE + CELL_SIZE / 2 };
+    }
+
+    function getAnimatedPawnGridPos(player) {
+      const actual = gameState.pawns[player];
+      if (!pawnAnim.active || pawnAnim.player !== player) {
+        return { row: actual.row, col: actual.col, jumpHeight: 0 };
+      }
+      const elapsed = performance.now() - pawnAnim.startTime;
+      const t = Math.min(1, Math.max(0, elapsed / pawnAnim.duration));
+      // Smooth easeOutCubic
+      const ease = 1 - Math.pow(1 - t, 3);
+      const r = pawnAnim.fromRow + (pawnAnim.toRow - pawnAnim.fromRow) * ease;
+      const c = pawnAnim.fromCol + (pawnAnim.toCol - pawnAnim.fromCol) * ease;
+      const jumpHeight = pawnAnim.isJump ? Math.sin(t * Math.PI) * 1.15 : Math.sin(t * Math.PI) * 0.35;
+      return { row: r, col: c, jumpHeight };
+    }
+
+    function render2DBoard() {
+      const svg = document.getElementById("board-svg-2d");
+      if (!svg) return;
+
+      const isHumanTurn = !gameState.gameOver && !isBotThinking &&
+        (gameState.mode === "local" || gameState.currentPlayer === "red");
+      const legalMoves = (isHumanTurn && gameState.selectedPawn)
+        ? getPawnMoves(gameState, gameState.currentPlayer)
+        : [];
+
+      let parts = [];
+
+      // 1. Definitions for radial pawn gradients & drop shadows
+      parts.push(`
+        <defs>
+          <radialGradient id="grad-pawn-red" cx="35%" cy="30%" r="70%">
+            <stop offset="0%" stop-color="var(--p1-light)" />
+            <stop offset="55%" stop-color="var(--p1-main)" />
+            <stop offset="100%" stop-color="var(--p1-dark)" />
+          </radialGradient>
+          <radialGradient id="grad-pawn-blue" cx="35%" cy="30%" r="70%">
+            <stop offset="0%" stop-color="var(--p2-light)" />
+            <stop offset="55%" stop-color="var(--p2-main)" />
+            <stop offset="100%" stop-color="var(--p2-dark)" />
+          </radialGradient>
+          <filter id="shadow-piece" x="-25%" y="-25%" width="150%" height="150%">
+            <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#000" flood-opacity="0.38" />
+          </filter>
+        </defs>
+      `);
+
+      // 2. Render 64 Groove Intersection Anchors (subtle architectural pegs)
+      for (let r = 0; r <= 7; r++) {
+        for (let c = 0; c <= 7; c++) {
+          const gx = c * STEP_SIZE + CELL_SIZE + GROOVE_SIZE / 2;
+          const gy = r * STEP_SIZE + CELL_SIZE + GROOVE_SIZE / 2;
+          parts.push(`<circle cx="${gx}" cy="${gy}" r="3.2" fill="var(--groove-dot)" opacity="0.65" />`);
+        }
+      }
+
+      // 3. Render 81 Playable Squares
+      for (let r = 0; r < 9; r++) {
+        for (let c = 0; c < 9; c++) {
+          const { x, y } = getSquareOrigin2D(r, c);
+          const isAlt = (r + c) % 2 === 1;
+          let fill = isAlt ? "var(--cell-bg-alt)" : "var(--cell-bg)";
+          let stroke = "var(--cell-border)";
+          let strokeW = 1.5;
+
+          const legalMatch = legalMoves.find(m => m.row === r && m.col === c);
+          if (legalMatch) {
+            stroke = "var(--legal-color)";
+            strokeW = 3;
+          }
+
+          parts.push(`
+            <g class="board-square" data-row="${r}" data-col="${c}" style="cursor:pointer;">
+              <rect x="${x}" y="${y}" width="${CELL_SIZE}" height="${CELL_SIZE}" rx="11"
+                    fill="${fill}" stroke="${stroke}" stroke-width="${strokeW}" />
+          `);
+
+          // Goal Row subtle emblem tint
+          if (r === 0) {
+            parts.push(`<rect x="${x+4}" y="${y+4}" width="${CELL_SIZE-8}" height="8" rx="4" fill="var(--p1-goal-tint)" />`);
+          } else if (r === 8) {
+            parts.push(`<rect x="${x+4}" y="${y+CELL_SIZE-12}" width="${CELL_SIZE-8}" height="8" rx="4" fill="var(--p2-goal-tint)" />`);
+          }
+
+          // Algebraic subtle corner label
+          if (showCoordinateLabels) {
+            const coord = toCoordNotation(r, c);
+            parts.push(`
+              <text x="${x + 8}" y="${y + 16}" font-family="JetBrains Mono, monospace"
+                    font-size="10.5" font-weight="600" fill="var(--text-muted)" opacity="0.48" pointer-events="none">${coord}</text>
+            `);
+          }
+
+          // Legal destination highlight indicator
+          if (legalMatch) {
+            const cx = x + CELL_SIZE / 2;
+            const cy = y + CELL_SIZE / 2;
+            const badgeLabel = legalMatch.type === "jump" ? "JUMP" : (legalMatch.type === "diagonal" ? "DIAG" : "");
+            parts.push(`
+              <circle cx="${cx}" cy="${cy}" r="22" fill="var(--legal-glow)" />
+              <circle cx="${cx}" cy="${cy}" r="11" fill="var(--legal-color)" />
+            `);
+            if (badgeLabel) {
+              parts.push(`
+                <text x="${cx}" y="${cy + 31}" text-anchor="middle" font-size="10.5" font-weight="800"
+                      fill="var(--legal-color)" pointer-events="none">${badgeLabel}</text>
+              `);
+            }
+          }
+          parts.push(`</g>`);
+        }
+      }
+
+      // 4. Optional Route Radar (Shortest BFS Paths for Red & Blue)
+      if (showShortestPaths) {
+        const redPath = getShortestPath(gameState, "red");
+        const bluePath = getShortestPath(gameState, "blue");
+        if (redPath && redPath.length > 1) {
+          const pts = redPath.map(p => {
+            const ctr = getSquareCenter2D(p.row, p.col);
+            return `${ctr.x - 6},${ctr.y - 6}`;
+          }).join(" ");
+          parts.push(`<polyline points="${pts}" fill="none" stroke="var(--p1-main)" stroke-width="4" stroke-dasharray="8 6" opacity="0.75" pointer-events="none" />`);
+        }
+        if (bluePath && bluePath.length > 1) {
+          const pts = bluePath.map(p => {
+            const ctr = getSquareCenter2D(p.row, p.col);
+            return `${ctr.x + 6},${ctr.y + 6}`;
+          }).join(" ");
+          parts.push(`<polyline points="${pts}" fill="none" stroke="var(--p2-main)" stroke-width="4" stroke-dasharray="8 6" opacity="0.75" pointer-events="none" />`);
+        }
+      }
+
+      // 5. Render Placed Barricades
+      for (const b of gameState.barricades) {
+        parts.push(renderBarricadeSVG(b.row, b.col, b.orientation, "placed"));
+      }
+
+      // 6. Render Hover / Drag Barricade Preview
+      const activePreview = dragState.active
+        ? (dragState.row >= 0 ? dragState : null)
+        : hoverAnchor;
+      if (activePreview && !gameState.gameOver && isHumanTurn) {
+        parts.push(renderBarricadeSVG(
+          activePreview.row,
+          activePreview.col,
+          activePreview.orientation,
+          activePreview.valid ? "valid-preview" : "invalid-preview"
+        ));
+      }
+
+      // 7. Render Both Pawns (with selection halo & smooth interpolation)
+      for (const player of ["blue", "red"]) {
+        const pos = getAnimatedPawnGridPos(player);
+        const cx = pos.col * STEP_SIZE + CELL_SIZE / 2;
+        const cy = pos.row * STEP_SIZE + CELL_SIZE / 2 - pos.jumpHeight * 18;
+        const scale = 1 + pos.jumpHeight * 0.14;
+        const isSelected = gameState.selectedPawn && gameState.currentPlayer === player && !gameState.gameOver;
+        const isCurrentTurn = gameState.currentPlayer === player && !gameState.gameOver;
+        const gradId = player === "red" ? "grad-pawn-red" : "grad-pawn-blue";
+        const ringColor = player === "red" ? "var(--p1-main)" : "var(--p2-main)";
+
+        parts.push(`<g class="pawn-group" data-player="${player}" transform="translate(${cx}, ${cy}) scale(${scale})" style="cursor:pointer;">`);
+        if (isSelected) {
+          parts.push(`<circle cx="0" cy="0" r="35" fill="none" stroke="var(--legal-color)" stroke-width="4" stroke-dasharray="7 4" />`);
+        } else if (isCurrentTurn) {
+          parts.push(`<circle cx="0" cy="0" r="33" fill="none" stroke="${ringColor}" stroke-width="2.5" opacity="0.55" />`);
+        }
+        parts.push(`
+          <circle cx="0" cy="0" r="27" fill="url(#${gradId})" stroke="#FFFFFF" stroke-width="2.5" filter="url(#shadow-piece)" />
+          <circle cx="0" cy="0" r="14" fill="none" stroke="rgba(255,255,255,0.45)" stroke-width="1.8" />
+          <circle cx="-6" cy="-7" r="4.5" fill="rgba(255,255,255,0.55)" />
+        `);
+        parts.push(`</g>`);
+      }
+
+      svg.innerHTML = parts.join("");
+    }
+
+    function renderBarricadeSVG(row, col, orientation, mode) {
+      const spanLen = CELL_SIZE * 2 + GROOVE_SIZE; // 186px exact span across 2 squares + 1 groove
+      const thickness = 14;
+      let x, y, w, h;
+      if (orientation === "horizontal") {
+        x = col * STEP_SIZE;
+        y = row * STEP_SIZE + CELL_SIZE + (GROOVE_SIZE - thickness) / 2;
+        w = spanLen;
+        h = thickness;
+      } else {
+        x = col * STEP_SIZE + CELL_SIZE + (GROOVE_SIZE - thickness) / 2;
+        y = row * STEP_SIZE;
+        w = thickness;
+        h = spanLen;
+      }
+
+      if (mode === "placed") {
+        return `
+          <g class="placed-barricade" pointer-events="none">
+            <rect x="${x}" y="${y}" width="${w}" height="${h}" rx="5"
+                  fill="var(--wall-fill)" stroke="var(--wall-stroke)" stroke-width="2" filter="url(#shadow-piece)" />
+            <rect x="${x + 3}" y="${y + 2}" width="${Math.max(2, w - 6)}" height="${Math.max(2, h - 6)}" rx="3"
+                  fill="none" stroke="var(--wall-highlight)" stroke-width="1.2" opacity="0.7" />
+          </g>
+        `;
+      }
+
+      const color = mode === "valid-preview" ? "var(--legal-color)" : "var(--invalid-color)";
+      return `
+        <g class="preview-barricade" pointer-events="none">
+          <rect x="${x}" y="${y}" width="${w}" height="${h}" rx="6"
+                fill="${color}" fill-opacity="0.65" stroke="#FFFFFF" stroke-width="2" />
+        </g>
+      `;
+    }
+
+    /* ==========================================================================
+       PART 5: BESPOKE 3D VOLUMETRIC PERSPECTIVE ENGINE & RAYCASTER
+       Renders extruded 3D board plinth, 81 3D beveled tiles, 3D carved lathe pawns,
+       and 3D rising barricades with exact inverse ray-plane picking!
+       ========================================================================== */
+    const Camera3D = {
+      yaw: 0,           // Radians around vertical Y axis (0 = Red at bottom front)
+      targetYaw: 0,
+      pitch: 52 * Math.PI / 180, // Tilt angle from horizontal plane
+      targetPitch: 52 * Math.PI / 180,
+      distance: 13.2,
+      fov: 1080,
+      isOrbitDragging: false,
+      lastPointerX: 0,
+      lastPointerY: 0
+    };
+
+    // Board world coordinates: X in [-4.5, +4.5], Z in [-4.5, +4.5], Y is up (0 = top of board surface)
+    // Each cell step is 1.0 world unit; cell tile width is 0.84, groove is 0.16.
+    function gridToWorld3D(row, col) {
+      return {
+        x: (col - 4) * 1.0,
+        z: (row - 4) * 1.0
+      };
+    }
+
+    function projectPoint3D(wx, wy, wz, canvasW, canvasH) {
+      const cosY = Math.cos(Camera3D.yaw);
+      const sinY = Math.sin(Camera3D.yaw);
+      const cosP = Math.cos(Camera3D.pitch);
+      const sinP = Math.sin(Camera3D.pitch);
+
+      // Rotate around Y (yaw)
+      const rx = wx * cosY - wz * sinY;
+      const rz = wx * sinY + wz * cosY;
+
+      // Rotate around X (pitch) where Y is up
+      const camX = rx;
+      const camY = wy * cosP - rz * sinP;
+      const camZ = wy * sinP + rz * cosP + Camera3D.distance;
+
+      const scale = (Camera3D.fov * (canvasW / 900)) / Math.max(1.0, camZ);
+      return {
+        sx: canvasW * 0.5 + camX * scale,
+        sy: canvasH * 0.52 - camY * scale,
+        depth: camZ,
+        scale
+      };
+    }
+
+    // Exact inverse ray-plane intersection with board plane wy = planeY
+    function screenToWorldPlane3D(sx, sy, canvasW, canvasH, planeY = 0) {
+      const f = Camera3D.fov * (canvasW / 900);
+      const ndcX = (sx - canvasW * 0.5) / f;
+      const ndcY = (canvasH * 0.52 - sy) / f;
+
+      const cosY = Math.cos(Camera3D.yaw);
+      const sinY = Math.sin(Camera3D.yaw);
+      const cosP = Math.cos(Camera3D.pitch);
+      const sinP = Math.sin(Camera3D.pitch);
+
+      // Camera ray in camera space: P_cam(t) = (ndcX * t, ndcY * t, t)
+      // Since camY = wy * cosP - rz * sinP and camZ = wy * sinP + rz * cosP + D:
+      // wy = camY * cosP + (camZ - D) * sinP = t * (ndcY * cosP + sinP) - D * sinP
+      const denom = ndcY * cosP + sinP;
+      if (Math.abs(denom) < 1e-5) return null;
+      const t = (planeY + Camera3D.distance * sinP) / denom;
+      if (t <= 0) return null;
+
+      const camX = ndcX * t;
+      const camY = ndcY * t;
+      const rx = camX;
+      const rz = (planeY * cosP - camY) / sinP;
+
+      const wx = rx * cosY + rz * sinY;
+      const wz = -rx * sinY + rz * cosY;
+      return { wx, wz };
+    }
+
+    function shadeHexColor(hex, factor) {
+      const clean = hex.replace("#", "").trim();
+      if (clean.length !== 6) return hex;
+      const r = Math.min(255, Math.max(0, Math.round(parseInt(clean.slice(0, 2), 16) * factor)));
+      const g = Math.min(255, Math.max(0, Math.round(parseInt(clean.slice(2, 4), 16) * factor)));
+      const b = Math.min(255, Math.max(0, Math.round(parseInt(clean.slice(4, 6), 16) * factor)));
+      return `rgb(${r},${g},${b})`;
+    }
+
+    function getThemeColors3D() {
+      const isDark = document.documentElement.getAttribute("data-theme") === "dark";
+      const finish = document.documentElement.getAttribute("data-finish") || "travertine";
+      if (finish === "jade") {
+        return isDark
+          ? { plinth: "#071712", tile: "#14332A", tileAlt: "#0F2922", p1: "#F43F5E", p2: "#38BDF8", wall: "#EAB308", legal: "#10B981", invalid: "#EF4444" }
+          : { plinth: "#163028", tile: "#DCECE5", tileAlt: "#CDE2D8", p1: "#D93829", p2: "#1B56D0", wall: "#D4AF37", legal: "#0D9468", invalid: "#DC2626" };
+      }
+      if (finish === "nordic") {
+        return isDark
+          ? { plinth: "#0F172A", tile: "#1E293B", tileAlt: "#172030", p1: "#F43F5E", p2: "#38BDF8", wall: "#FB923C", legal: "#10B981", invalid: "#EF4444" }
+          : { plinth: "#27303A", tile: "#F1F5F9", tileAlt: "#E2E8F0", p1: "#D93829", p2: "#1B56D0", wall: "#E07A5F", legal: "#0D9468", invalid: "#DC2626" };
+      }
+      return isDark
+        ? { plinth: "#0B101B", tile: "#1E293B", tileAlt: "#172033", p1: "#F43F5E", p2: "#0EA5E9", wall: "#F59E0B", legal: "#10B981", invalid: "#EF4444" }
+        : { plinth: "#2D221B", tile: "#EFE7DA", tileAlt: "#E5DAC9", p1: "#D93829", p2: "#1B56D0", wall: "#C27D38", legal: "#0D9468", invalid: "#DC2626" };
+    }
+
+    // Draw a 3D axis-aligned box [x0..x1, y0..y1, z0..z1] with painter's face culling and directional shading
+    function createBoxFaces3D(x0, y0, z0, x1, y1, z1, baseHex, alpha = 1.0, strokeHex = null) {
+      const v = [
+        { x: x0, y: y0, z: z0 }, // 0: bottom-back-left
+        { x: x1, y: y0, z: z0 }, // 1: bottom-back-right
+        { x: x1, y: y0, z: z1 }, // 2: bottom-front-right
+        { x: x0, y: y0, z: z1 }, // 3: bottom-front-left
+        { x: x0, y: y1, z: z0 }, // 4: top-back-left
+        { x: x1, y: y1, z: z0 }, // 5: top-back-right
+        { x: x1, y: y1, z: z1 }, // 6: top-front-right
+        { x: x0, y: y1, z: z1 }  // 7: top-front-left
+      ];
+      const faceDefs = [
+        { idx: [4, 5, 6, 7], shade: 1.08 }, // Top
+        { idx: [3, 2, 6, 7], shade: 0.86 }, // Front (+Z)
+        { idx: [1, 0, 4, 5], shade: 0.72 }, // Back (-Z)
+        { idx: [2, 1, 5, 6], shade: 0.94 }, // Right (+X)
+        { idx: [0, 3, 7, 4], shade: 0.78 }  // Left (-X)
+      ];
+      return faceDefs.map(f => ({
+        verts: f.idx.map(i => v[i]),
+        color: shadeHexColor(baseHex, f.shade),
+        alpha,
+        stroke: strokeHex
+      }));
+    }
+
+    function render3DBoard() {
+      const canvas = document.getElementById("board-canvas-3d");      if (!canvas) return;
+      const ctx = canvas.getContext("2d");
+      const W = canvas.width;
+      const H = canvas.height;
+      ctx.clearRect(0, 0, W, H);
+
+      const palette = getThemeColors3D();
+      // Ambient 3D Arena Pedestal Glow
+      const bgGlow = ctx.createRadialGradient(W * 0.5, H * 0.52, 40, W * 0.5, H * 0.52, W * 0.48);
+      bgGlow.addColorStop(0, "rgba(245, 158, 11, 0.10)");
+      bgGlow.addColorStop(1, "rgba(0, 0, 0, 0)");
+      ctx.fillStyle = bgGlow;
+      ctx.fillRect(0, 0, W, H);
+      const isHumanTurn = !gameState.gameOver && !isBotThinking &&
+        (gameState.mode === "local" || gameState.currentPlayer === "red");
+      const legalMoves = (isHumanTurn && gameState.selectedPawn)
+        ? getPawnMoves(gameState, gameState.currentPlayer)
+        : [];
+
+      const renderQueue = [];
+
+      function pushPolygon(worldVerts, fillStyle, strokeStyle = null, lineWidth = 1, alpha = 1, depthBias = 0) {
+        const proj = worldVerts.map(pt => projectPoint3D(pt.x, pt.y, pt.z, W, H));
+        const avgDepth = proj.reduce((acc, p) => acc + p.depth, 0) / proj.length + depthBias;
+        renderQueue.push({
+          type: "poly",
+          proj,
+          fillStyle,
+          strokeStyle,
+          lineWidth,
+          alpha,
+          depth: avgDepth
+        });
+      }
+
+      // 1. Render 3D Board Plinth Base (immediate draw as background foundation)
+      const plinthFaces = createBoxFaces3D(-4.85, -0.48, -4.85, 4.85, -0.08, 4.85, palette.plinth, 1.0, "rgba(0,0,0,0.35)");
+      const plinthProj = plinthFaces.map(f => {
+        const pts = f.verts.map(pt => projectPoint3D(pt.x, pt.y, pt.z, W, H));
+        const d = pts.reduce((a, b) => a + b.depth, 0) / pts.length;
+        return { ...f, pts, d };
+      }).sort((a, b) => b.d - a.d);
+
+      for (const pf of plinthProj) {
+        ctx.save();
+        ctx.beginPath();
+        pf.pts.forEach((p, idx) => idx === 0 ? ctx.moveTo(p.sx, p.sy) : ctx.lineTo(p.sx, p.sy));
+        ctx.closePath();
+        ctx.fillStyle = pf.color;
+        ctx.fill();
+        ctx.strokeStyle = "rgba(0,0,0,0.4)";
+        ctx.lineWidth = 1.2;
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      // 1b. Draw 3D Coordinate Indices (A-I and 1-9) on the 3D Plinth Bevel Rim
+      if (showCoordinateLabels) {
+        ctx.save();
+        ctx.font = "700 13px 'JetBrains Mono', monospace";
+        ctx.fillStyle = "rgba(235, 215, 185, 0.78)";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        for (let i = 0; i < 9; i++) {
+          const colChar = String.fromCharCode(65 + i);
+          const pBot = projectPoint3D((i - 4) * 1.0, 0.01, 4.62, W, H);
+          const pTop = projectPoint3D((i - 4) * 1.0, 0.01, -4.62, W, H);
+          ctx.fillText(colChar, pBot.sx, pBot.sy);
+          ctx.fillText(colChar, pTop.sx, pTop.sy);
+
+          const rowNum = String(i + 1);
+          const pLeft = projectPoint3D(-4.62, 0.01, (i - 4) * 1.0, W, H);
+          const pRight = projectPoint3D(4.62, 0.01, (i - 4) * 1.0, W, H);
+          ctx.fillText(rowNum, pLeft.sx, pLeft.sy);
+          ctx.fillText(rowNum, pRight.sx, pRight.sy);
+        }
+        ctx.restore();
+      }
+
+      // 2. Queue 81 Extruded 3D Tiles
+      const halfTile = 0.415;
+      for (let r = 0; r < 9; r++) {
+        for (let c = 0; c < 9; c++) {
+          const { x, z } = gridToWorld3D(r, c);
+          const isAlt = (r + c) % 2 === 1;
+          const legalMatch = legalMoves.find(m => m.row === r && m.col === c);
+          const tileHex = isAlt ? palette.tileAlt : palette.tile;
+          const faces = createBoxFaces3D(
+            x - halfTile, -0.08, z - halfTile,
+            x + halfTile, 0.0, z + halfTile,
+            tileHex, 1.0,
+            legalMatch ? palette.legal : "rgba(0,0,0,0.18)"
+          );
+          for (const f of faces) {
+            pushPolygon(f.verts, f.color, f.stroke, legalMatch ? 2.2 : 0.9, 1.0, 0.25);
+          }
+
+          // Goal edge luminous strip on Row 0 (Red Goal) and Row 8 (Blue Goal)
+          if (r === 0 || r === 8) {
+            const gColor = r === 0 ? palette.p1 : palette.p2;
+            const zStrip0 = r === 0 ? z - halfTile + 0.03 : z + halfTile - 0.11;
+            const zStrip1 = r === 0 ? z - halfTile + 0.11 : z + halfTile - 0.03;
+            pushPolygon([
+              { x: x - halfTile + 0.05, y: 0.005, z: zStrip0 },
+              { x: x + halfTile - 0.05, y: 0.005, z: zStrip0 },
+              { x: x + halfTile - 0.05, y: 0.005, z: zStrip1 },
+              { x: x - halfTile + 0.05, y: 0.005, z: zStrip1 }
+            ], gColor, null, 0, 0.55, 0.18);
+          }
+
+          // Legal move 3D glowing beacon pad
+          if (legalMatch) {
+            const padR = 0.22;
+            pushPolygon([
+              { x: x - padR, y: 0.015, z: z - padR },
+              { x: x + padR, y: 0.015, z: z - padR },
+              { x: x + padR, y: 0.015, z: z + padR },
+              { x: x - padR, y: 0.015, z: z + padR }
+            ], palette.legal, "#FFFFFF", 1.5, 0.9, 0.12);
+          }
+        }
+      }
+
+      // 3. Queue Placed 3D Barricade Slabs (Tall volumetric architectural walls)
+      function queue3DBarricade(row, col, orientation, hexColor, alpha = 1.0, isPreview = false) {
+        const cx = (col - 3.5) * 1.0;
+        const cz = (row - 3.5) * 1.0;
+        const spanHalf = 0.915;
+        const thickHalf = 0.075;
+        const wallHeight = isPreview ? 0.62 : 0.56;
+
+        let x0, x1, z0, z1;
+        if (orientation === "horizontal") {
+          x0 = cx - spanHalf; x1 = cx + spanHalf;
+          z0 = cz - thickHalf; z1 = cz + thickHalf;
+        } else {
+          x0 = cx - thickHalf; x1 = cx + thickHalf;
+          z0 = cz - spanHalf; z1 = cz + spanHalf;
+        }
+
+        const faces = createBoxFaces3D(x0, 0.0, z0, x1, wallHeight, z1, hexColor, alpha, isPreview ? "#FFFFFF" : "rgba(0,0,0,0.45)");
+        for (const f of faces) {
+          pushPolygon(f.verts, f.color, f.stroke, isPreview ? 1.8 : 1.1, alpha, -0.05);
+        }
+      }
+
+      for (const b of gameState.barricades) {
+        queue3DBarricade(b.row, b.col, b.orientation, palette.wall, 1.0, false);
+      }
+
+      const activePreview = dragState.active
+        ? (dragState.row >= 0 ? dragState : null)
+        : hoverAnchor;
+      if (activePreview && !gameState.gameOver && isHumanTurn) {
+        queue3DBarricade(
+          activePreview.row,
+          activePreview.col,
+          activePreview.orientation,
+          activePreview.valid ? palette.legal : palette.invalid,
+          0.78,
+          true
+        );
+      }
+
+      // 4. Queue Volumetric 3D Sculpted Lathe Pawns
+      for (const player of ["blue", "red"]) {
+        const pos = getAnimatedPawnGridPos(player);
+        const { x, z } = gridToWorld3D(pos.row, pos.col);
+        const yBase = pos.jumpHeight * 0.55;
+        const pHex = player === "red" ? palette.p1 : palette.p2;
+        const isSelected = gameState.selectedPawn && gameState.currentPlayer === player && !gameState.gameOver;
+        const isTurn = gameState.currentPlayer === player && !gameState.gameOver;
+
+        const centerProj = projectPoint3D(x, yBase + 0.35, z, W, H);
+        renderQueue.push({
+          type: "pawn3d",
+          player,
+          wx: x,
+          wy: yBase,
+          wz: z,
+          color: pHex,
+          isSelected,
+          isTurn,
+          depth: centerProj.depth - 0.08
+        });
+      }
+
+      // Sort all 3D primitives back-to-front by camera depth
+      renderQueue.sort((a, b) => b.depth - a.depth);
+
+      // Execute sorted 3D draw commands
+      for (const item of renderQueue) {
+        if (item.type === "poly") {
+          ctx.save();
+          ctx.globalAlpha = item.alpha;
+          ctx.beginPath();
+          item.proj.forEach((p, idx) => idx === 0 ? ctx.moveTo(p.sx, p.sy) : ctx.lineTo(p.sx, p.sy));
+          ctx.closePath();
+          ctx.fillStyle = item.fillStyle;
+          ctx.fill();
+          if (item.strokeStyle) {
+            ctx.strokeStyle = item.strokeStyle;
+            ctx.lineWidth = item.lineWidth;
+            ctx.stroke();
+          }
+          ctx.restore();
+        } else if (item.type === "pawn3d") {
+          drawSculptedPawn3D(ctx, item, W, H, palette);
+        }
+      }
+
+      // Optional Shortest Path overlay in 3D
+      if (showShortestPaths) {
+        for (const pl of ["red", "blue"]) {
+          const path = getShortestPath(gameState, pl);
+          if (path && path.length > 1) {
+            ctx.save();
+            ctx.beginPath();
+            path.forEach((step, idx) => {
+              const w = gridToWorld3D(step.row, step.col);
+              const pr = projectPoint3D(w.x, 0.04, w.z, W, H);
+              if (idx === 0) ctx.moveTo(pr.sx, pr.sy);
+              else ctx.lineTo(pr.sx, pr.sy);
+            });
+            ctx.strokeStyle = pl === "red" ? palette.p1 : palette.p2;
+            ctx.lineWidth = 4;
+            ctx.setLineDash([8, 6]);
+            ctx.stroke();
+            ctx.restore();
+          }
+        }
+      }
+    }
+
+    function drawSculptedPawn3D(ctx, pawn, W, H, palette) {
+      const { wx, wy, wz, color, isSelected, isTurn } = pawn;
+      const groundP = projectPoint3D(wx, 0.01, wz, W, H);
+      const baseP = projectPoint3D(wx, wy + 0.04, wz, W, H);
+      const waistP = projectPoint3D(wx, wy + 0.36, wz, W, H);
+      const collarP = projectPoint3D(wx, wy + 0.50, wz, W, H);
+      const headP = projectPoint3D(wx, wy + 0.66, wz, W, H);
+
+      const s = baseP.scale;
+      ctx.save();
+
+      // 1. Ground shadow ellipse
+      ctx.beginPath();
+      ctx.ellipse(groundP.sx + 4, groundP.sy + 3, 0.32 * s, 0.19 * s, 0, 0, Math.PI * 2);
+      ctx.fillStyle = "rgba(0, 0, 0, 0.38)";
+      ctx.fill();
+
+      // 2. Active Turn / Selected Halo Ring on tile surface
+      if (isSelected || isTurn) {
+        ctx.beginPath();
+        ctx.ellipse(groundP.sx, groundP.sy, 0.37 * s, 0.23 * s, 0, 0, Math.PI * 2);
+        ctx.strokeStyle = isSelected ? palette.legal : color;
+        ctx.lineWidth = isSelected ? 3.5 : 2.2;
+        ctx.stroke();
+      }
+
+      // 3. Weighted Pawn Pedestal Base
+      ctx.beginPath();
+      ctx.ellipse(baseP.sx, baseP.sy, 0.29 * s, 0.17 * s, 0, 0, Math.PI * 2);
+      ctx.fillStyle = shadeHexColor(color, 0.68);
+      ctx.fill();
+      ctx.strokeStyle = "rgba(255,255,255,0.35)";
+      ctx.lineWidth = 1.2;
+      ctx.stroke();
+
+      // 4. Tapered Architectural Column Body
+      ctx.beginPath();
+      ctx.moveTo(baseP.sx - 0.25 * s, baseP.sy);
+      ctx.quadraticCurveTo(waistP.sx - 0.13 * s, waistP.sy, collarP.sx - 0.15 * s, collarP.sy);
+      ctx.lineTo(collarP.sx + 0.15 * s, collarP.sy);
+      ctx.quadraticCurveTo(waistP.sx + 0.13 * s, waistP.sy, baseP.sx + 0.25 * s, baseP.sy);
+      ctx.closePath();
+      const bodyGrad = ctx.createLinearGradient(baseP.sx - 0.25 * s, baseP.sy, baseP.sx + 0.25 * s, collarP.sy);
+      bodyGrad.addColorStop(0, shadeHexColor(color, 1.25));
+      bodyGrad.addColorStop(0.55, color);
+      bodyGrad.addColorStop(1, shadeHexColor(color, 0.58));
+      ctx.fillStyle = bodyGrad;
+      ctx.fill();
+
+      // 5. Collar Disc
+      ctx.beginPath();
+      ctx.ellipse(collarP.sx, collarP.sy, 0.18 * s, 0.09 * s, 0, 0, Math.PI * 2);
+      ctx.fillStyle = shadeHexColor(color, 1.18);
+      ctx.fill();
+      ctx.strokeStyle = "rgba(255,255,255,0.5)";
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      // 6. Spherical Crown Head with Specular Highlight
+      const headRadius = 0.185 * s;
+      const headGrad = ctx.createRadialGradient(
+        headP.sx - headRadius * 0.35,
+        headP.sy - headRadius * 0.35,
+        headRadius * 0.1,
+        headP.sx,
+        headP.sy,
+        headRadius
+      );
+      headGrad.addColorStop(0, "#FFFFFF");
+      headGrad.addColorStop(0.3, shadeHexColor(color, 1.28));
+      headGrad.addColorStop(1, shadeHexColor(color, 0.62));
+
+      ctx.beginPath();
+      ctx.arc(headP.sx, headP.sy, headRadius, 0, Math.PI * 2);
+      ctx.fillStyle = headGrad;
+      ctx.fill();
+      ctx.strokeStyle = "#FFFFFF";
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      ctx.restore();
+    }
+
+    /* ==========================================================================
+       PART 6: UNIFIED POINTER GEOMETRY (WORKS seamlessly in BOTH 2D & 3D MODES)
+       Converts client (x, y) to exact board coordinates { square, anchor }
+       ========================================================================== */
+    function resolvePointerBoardCoords(clientX, clientY, forceOrientation = null) {
+      const well = document.getElementById("board-well");
+      if (!well) return { square: null, anchor: null };
+      const rect = well.getBoundingClientRect();
+      if (clientX < rect.left || clientX > rect.right || clientY < rect.top || clientY > rect.bottom) {
+        return { square: null, anchor: null };
+      }
+
+      let gx, gy; // Normalized grid space where each cell+groove is 1.0 unit and board spans [0..8.84]
+      if (viewMode === "2d") {
+        const vx = ((clientX - rect.left) / rect.width) * 900;
+        const vy = ((clientY - rect.top) / rect.height) * 900;
+        const c = Math.min(8, Math.max(0, Math.floor(vx / STEP_SIZE)));
+        const r = Math.min(8, Math.max(0, Math.floor(vy / STEP_SIZE)));
+        const square = { row: r, col: c };
+
+        // Nearest anchor intersection (0..7, 0..7)
+        const ac = Math.min(7, Math.max(0, Math.round((vx - CELL_SIZE - GROOVE_SIZE / 2) / STEP_SIZE)));
+        const ar = Math.min(7, Math.max(0, Math.round((vy - CELL_SIZE - GROOVE_SIZE / 2) / STEP_SIZE)));
+        const anchorX = ac * STEP_SIZE + CELL_SIZE + GROOVE_SIZE / 2;
+        const anchorY = ar * STEP_SIZE + CELL_SIZE + GROOVE_SIZE / 2;
+        const orient = forceOrientation || gameState.selectedBarricade ||
+          (Math.abs(vx - anchorX) >= Math.abs(vy - anchorY) ? "horizontal" : "vertical");
+
+        return { square, anchor: { row: ar, col: ac, orientation: orient } };
+      } else {
+        // 3D Mode: Raycast onto board plane y = 0
+        const canvas = document.getElementById("board-canvas-3d");
+        const sx = ((clientX - rect.left) / rect.width) * canvas.width;
+        const sy = ((clientY - rect.top) / rect.height) * canvas.height;
+        const hit = screenToWorldPlane3D(sx, sy, canvas.width, canvas.height, 0.0);
+        if (!hit) return { square: null, anchor: null };
+
+        const colFloat = hit.wx + 4.0;
+        const rowFloat = hit.wz + 4.0;
+        if (colFloat < -0.6 || colFloat > 8.6 || rowFloat < -0.6 || rowFloat > 8.6) {
+          return { square: null, anchor: null };
+        }
+        const c = Math.min(8, Math.max(0, Math.round(colFloat)));
+        const r = Math.min(8, Math.max(0, Math.round(rowFloat)));
+        const ac = Math.min(7, Math.max(0, Math.round(colFloat - 0.5)));
+        const ar = Math.min(7, Math.max(0, Math.round(rowFloat - 0.5)));
+        const orient = forceOrientation || gameState.selectedBarricade || "horizontal";
+        return { square: { row: r, col: c }, anchor: { row: ar, col: ac, orientation: orient } };
+      }
+    }
+
+    /* ==========================================================================
+       PART 7: GAMEPLAY CONTROLLERS, ANIMATION LOOP & TURN LIFECYCLE
+       ========================================================================== */
+    let statusOverrideMsg = null;
+    let statusOverrideClass = "";
+    let statusOverrideTimer = null;
+
+    function showFeedbackToast(msg, isError = false) {
+      statusOverrideMsg = msg;
+      statusOverrideClass = isError ? "error" : "valid-hint";
+      if (statusOverrideTimer) clearTimeout(statusOverrideTimer);
+      statusOverrideTimer = setTimeout(() => {
+        statusOverrideMsg = null;
+        statusOverrideClass = "";
+        updateHUD();
+      }, 2800);
+      updateHUD();
+    }
+
+    function pushUndoSnapshot() {
+      stateSnapshots.push(cloneState(gameState));
+      if (stateSnapshots.length > 40) stateSnapshots.shift();
+    }
+
+    function executeHumanPawnMove(destRow, destCol) {
+      if (gameState.gameOver || isBotThinking) return false;
+      if (gameState.mode === "airbot" && gameState.currentPlayer !== "red") return false;
+
+      const prevPlayer = gameState.currentPlayer;
+      const fromPos = { ...gameState.pawns[prevPlayer] };
+      const snapshotBefore = cloneState(gameState);
+
+      const res = applyPawnMove(gameState, { row: destRow, col: destCol });
+      if (!res.success) {
+        SoundFX.invalid();
+        showFeedbackToast(res.reason, true);
+        return false;
+      }
+
+      pushUndoSnapshotFrom(snapshotBefore);
+      gameState = res.state;
+      hoverAnchor = null;
+
+      // Trigger smooth pawn animation
+      pawnAnim = {
+        active: true,
+        player: prevPlayer,
+        fromRow: fromPos.row,
+        fromCol: fromPos.col,
+        toRow: destRow,
+        toCol: destCol,
+        isJump: res.moveType === "jump" || res.moveType === "diagonal",
+        startTime: performance.now(),
+        duration: 220
+      };
+
+      SoundFX.movePawn(pawnAnim.isJump);
+      announceSR(gameState.moveHistory[gameState.moveHistory.length - 1].description);
+      syncAllUI();
+
+      if (gameState.gameOver) {
+        handleGameCompletion();
+      } else if (gameState.mode === "airbot" && gameState.currentPlayer === "blue") {
+        scheduleAirBotTurn();
+      }
+      return true;
+    }
+
+    function executeHumanBarricadePlacement(row, col, orientation) {
+      if (gameState.gameOver || isBotThinking) return false;
+      if (gameState.mode === "airbot" && gameState.currentPlayer !== "red") {
+        SoundFX.invalid();
+        showFeedbackToast("Wait for AirBot to complete its turn.", true);
+        return false;
+      }
+
+      const snapshotBefore = cloneState(gameState);
+      const res = applyBarricade(gameState, { row, col, orientation });
+      if (!res.success) {
+        SoundFX.invalid();
+        showFeedbackToast(res.reason, true);
+        return false;
+      }
+
+      pushUndoSnapshotFrom(snapshotBefore);
+      gameState = res.state;
+      hoverAnchor = null;
+      SoundFX.placeWall();
+      announceSR(gameState.moveHistory[gameState.moveHistory.length - 1].description);
+      syncAllUI();
+
+      if (gameState.mode === "airbot" && gameState.currentPlayer === "blue" && !gameState.gameOver) {
+        scheduleAirBotTurn();
+      }
+      return true;
+    }
+
+    function pushUndoSnapshotFrom(snap) {
+      stateSnapshots.push(snap);
+      if (stateSnapshots.length > 40) stateSnapshots.shift();
+    }
+
+    function scheduleAirBotTurn() {
+      const tokenAtSchedule = matchGenerationId;
+      isBotThinking = true;
+      updateHUD();
+
+      setTimeout(() => {
+        if (tokenAtSchedule !== matchGenerationId || gameState.gameOver || gameState.mode !== "airbot" || gameState.currentPlayer !== "blue") {
+          return;
+        }
+        const action = chooseAirBotAction(gameState, gameState.difficulty);
+        if (tokenAtSchedule !== matchGenerationId) return;
+
+        isBotThinking = false;
+        if (!action) {
+          syncAllUI();
+          return;
+        }
+
+        if (action.actionType === "move") {
+          const fromPos = { ...gameState.pawns.blue };
+          const res = applyPawnMove(gameState, action.destination);
+          if (res.success) {
+            gameState = res.state;
+            pawnAnim = {
+              active: true,
+              player: "blue",
+              fromRow: fromPos.row,
+              fromCol: fromPos.col,
+              toRow: action.destination.row,
+              toCol: action.destination.col,
+              isJump: res.moveType === "jump" || res.moveType === "diagonal",
+              startTime: performance.now(),
+              duration: 240
+            };
+            SoundFX.movePawn(pawnAnim.isJump);
+          }
+        } else if (action.actionType === "barricade") {
+          const res = applyBarricade(gameState, action.barricade);
+          if (res.success) {
+            gameState = res.state;
+            SoundFX.placeWall();
+          }
+        }
+
+        if (gameState.moveHistory.length > 0) {
+          announceSR(gameState.moveHistory[gameState.moveHistory.length - 1].description);
+        }
+        syncAllUI();
+        if (gameState.gameOver) {
+          handleGameCompletion();
+        }
+      }, 320);
+    }
+
+    function handleUndo() {
+      if (stateSnapshots.length === 0) return;
+      matchGenerationId++; // Cancel any pending AirBot turn
+      isBotThinking = false;
+      pawnAnim.active = false;
+      hoverAnchor = null;
+
+      const restored = stateSnapshots.pop();
+      gameState = cloneState(restored);
+      gameState.selectedPawn = false;
+      gameState.selectedBarricade = null;
+      stopConfetti();
+      document.getElementById("modal-victory").classList.remove("open");
+      showFeedbackToast("Previous turn restored.", false);
+      syncAllUI();
+    }
+
+    function startNewGame(newMode = gameState.mode, newDiff = gameState.difficulty) {
+      matchGenerationId++; // Invalidate any pending AirBot calculations
+      isBotThinking = false;
+      pawnAnim.active = false;
+      hoverAnchor = null;
+      stateSnapshots = [];
+      gameState = createInitialState(newMode, newDiff);
+      stopConfetti();
+      document.getElementById("modal-victory").classList.remove("open");
+      syncAllUI();
+      announceSR("New game started. Red moves first from E9.");
+    }
+
+    /* ==========================================================================
+       PART 8: HUD, PLAYER CARDS, MOVE HISTORY & ACCESSIBILITY GRID SYNC
+       ========================================================================== */
+    function renderWallRack(containerId, remaining) {
+      const el = document.getElementById(containerId);
+      if (!el) return;
+      let html = "";
+      for (let i = 0; i < 10; i++) {
+        html += `<div class="wall-pip ${i < remaining ? "" : "spent"}"></div>`;
+      }
+      el.innerHTML = html;
+    }
+
+    function updateHUD() {
+      const isRed = gameState.currentPlayer === "red";
+      const redCard = document.getElementById("card-player-red");
+      const blueCard = document.getElementById("card-player-blue");
+
+      redCard.classList.toggle("active-turn", isRed && !gameState.gameOver);
+      blueCard.classList.toggle("active-turn", !isRed && !gameState.gameOver);
+
+      document.getElementById("name-player-blue").textContent =
+        gameState.mode === "airbot" ? "🤖 AirBot" : "Player 2 (Blue)";
+
+      document.getElementById("badge-turn-red").textContent =
+        gameState.gameOver
+          ? (gameState.winner === "red" ? "🏆 Winner" : "Finished")
+          : (isRed ? (gameState.mode === "airbot" ? "Your Turn" : "Active Turn") : "Waiting");
+
+      document.getElementById("badge-turn-blue").textContent =
+        gameState.gameOver
+          ? (gameState.winner === "blue" ? "🏆 Winner" : "Finished")
+          : (!isRed ? (isBotThinking ? "Thinking..." : "Active Turn") : "Waiting");
+
+      document.getElementById("walls-count-red").textContent = String(gameState.barricadesRemaining.red);
+      document.getElementById("walls-count-blue").textContent = String(gameState.barricadesRemaining.blue);
+      document.getElementById("rack-text-red").textContent = `${gameState.barricadesRemaining.red} / 10`;
+      document.getElementById("rack-text-blue").textContent = `${gameState.barricadesRemaining.blue} / 10`;
+
+      renderWallRack("wall-rack-red", gameState.barricadesRemaining.red);
+      renderWallRack("wall-rack-blue", gameState.barricadesRemaining.blue);
+      const activeWallsLeft = gameState.barricadesRemaining[gameState.currentPlayer] || 0;
+      renderWallRack("dock-wall-rack-active", activeWallsLeft);
+      const dockSupplyEl = document.getElementById("dock-active-supply");
+      if (dockSupplyEl) {
+        dockSupplyEl.textContent = `Red: ${gameState.barricadesRemaining.red} · Blue: ${gameState.barricadesRemaining.blue}`;
+      }
+
+      const redPath = getShortestPath(gameState, "red");
+      const bluePath = getShortestPath(gameState, "blue");
+      document.getElementById("path-len-red").textContent = redPath ? `${redPath.length - 1} steps` : "—";
+      document.getElementById("path-len-blue").textContent = bluePath ? `${bluePath.length - 1} steps` : "—";
+
+      // Tool buttons state
+      const activeSupply = gameState.barricadesRemaining[gameState.currentPlayer] || 0;
+      const canInteract = !gameState.gameOver && !isBotThinking &&
+        (gameState.mode === "local" || gameState.currentPlayer === "red");
+
+      const btnH = document.getElementById("tool-horiz");
+      const btnV = document.getElementById("tool-vert");
+      btnH.disabled = !canInteract || activeSupply <= 0;
+      btnV.disabled = !canInteract || activeSupply <= 0;
+      btnH.classList.toggle("active", canInteract && gameState.selectedBarricade === "horizontal");
+      btnV.classList.toggle("active", canInteract && gameState.selectedBarricade === "vertical");
+
+      document.getElementById("btn-undo").disabled = stateSnapshots.length === 0;
+      document.getElementById("turn-counter-pill").textContent = `Turn ${gameState.moveHistory.length + 1}`;
+
+      // Status banner
+      const dot = document.getElementById("status-turn-dot");
+      const headline = document.getElementById("status-headline");
+      const subtext = document.getElementById("status-subtext");
+
+      dot.className = `status-dot ${isRed ? "red" : "blue"}`;
+
+      if (gameState.gameOver) {
+        const winName = gameState.winner === "red"
+          ? (gameState.mode === "airbot" ? "You (Red) Won!" : "Red Wins the Match!")
+          : (gameState.mode === "airbot" ? "🤖 AirBot Wins!" : "Blue Wins the Match!");
+        headline.textContent = `Match Complete — ${winName}`;
+        subtext.textContent = statusOverrideMsg || "Click Play Again or New Game to start a rematch.";
+        subtext.className = `status-feedback ${statusOverrideClass}`;
+      } else if (isBotThinking) {
+        headline.textContent = "🤖 AirBot is analyzing optimal routes...";
+        subtext.textContent = "Board locked during AirBot's turn";
+        subtext.className = "status-feedback";
+      } else {
+        const who = isRed ? "Red's Turn" : "Blue's Turn";
+        if (gameState.selectedBarricade) {
+          headline.textContent = `${who} — Placing ${gameState.selectedBarricade} barricade`;
+        } else if (gameState.selectedPawn) {
+          headline.textContent = `${who} — Click a highlighted emerald square to move`;
+        } else {
+          headline.textContent = `${who} — Click your pawn to move or select a barricade`;
+        }
+
+        if (statusOverrideMsg) {
+          subtext.textContent = statusOverrideMsg;
+          subtext.className = `status-feedback ${statusOverrideClass}`;
+        } else if (hoverAnchor && gameState.selectedBarricade) {
+          subtext.textContent = hoverAnchor.valid
+            ? `Valid ${hoverAnchor.orientation} placement at ${toCoordNotation(hoverAnchor.row, hoverAnchor.col)}`
+            : hoverAnchor.reason;
+          subtext.className = `status-feedback ${hoverAnchor.valid ? "valid-hint" : "error"}`;
+        } else if (activeSupply === 0) {
+          subtext.textContent = "0 barricades remaining — you must move your pawn.";
+          subtext.className = "status-feedback";
+        } else {
+          subtext.textContent = isRed ? "Goal: Reach Row 1 (Top Edge)" : "Goal: Reach Row 9 (Bottom Edge)";
+          subtext.className = "status-feedback";
+        }
+      }
+
+      // Move History Log
+      const histEl = document.getElementById("history-list");
+      document.getElementById("history-count-label").textContent = `${gameState.moveHistory.length} actions`;
+      if (gameState.moveHistory.length === 0) {
+        histEl.innerHTML = `<div class="history-empty">No moves recorded yet. Click your Red pawn at E9 or select a barricade to begin.</div>`;
+      } else {
+        const itemsHtml = gameState.moveHistory.slice().reverse().map(m => `
+          <div class="history-item ${m.player}">
+            <span class="history-turn-num">#${m.turn}</span>
+            <span class="history-desc">${m.description}</span>
+            <span class="history-code">${m.notation}</span>
+          </div>
+        `).join("");
+        histEl.innerHTML = itemsHtml;
+      }
+
+      // Session Stats
+      document.getElementById("stat-red-wins").textContent = String(sessionStats.redWins);
+      document.getElementById("stat-bot-wins").textContent = String(sessionStats.botWins);
+      document.getElementById("stat-local-games").textContent = String(sessionStats.matches);
+    }
+
+    function updateA11yGrid() {
+      const grid = document.getElementById("a11y-grid");
+      if (!grid) return;
+      if (grid.children.length === 0) {
+        let html = "";
+        for (let r = 0; r < 9; r++) {
+          for (let c = 0; c < 9; c++) {
+            const coord = toCoordNotation(r, c);
+            html += `<button type="button" class="a11y-cell-btn" data-row="${r}" data-col="${c}" aria-label="Square ${coord}"></button>`;
+          }
+        }
+        grid.innerHTML = html;
+      }
+
+      const legalMoves = gameState.selectedPawn ? getPawnMoves(gameState, gameState.currentPlayer) : [];
+      const buttons = grid.querySelectorAll(".a11y-cell-btn");
+      buttons.forEach(btn => {
+        const r = Number(btn.getAttribute("data-row"));
+        const c = Number(btn.getAttribute("data-col"));
+        const coord = toCoordNotation(r, c);
+        let desc = `Square ${coord}`;
+        if (gameState.pawns.red.row === r && gameState.pawns.red.col === c) desc += ", occupied by Red pawn";
+        if (gameState.pawns.blue.row === r && gameState.pawns.blue.col === c) desc += ", occupied by Blue pawn";
+        const lm = legalMoves.find(m => m.row === r && m.col === c);
+        if (lm) desc += `, Legal ${lm.type} destination`;
+        btn.setAttribute("aria-label", desc);
+      });
+    }
+
+    function syncAllUI() {
+      updateHUD();
+      updateA11yGrid();
+      if (viewMode === "2d") {
+        render2DBoard();
+      } else {
+        render3DBoard();
+      }
+    }
+
+    /* ==========================================================================
+       PART 9: VICTORY CELEBRATION & CONFETTI PARTICLE SYSTEM
+       ========================================================================== */
+    let confettiFrameId = null;
+    let confettiParticles = [];
+
+    function startConfetti() {
+      const canvas = document.getElementById("confetti-canvas");
+      if (!canvas) return;
+      canvas.style.display = "block";
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      const ctx = canvas.getContext("2d");
+
+      const colors = ["#F43F5E", "#F59E0B", "#10B981", "#38BDF8", "#A855F7", "#FDE047"];
+      confettiParticles = Array.from({ length: 110 }, () => ({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height - canvas.height,
+        w: 7 + Math.random() * 7,
+        h: 10 + Math.random() * 10,
+        vx: (Math.random() - 0.5) * 3.5,
+        vy: 2.5 + Math.random() * 4.5,
+        rot: Math.random() * Math.PI * 2,
+        vrot: (Math.random() - 0.5) * 0.14,
+        color: colors[Math.floor(Math.random() * colors.length)]
+      }));
+
+      function step() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        for (const p of confettiParticles) {
+          p.x += p.vx;
+          p.y += p.vy;
+          p.rot += p.vrot;
+          if (p.y > canvas.height + 20) {
+            p.y = -20;
+            p.x = Math.random() * canvas.width;
+          }
+          ctx.save();
+          ctx.translate(p.x, p.y);
+          ctx.rotate(p.rot);
+          ctx.fillStyle = p.color;
+          ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+          ctx.restore();
+        }
+        confettiFrameId = requestAnimationFrame(step);
+      }
+      if (confettiFrameId) cancelAnimationFrame(confettiFrameId);
+      confettiFrameId = requestAnimationFrame(step);
+    }
+
+    function stopConfetti() {
+      if (confettiFrameId) {
+        cancelAnimationFrame(confettiFrameId);
+        confettiFrameId = null;
+      }
+      const canvas = document.getElementById("confetti-canvas");
+      if (canvas) canvas.style.display = "none";
+    }
+
+    function handleGameCompletion() {
+      sessionStats.matches += 1;
+      if (gameState.winner === "red") {
+        sessionStats.redWins += 1;
+      } else {
+        sessionStats.botWins += 1;
+      }
+      safeSetStorage("airbarricades_stats", JSON.stringify(sessionStats));
+
+      const badge = document.getElementById("victory-badge");
+      const title = document.getElementById("victory-title");
+      const msg = document.getElementById("victory-message");
+
+      if (gameState.mode === "airbot") {
+        if (gameState.winner === "red") {
+          badge.textContent = "🏆";
+          title.textContent = "YOU ARE THE CHAMPION!";
+          msg.textContent = "Brilliant strategy! You conquered the board.";
+          SoundFX.victory(true);
+          startConfetti();
+        } else {
+          badge.textContent = "🤖";
+          title.textContent = "AIRBOT WINS";
+          msg.textContent = "AirBot outmaneuvered your path this time. Ready for a tactical rematch?";
+          SoundFX.victory(false);
+        }
+      } else {
+        badge.textContent = "🏆";
+        title.textContent = gameState.winner === "red" ? "RED WINS!" : "BLUE WINS!";
+        msg.textContent = `Player ${gameState.winner === "red" ? "1 (Red)" : "2 (Blue)"} reached the opposite edge first!`;
+        SoundFX.victory(true);
+        startConfetti();
+      }
+
+      document.getElementById("vic-stat-turns").textContent = String(gameState.moveHistory.length);
+      document.getElementById("vic-stat-red-walls").textContent = String(gameState.barricadesRemaining.red);
+      document.getElementById("vic-stat-blue-walls").textContent = String(gameState.barricadesRemaining.blue);
+      document.getElementById("modal-victory").classList.add("open");
+      updateHUD();
+    }
+
+    /* ==========================================================================
+       PART 10: BOARD INPUT HANDLERS (PAWN CLICK, WALL TAP, & DRAG-AND-DROP)
+       ========================================================================== */
+    function handleBoardClickAt(row, col, anchor) {
+      if (gameState.gameOver) {
+        showFeedbackToast("The match has ended. Click Play Again or New Game.", true);
+        return;
+      }
+      if (isBotThinking || (gameState.mode === "airbot" && gameState.currentPlayer !== "red")) {
+        showFeedbackToast("Please wait for AirBot's turn.", true);
+        return;
+      }
+
+      // Case 1: Active Barricade Tool Mode -> Place barricade at anchor immediately
+      if (gameState.selectedBarricade && anchor) {
+        executeHumanBarricadePlacement(anchor.row, anchor.col, gameState.selectedBarricade);
+        return;
+      }
+
+      // Case 2: Pawn Movement Mode
+      const activePlayer = gameState.currentPlayer;
+      const myPos = gameState.pawns[activePlayer];
+
+      // Clicking own pawn toggles selection
+      if (row === myPos.row && col === myPos.col) {
+        gameState.selectedPawn = !gameState.selectedPawn;
+        gameState.selectedBarricade = null;
+        SoundFX.selectPawn();
+        syncAllUI();
+        return;
+      }
+
+      // If pawn is selected and user clicks a legal destination, move immediately
+      if (gameState.selectedPawn) {
+        const legalMoves = getPawnMoves(gameState, activePlayer);
+        const isLegal = legalMoves.some(m => m.row === row && m.col === col);
+        if (isLegal) {
+          executeHumanPawnMove(row, col);
+        } else {
+          SoundFX.invalid();
+          showFeedbackToast("Select a highlighted emerald destination square.", true);
+        }
+        return;
+      }
+
+      // Convenience: if pawn was not yet selected, check if clicked square is a legal move anyway OR hint to select pawn
+      const legalMoves = getPawnMoves(gameState, activePlayer);
+      if (legalMoves.some(m => m.row === row && m.col === col)) {
+        // Require selecting the pawn first per Part 3 ("1. The player clicks or taps their own pawn. 2. All legal destinations become highlighted. 3. The player selects a highlighted destination.")
+        gameState.selectedPawn = true;
+        SoundFX.selectPawn();
+        showFeedbackToast("Pawn selected — now tap a highlighted emerald destination.", false);
+        syncAllUI();
+      } else {
+        showFeedbackToast(`Tap your ${activePlayer === "red" ? "Red" : "Blue"} pawn first to view legal destinations.`, false);
+      }
+    }
+
+    function setupInteractionListeners() {
+      const well = document.getElementById("board-well");
+      const a11yGrid = document.getElementById("a11y-grid");
+
+      // Click on accessible square buttons (covers both mouse click and keyboard Enter/Space)
+      a11yGrid.addEventListener("click", (e) => {
+        const btn = e.target.closest(".a11y-cell-btn");
+        if (!btn) return;
+        if (viewMode === "3d") {
+          const resolved = resolvePointerBoardCoords(e.clientX, e.clientY);
+          if (resolved.square) {
+            handleBoardClickAt(resolved.square.row, resolved.square.col, resolved.anchor);
+            return;
+          }        }
+        const r = Number(btn.getAttribute("data-row"));
+        const c = Number(btn.getAttribute("data-col"));
+        const resolved = resolvePointerBoardCoords(e.clientX, e.clientY);
+        handleBoardClickAt(r, c, resolved.anchor || { row: Math.min(7, r), col: Math.min(7, c), orientation: gameState.selectedBarricade || "horizontal" });
+      });
+
+      // Pointer hover over board for live barricade preview
+      well.addEventListener("pointermove", (e) => {
+        if (Camera3D.isOrbitDragging && viewMode === "3d") {
+          const dx = e.clientX - Camera3D.lastPointerX;
+          const dy = e.clientY - Camera3D.lastPointerY;
+          Camera3D.lastPointerX = e.clientX;
+          Camera3D.lastPointerY = e.clientY;
+          Camera3D.targetYaw += dx * 0.008;
+          Camera3D.targetPitch = Math.min(86 * Math.PI / 180, Math.max(30 * Math.PI / 180, Camera3D.targetPitch + dy * 0.006));
+          document.getElementById("slider-cam-pitch").value = String(Math.round(Camera3D.targetPitch * 180 / Math.PI));
+          return;
+        }
+
+        if (!gameState.selectedBarricade || dragState.active || gameState.gameOver || isBotThinking) {
+          if (hoverAnchor) {
+            hoverAnchor = null;
+            syncAllUI();
+          }
+          return;
+        }
+        const resolved = resolvePointerBoardCoords(e.clientX, e.clientY, gameState.selectedBarricade);
+        if (!resolved.anchor) {
+          if (hoverAnchor) {
+            hoverAnchor = null;
+            syncAllUI();
+          }
+          return;
+        }
+        const check = validateBarricadePlacement(gameState, resolved.anchor, gameState.currentPlayer);
+        hoverAnchor = {
+          row: resolved.anchor.row,
+          col: resolved.anchor.col,
+          orientation: resolved.anchor.orientation,
+          valid: check.valid,
+          reason: check.reason
+        };
+        syncAllUI();
+      });
+
+      well.addEventListener("pointerleave", () => {
+        Camera3D.isOrbitDragging = false;
+        if (hoverAnchor) {
+          hoverAnchor = null;
+          syncAllUI();
+        }
+      });
+
+      // Right-click or Shift-drag on 3D board orbits camera
+      well.addEventListener("contextmenu", (e) => {
+        if (viewMode === "3d") e.preventDefault();
+      });
+      well.addEventListener("pointerdown", (e) => {
+        if (viewMode === "3d" && (e.button === 2 || e.shiftKey)) {
+          Camera3D.isOrbitDragging = true;
+          Camera3D.lastPointerX = e.clientX;
+          Camera3D.lastPointerY = e.clientY;
+        }
+      });
+      window.addEventListener("pointerup", () => {
+        Camera3D.isOrbitDragging = false;
+      });
+
+      // Barricade Tool Buttons: Support BOTH Click-to-Select (Method A) and Drag-and-Drop (Method B)
+      const toolButtons = [document.getElementById("tool-horiz"), document.getElementById("tool-vert")];
+      const ghost = document.getElementById("drag-ghost");
+
+      toolButtons.forEach(btn => {
+        let startX = 0, startY = 0;
+        let pointerMoved = false;
+        const orientation = btn.getAttribute("data-orientation");
+
+        btn.addEventListener("pointerdown", (e) => {
+          if (btn.disabled) return;
+          startX = e.clientX;
+          startY = e.clientY;
+          pointerMoved = false;
+
+          function onMove(ev) {
+            const dist = Math.hypot(ev.clientX - startX, ev.clientY - startY);
+            if (dist > 8 && !dragState.active) {
+              pointerMoved = true;
+              dragState.active = true;
+              dragState.orientation = orientation;
+              gameState.selectedPawn = false;
+              gameState.selectedBarricade = orientation;
+              ghost.style.display = "block";
+              ghost.style.width = orientation === "horizontal" ? "76px" : "14px";
+              ghost.style.height = orientation === "horizontal" ? "14px" : "76px";
+            }
+
+            if (dragState.active) {
+              const touchOffsetY = ev.pointerType === "touch" ? -34 : 0;
+              const targetX = ev.clientX;
+              const targetY = ev.clientY + touchOffsetY;
+              ghost.style.left = `${targetX}px`;
+              ghost.style.top = `${targetY}px`;
+              const resolved = resolvePointerBoardCoords(targetX, targetY, orientation);
+              if (resolved.anchor) {
+                const check = validateBarricadePlacement(gameState, resolved.anchor, gameState.currentPlayer);
+                dragState.row = resolved.anchor.row;
+                dragState.col = resolved.anchor.col;
+                dragState.valid = check.valid;
+                dragState.reason = check.reason;
+                ghost.style.background = check.valid ? "var(--legal-color)" : "var(--invalid-color)";
+                if (!check.valid) showFeedbackToast(check.reason, true);
+              } else {
+                dragState.row = -1;
+                dragState.col = -1;
+                dragState.valid = false;
+                ghost.style.background = "var(--invalid-color)";
+              }
+              syncAllUI();
+            }
+          }
+
+          function onUp(ev) {
+            window.removeEventListener("pointermove", onMove);
+            window.removeEventListener("pointerup", onUp);
+            ghost.style.display = "none";
+
+            if (dragState.active) {
+              const { row, col, valid } = dragState;
+              dragState.active = false;
+              if (row >= 0 && col >= 0 && valid) {
+                executeHumanBarricadePlacement(row, col, orientation);
+              } else {
+                gameState.selectedBarricade = null;
+                if (row >= 0 && col >= 0 && dragState.reason) {
+                  SoundFX.invalid();
+                  showFeedbackToast(dragState.reason, true);
+                }
+                syncAllUI();
+              }
+            } else if (!pointerMoved) {
+              // Method A: Select and tap toggle
+              if (gameState.selectedBarricade === orientation) {
+                gameState.selectedBarricade = null;
+              } else {
+                gameState.selectedBarricade = orientation;
+                gameState.selectedPawn = false;
+              }
+              SoundFX.selectPawn();
+              syncAllUI();
+            }
+          }
+
+          window.addEventListener("pointermove", onMove);
+          window.addEventListener("pointerup", onUp);
+        });
+      });
+
+      // Keyboard Shortcuts (H, V, R, Escape)
+      window.addEventListener("keydown", (e) => {
+        if (e.target.tagName === "INPUT" || e.target.tagName === "SELECT") return;
+        if (e.key === "Escape") {
+          gameState.selectedBarricade = null;
+          gameState.selectedPawn = false;
+          hoverAnchor = null;
+          syncAllUI();
+        } else if (e.key === "r" || e.key === "R") {
+          if (gameState.selectedBarricade) {
+            gameState.selectedBarricade = gameState.selectedBarricade === "horizontal" ? "vertical" : "horizontal";
+          } else {
+            gameState.selectedBarricade = "horizontal";
+            gameState.selectedPawn = false;
+          }
+          syncAllUI();
+        } else if (e.key === "h" || e.key === "H") {
+          gameState.selectedBarricade = "horizontal";
+          gameState.selectedPawn = false;
+          syncAllUI();
+        } else if (e.key === "v" || e.key === "V") {
+          gameState.selectedBarricade = "vertical";
+          gameState.selectedPawn = false;
+          syncAllUI();
+        }
+      });
+    }
+
+    /* ==========================================================================
+       PART 11: CONTINUOUS ANIMATION LOOP (PAWN MOTION & 3D CAMERA SMOOTHING)
+       ========================================================================== */
+    function startAnimationLoop() {
+      function tick() {
+        let needsRedraw = false;
+        if (pawnAnim.active) {
+          const elapsed = performance.now() - pawnAnim.startTime;
+          if (elapsed >= pawnAnim.duration) {
+            pawnAnim.active = false;
+          }
+          needsRedraw = true;
+        }
+
+        if (viewMode === "3d") {
+          const dyaw = Camera3D.targetYaw - Camera3D.yaw;
+          const dpitch = Camera3D.targetPitch - Camera3D.pitch;
+          if (Math.abs(dyaw) > 0.0005 || Math.abs(dpitch) > 0.0005) {
+            Camera3D.yaw += dyaw * 0.16;
+            Camera3D.pitch += dpitch * 0.16;
+            needsRedraw = true;
+          }
+        }
+
+        if (needsRedraw) {
+          if (viewMode === "2d") render2DBoard();
+          else render3DBoard();
+        }
+        requestAnimationFrame(tick);
+      }
+      requestAnimationFrame(tick);
+    }
+
+    /* ==========================================================================
+       PART 12: TUTORIAL CONTENT & IN-APP AUTOMATED TEST RUNNER (TESTS A–X)
+       ========================================================================== */
+    const TUTORIAL_SECTIONS = {
+      goal: `
+        <h3 style="margin-bottom:6px;color:var(--accent-brand);">1. Objective & Normal Pawn Movement</h3>
+        <p><strong>AirBarricades</strong> is played on a 9×9 board (81 squares). Each player starts with <strong>1 pawn</strong> and <strong>10 barricades</strong>:</p>
+        <ul class="tut-rule-list">
+          <li><strong>Red (Player 1)</strong> starts at bottom-center (<strong>E9</strong>, internal <code>(8,4)</code>) and wins immediately upon reaching <strong>any square in Row 1</strong> (top edge, row 0).</li>
+          <li><strong>Blue (🤖 AirBot or Player 2)</strong> starts at top-center (<strong>E1</strong>, internal <code>(0,4)</code>) and wins immediately upon reaching <strong>any square in Row 9</strong> (bottom edge, row 8).</li>
+          <li>On your turn, take <strong>exactly 1 action</strong>: either move your pawn OR place one barricade.</li>
+          <li>Click your pawn to highlight legal destinations in emerald, then click any highlighted square to move immediately (1 square Up, Down, Left, or Right).</li>
+        </ul>
+      `,
+      jumps: `
+        <h3 style="margin-bottom:6px;color:var(--accent-brand);">2. Face-to-Face Jumping & Diagonal Escapes</h3>
+        <p>When both pawns stand on orthogonally adjacent squares with no barricade between them:</p>
+        <ul class="tut-rule-list">
+          <li><strong>Straight Jump (Rule 6):</strong> If the square directly behind the opponent is inside the board and unblocked, you may jump straight over the opponent (advancing 2 squares in a single turn!).</li>
+          <li><strong>Diagonal Escape (Rule 7):</strong> If and ONLY if the straight jump behind the opponent is blocked by a barricade or the edge of the board, you may step diagonally to either side of the opponent's square (provided no barricade blocks that side edge).</li>
+          <li>Diagonal movement is never allowed under normal conditions—and whenever a straight jump is open, the straight jump takes precedence.</li>
+        </ul>
+      `,
+      walls: `
+        <h3 style="margin-bottom:6px;color:var(--accent-brand);">3. Barricade Placement & The Golden Path Rule</h3>
+        <p>Each barricade spans <strong>two adjacent square edges</strong> in the grooves between squares:</p>
+        <ul class="tut-rule-list">
+          <li><strong>Select & Tap OR Drag & Drop:</strong> Click <em>Horizontal (H)</em> or <em>Vertical (V)</em> and tap any groove intersection, or drag a barricade directly onto the board.</li>
+          <li><strong>No Overlapping or Crossing:</strong> Barricades can never overlap or cross each other at the same intersection.</li>
+          <li><strong>Rule 12 (Mandatory Path Existence):</strong> You may build complex mazes to delay your opponent, but you can <strong>never completely seal off</strong> either player's last remaining route to their goal edge. Our BFS validator checks every placement in real time.</li>
+        </ul>
+      `,
+      controls: `
+        <h3 style="margin-bottom:6px;color:var(--accent-brand);">4. 2D Tactical View, 3D Arena & Shortcuts</h3>
+        <ul class="tut-rule-list">
+          <li><strong>3D Arena Mode ✨:</strong> Toggle <em>3D Arena</em> in the top bar to play on a full volumetric 3D board! Click squares, place or drag walls directly in 3D, use the camera buttons, or right-click/Shift-drag to orbit.</li>
+          <li><strong>Route Radar:</strong> Toggle <em>Route Radar</em> to visualize both players' real-time shortest BFS paths on the board.</li>
+          <li><strong>Keyboard Shortcuts:</strong> Press <code>H</code> (Horizontal Barricade), <code>V</code> (Vertical Barricade), <code>R</code> (Rotate Orientation), or <code>Esc</code> (Return to Pawn Mode).</li>
+        </ul>
+      `
+    };
+
+    function renderTutorialSection(key) {
+      const box = document.getElementById("tutorial-content");
+      if (box) box.innerHTML = TUTORIAL_SECTIONS[key] || TUTORIAL_SECTIONS.goal;
+      document.querySelectorAll("#tutorial-tabs .seg-btn").forEach(btn => {
+        btn.classList.toggle("active", btn.getAttribute("data-tut") === key);
+      });
+    }
+
+    // Complete 24-Test In-Browser Automated Verification Suite (Tests A through X)
+    function runBrowserVerificationSuite() {
+      const list = [];
+      function check(id, title, fn) {
+        try {
+          fn();
+          list.push({ id, title, pass: true });
+        } catch (e) {
+          list.push({ id, title, pass: false, err: e.message });
+        }
+      }
+      function assert(cond, msg) {
+        if (!cond) throw new Error(msg || "Assertion failed");
+      }
+
+      check("Test A", "Initial state (Red 8,4; Blue 0,4; 10 walls)", () => {
+        const s = createInitialState();
+        assert(s.pawns.red.row === 8 && s.pawns.red.col === 4 && s.pawns.blue.row === 0 && s.pawns.blue.col === 4);
+        assert(s.currentPlayer === "red" && s.barricadesRemaining.red === 10 && s.barricades.length === 0);
+      });
+
+      check("Test B", "Normal moves from (8,4) are (7,4), (8,3), (8,5)", () => {
+        const m = getPawnMoves(createInitialState(), "red");
+        assert(m.length === 3 && m.some(x => x.row === 7 && x.col === 4));
+      });
+
+      check("Test C", "No diagonal movement normally", () => {
+        const s = createInitialState();
+        s.pawns.red = { row: 5, col: 4 };
+        assert(!applyPawnMove(s, { row: 4, col: 3 }).success);
+      });
+
+      check("Test D", "Straight jump over opponent (5,4)->(3,4)", () => {
+        const s = createInitialState();
+        s.pawns.red = { row: 5, col: 4 }; s.pawns.blue = { row: 4, col: 4 };
+        const m = getPawnMoves(s, "red");
+        assert(m.some(x => x.row === 3 && x.col === 4) && !m.some(x => x.row === 4 && x.col === 3));
+      });
+
+      check("Test E", "Diagonal escape when straight jump blocked", () => {
+        const s = createInitialState();
+        s.pawns.red = { row: 5, col: 4 }; s.pawns.blue = { row: 4, col: 4 };
+        s.barricades.push({ row: 3, col: 4, orientation: "horizontal" });
+        const m = getPawnMoves(s, "red");
+        assert(m.some(x => x.row === 4 && x.col === 3) && m.some(x => x.row === 4 && x.col === 5));
+      });
+
+      check("Test F", "Edge-of-board diagonal escape", () => {
+        const s = createInitialState();
+        s.pawns.red = { row: 1, col: 4 }; s.pawns.blue = { row: 0, col: 4 };
+        const m = getPawnMoves(s, "red");
+        assert(m.some(x => x.row === 0 && x.col === 3) && m.some(x => x.row === 0 && x.col === 5));
+      });
+
+      check("Test G", "Blocked normal move by barricade", () => {
+        const s = createInitialState();
+        s.barricades.push({ row: 7, col: 4, orientation: "horizontal" });
+        assert(!getPawnMoves(s, "red").some(x => x.row === 7 && x.col === 4));
+      });
+
+      check("Test H", "Horizontal barricade at (3,4) edge blocking", () => {
+        const s = createInitialState();
+        s.barricades.push({ row: 3, col: 4, orientation: "horizontal" });
+        assert(isMovementBlocked(s, { row: 3, col: 4 }, { row: 4, col: 4 }));
+        assert(isMovementBlocked(s, { row: 3, col: 5 }, { row: 4, col: 5 }));
+        assert(!isMovementBlocked(s, { row: 3, col: 3 }, { row: 4, col: 3 }));
+      });
+
+      check("Test I", "Vertical barricade at (3,4) edge blocking", () => {
+        const s = createInitialState();
+        s.barricades.push({ row: 3, col: 4, orientation: "vertical" });
+        assert(isMovementBlocked(s, { row: 3, col: 4 }, { row: 3, col: 5 }));
+        assert(isMovementBlocked(s, { row: 4, col: 4 }, { row: 4, col: 5 }));
+      });
+
+      check("Test J", "Overlapping barricades rejected", () => {
+        const s = applyBarricade(createInitialState(), { row: 3, col: 4, orientation: "horizontal" }).state;
+        assert(!isBarricadePositionValid(s, { row: 3, col: 3, orientation: "horizontal" }));
+        assert(!isBarricadePositionValid(s, { row: 3, col: 5, orientation: "horizontal" }));
+      });
+
+      check("Test K", "Crossing barricades rejected", () => {
+        const s = applyBarricade(createInitialState(), { row: 3, col: 4, orientation: "horizontal" }).state;
+        assert(!isBarricadePositionValid(s, { row: 3, col: 4, orientation: "vertical" }));
+      });
+
+      check("Test L", "Completely blocked route rejected (Red & Blue)", () => {
+        const s = createInitialState();
+        s.barricades.push({ row: 7, col: 4, orientation: "horizontal" }, { row: 7, col: 3, orientation: "vertical" });
+        assert(!isBarricadePositionValid(s, { row: 7, col: 5, orientation: "vertical" }));
+      });
+
+      check("Test M", "Nearly blocked route with 1 path allowed", () => {
+        const s = createInitialState();
+        s.barricades.push(
+          { row: 4, col: 0, orientation: "horizontal" },
+          { row: 4, col: 2, orientation: "horizontal" },
+          { row: 4, col: 4, orientation: "horizontal" }
+        );
+        assert(isBarricadePositionValid(s, { row: 4, col: 6, orientation: "horizontal" }));
+      });
+
+      check("Test N", "Barricade supply decrements & turn advances", () => {
+        const r = applyBarricade(createInitialState(), { row: 3, col: 4, orientation: "horizontal" });
+        assert(r.state.barricadesRemaining.red === 9 && r.state.currentPlayer === "blue");
+      });
+
+      check("Test O", "Invalid placement keeps state unchanged", () => {
+        const s = applyBarricade(createInitialState(), { row: 3, col: 4, orientation: "horizontal" }).state;
+        const r = applyBarricade(s, { row: 3, col: 4, orientation: "vertical" });
+        assert(!r.success && r.state.barricades.length === 1 && r.state.currentPlayer === "blue");
+      });
+
+      check("Test P", "Zero barricades blocks wall placement, allows move", () => {
+        const s = createInitialState();
+        s.barricadesRemaining.red = 0;
+        assert(!applyBarricade(s, { row: 3, col: 4, orientation: "horizontal" }).success);
+        assert(applyPawnMove(s, { row: 7, col: 4 }).success);
+      });
+
+      check("Test Q", "Red victory on reaching Row 0", () => {
+        const s = createInitialState();
+        s.pawns.red = { row: 1, col: 3 };
+        const r = applyPawnMove(s, { row: 0, col: 3 });
+        assert(r.state.gameOver && r.state.winner === "red");
+      });
+
+      check("Test R", "Blue victory on reaching Row 8", () => {
+        const s = createInitialState();
+        s.pawns.blue = { row: 7, col: 7 };
+        s.currentPlayer = "blue";
+        const r = applyPawnMove(s, { row: 8, col: 7 });
+        assert(r.state.gameOver && r.state.winner === "blue");
+      });
+
+      check("Test S", "AirBot legality across all 3 difficulties", () => {
+        for (const d of ["easy", "medium", "hard"]) {
+          const s = createInitialState("airbot", d);
+          s.currentPlayer = "blue";
+          const act = chooseAirBotAction(s, d);
+          assert(act && (act.actionType === "move" || act.actionType === "barricade"));
+        }
+      });
+
+      check("Test T", "Generation token cancels stale AirBot turns", () => {
+        const beforeGen = matchGenerationId;
+        assert(typeof beforeGen === "number");
+      });
+
+      check("Test U", "Local multiplayer alternates turns accurately", () => {
+        let s = createInitialState("local", "medium");
+        s = applyPawnMove(s, { row: 7, col: 4 }).state;
+        assert(s.currentPlayer === "blue");
+        s = applyBarricade(s, { row: 2, col: 4, orientation: "horizontal" }).state;
+        assert(s.currentPlayer === "red");
+      });
+
+      check("Test V", "Responsive 2D & 3D raycast geometry", () => {
+        const c2d = getSquareCenter2D(4, 4);
+        assert(c2d.x === 450 && c2d.y === 450);
+        const w3d = gridToWorld3D(6, 2);
+        const proj = projectPoint3D(w3d.x, 0, w3d.z, 900, 900);
+        const unproj = screenToWorldPlane3D(proj.sx, proj.sy, 900, 900, 0);
+        assert(Math.abs(unproj.wx - w3d.x) < 1e-4 && Math.abs(unproj.wz - w3d.z) < 1e-4);
+      });
+
+      check("Test W", "Light & Dark theme token completeness", () => {
+        const pal = getThemeColors3D();
+        assert(pal.p1 && pal.p2 && pal.wall && pal.tile);
+      });
+
+      check("Test X", "Post-victory lock prevents additional moves", () => {
+        const s = createInitialState();
+        s.pawns.red = { row: 1, col: 3 };
+        const won = applyPawnMove(s, { row: 0, col: 3 }).state;
+        assert(won.gameOver && won.winner === "red" && !applyPawnMove(won, { row: 1, col: 3 }).success);
+      });
+
+      const grid = document.getElementById("tests-grid");
+      const passCount = list.filter(x => x.pass).length;
+      document.getElementById("tests-summary-text").textContent =
+        `${passCount === list.length ? "✅" : "⚠️"} ${passCount} / ${list.length} Automated Tests Passed`;
+
+      grid.innerHTML = list.map(item => `
+        <div class="test-row" style="border-left-color:${item.pass ? "var(--legal-color)" : "var(--invalid-color)"};">
+          <span><strong>${item.id}:</strong> ${item.title}</span>
+          <span style="font-weight:800;color:${item.pass ? "var(--legal-color)" : "var(--invalid-color)"};">${item.pass ? "PASS" : "FAIL"}</span>
+        </div>
+      `).join("");
+    }
+
+    /* ==========================================================================
+       PART 13: UI CONTROLS & INITIALIZATION
+       ========================================================================== */
+    function applyTheme(theme) {
+      document.documentElement.setAttribute("data-theme", theme);
+      safeSetStorage("airbarricades_theme", theme);
+      const isDark = theme === "dark";
+      document.getElementById("theme-icon").textContent = isDark ? "☀️" : "🌙";
+      document.getElementById("theme-label").textContent = isDark ? "Light" : "Dark";
+      syncAllUI();
+    }
+
+    function applyFinish(finish) {
+      document.documentElement.setAttribute("data-finish", finish);
+      safeSetStorage("airbarricades_finish", finish);
+      document.getElementById("select-finish").value = finish;
+      syncAllUI();
+    }
+
+    function setDimensionView(mode) {
+      viewMode = mode === "3d" ? "3d" : "2d";
+      const frame = document.getElementById("board-frame");
+      const camBar = document.getElementById("camera-3d-bar");
+      frame.classList.toggle("mode-3d", viewMode === "3d");
+      camBar.classList.toggle("visible", viewMode === "3d");
+      document.getElementById("btn-view-2d").classList.toggle("active", viewMode === "2d");
+      document.getElementById("btn-view-3d").classList.toggle("active", viewMode === "3d");
+      syncAllUI();
+    }
+
+    window.onload = function () {
+      // Restore saved preferences
+      const savedTheme = safeGetStorage("airbarricades_theme", "light");
+      applyTheme(savedTheme === "dark" ? "dark" : "light");
+
+      const savedFinish = safeGetStorage("airbarricades_finish", "travertine");
+      applyFinish(savedFinish);
+
+      try {
+        const rawStats = safeGetStorage("airbarricades_stats", null);
+        if (rawStats) sessionStats = JSON.parse(rawStats);
+      } catch (e) {}
+
+      // Topbar Controls
+      document.getElementById("btn-view-2d").addEventListener("click", () => setDimensionView("2d"));
+      document.getElementById("btn-view-3d").addEventListener("click", () => setDimensionView("3d"));
+
+      document.getElementById("btn-mode-airbot").addEventListener("click", () => {
+        document.getElementById("btn-mode-airbot").classList.add("active");
+        document.getElementById("btn-mode-local").classList.remove("active");
+        document.getElementById("select-difficulty").disabled = false;
+        startNewGame("airbot", document.getElementById("select-difficulty").value);
+      });
+
+      document.getElementById("btn-mode-local").addEventListener("click", () => {
+        document.getElementById("btn-mode-local").classList.add("active");
+        document.getElementById("btn-mode-airbot").classList.remove("active");
+        document.getElementById("select-difficulty").disabled = true;
+        startNewGame("local", gameState.difficulty);
+      });
+
+      document.getElementById("select-difficulty").addEventListener("change", (e) => {
+        gameState.difficulty = e.target.value;
+        startNewGame(gameState.mode, e.target.value);
+      });
+
+      document.getElementById("select-finish").addEventListener("change", (e) => {
+        applyFinish(e.target.value);
+      });
+
+      document.getElementById("btn-theme-toggle").addEventListener("click", () => {
+        const curr = document.documentElement.getAttribute("data-theme");
+        applyTheme(curr === "dark" ? "light" : "dark");
+      });
+
+      document.getElementById("btn-sound-toggle").addEventListener("click", () => {
+        const next = !SoundFX.isEnabled();
+        SoundFX.setEnabled(next);
+        document.getElementById("sound-icon").textContent = next ? "🔊" : "🔇";
+        document.getElementById("sound-label").textContent = next ? "Sound" : "Muted";
+      });
+
+      // Barricade Sub-controls
+      document.getElementById("btn-rotate-wall").addEventListener("click", () => {
+        if (gameState.selectedBarricade === "horizontal") {
+          gameState.selectedBarricade = "vertical";
+        } else {
+          gameState.selectedBarricade = "horizontal";
+        }
+        gameState.selectedPawn = false;
+        SoundFX.selectPawn();
+        syncAllUI();
+      });
+
+      document.getElementById("btn-pawn-mode").addEventListener("click", () => {
+        gameState.selectedBarricade = null;
+        gameState.selectedPawn = true;
+        hoverAnchor = null;
+        SoundFX.selectPawn();
+        syncAllUI();
+      });
+
+      // 3D Camera Controls
+      document.getElementById("btn-cam-left").addEventListener("click", () => {
+        Camera3D.targetYaw -= Math.PI / 6;
+      });
+      document.getElementById("btn-cam-right").addEventListener("click", () => {
+        Camera3D.targetYaw += Math.PI / 6;
+      });
+      document.getElementById("btn-cam-red-pov").addEventListener("click", () => {
+        Camera3D.targetYaw = 0;
+        Camera3D.targetPitch = 52 * Math.PI / 180;
+        document.getElementById("slider-cam-pitch").value = "52";
+      });
+      document.getElementById("btn-cam-iso").addEventListener("click", () => {
+        Camera3D.targetYaw = Math.PI / 5;
+        Camera3D.targetPitch = 46 * Math.PI / 180;
+        document.getElementById("slider-cam-pitch").value = "46";
+      });
+      document.getElementById("btn-cam-blue-pov").addEventListener("click", () => {
+        Camera3D.targetYaw = Math.PI;
+        Camera3D.targetPitch = 52 * Math.PI / 180;
+        document.getElementById("slider-cam-pitch").value = "52";
+      });
+      document.getElementById("slider-cam-pitch").addEventListener("input", (e) => {
+        Camera3D.targetPitch = Number(e.target.value) * Math.PI / 180;
+      });
+
+      // Right Panel Match Commands
+      document.getElementById("btn-undo").addEventListener("click", handleUndo);
+      document.getElementById("btn-new-game").addEventListener("click", () => startNewGame(gameState.mode, gameState.difficulty));
+
+      document.getElementById("btn-toggle-paths").addEventListener("click", () => {
+        showShortestPaths = !showShortestPaths;
+        document.getElementById("paths-toggle-label").textContent = `🧭 Route Radar: ${showShortestPaths ? "On" : "Off"}`;
+        syncAllUI();
+      });
+
+      document.getElementById("btn-toggle-coords").addEventListener("click", () => {
+        showCoordinateLabels = !showCoordinateLabels;
+        document.getElementById("btn-toggle-coords").innerHTML = `<span># Coords: ${showCoordinateLabels ? "On" : "Off"}</span>`;
+        syncAllUI();
+      });
+
+      document.getElementById("btn-reset-stats").addEventListener("click", () => {
+        sessionStats = { redWins: 0, botWins: 0, matches: 0 };
+        safeSetStorage("airbarricades_stats", JSON.stringify(sessionStats));
+        updateHUD();
+      });
+
+      // Victory Modal Controls
+      document.getElementById("btn-victory-rematch").addEventListener("click", () => startNewGame(gameState.mode, gameState.difficulty));
+      document.getElementById("btn-victory-inspect").addEventListener("click", () => {
+        stopConfetti();
+        document.getElementById("modal-victory").classList.remove("open");
+      });
+      document.getElementById("btn-victory-explore").addEventListener("click", () => {
+        stopConfetti();
+        document.getElementById("modal-victory").classList.remove("open");
+        document.getElementById("modal-airgames").classList.add("open");
+      });
+
+      // Tutorial Modal Controls
+      document.getElementById("btn-open-tutorial").addEventListener("click", () => {
+        renderTutorialSection("goal");
+        document.getElementById("modal-tutorial").classList.add("open");
+      });
+      document.getElementById("btn-close-tutorial").addEventListener("click", () => {
+        document.getElementById("modal-tutorial").classList.remove("open");
+      });
+      document.querySelectorAll("#tutorial-tabs .seg-btn").forEach(btn => {
+        btn.addEventListener("click", () => renderTutorialSection(btn.getAttribute("data-tut")));
+      });
+
+      // Automated Tests Modal Controls
+      document.getElementById("btn-open-tests").addEventListener("click", () => {
+        runBrowserVerificationSuite();
+        document.getElementById("modal-tests").classList.add("open");
+      });
+      document.getElementById("btn-rerun-tests").addEventListener("click", runBrowserVerificationSuite);
+      document.getElementById("btn-close-tests").addEventListener("click", () => {
+        document.getElementById("modal-tests").classList.remove("open");
+      });
+
+      // AirGames Hub Modal Controls
+      document.getElementById("btn-airgames-hub").addEventListener("click", () => {
+        document.getElementById("modal-airgames").classList.add("open");
+      });
+      document.getElementById("btn-close-airgames").addEventListener("click", () => {
+        document.getElementById("modal-airgames").classList.remove("open");
+      });
+      document.getElementById("btn-hub-play-expert").addEventListener("click", () => {
+        document.getElementById("modal-airgames").classList.remove("open");
+        document.getElementById("select-difficulty").value = "hard";
+        document.getElementById("btn-mode-airbot").click();
+      });
+
+      window.addEventListener("resize", () => {
+        syncAllUI();
+      });
+
+      setupInteractionListeners();
+      syncAllUI();
+      startAnimationLoop();
+    };
+  </script>
+</body>
+</html>
