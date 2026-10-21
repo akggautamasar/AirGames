@@ -1,0 +1,3336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AirPaperRoute — 3D Delivery Adventure | AirGames by WorksBeyond</title>
+    <meta name="description" content="Play AirPaperRoute on AirGames by WorksBeyond: ride your bike across a 3D colony and market, deliver newspapers, explore the map and upgrade your equipment.">
+    <meta name="theme-color" content="#13202c">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Three.js r128 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700;800&family=Playfair+Display:ital,wght@0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #13202c;
+            font-family: 'Inter', sans-serif;
+        }
+        #gameCanvasContainer {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+        }
+        #gameCanvasContainer canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+        .font-newspaper {
+            font-family: 'Playfair Display', Georgia, serif;
+        }
+        .font-mono-score {
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .newsprint-card {
+            background-color: #F4EFE6;
+            background-image: 
+                radial-gradient(rgba(30, 27, 22, 0.045) 1px, transparent 0),
+                linear-gradient(180deg, rgba(255,255,255,0.45) 0%, rgba(226,217,200,0.35) 100%);
+            background-size: 14px 14px, 100% 100%;
+            box-shadow: 
+                0 25px 60px -12px rgba(0, 0, 0, 0.72),
+                0 0 0 1px rgba(45, 40, 32, 0.3),
+                inset 0 0 32px rgba(138, 121, 93, 0.14);
+        }
+        @keyframes scoreFloatUp {
+            0% { opacity: 0; transform: translateY(10px) scale(0.82); }
+            18% { opacity: 1; transform: translateY(0px) scale(1.08); }
+            82% { opacity: 1; transform: translateY(-22px) scale(1); }
+            100% { opacity: 0; transform: translateY(-34px) scale(0.94); }
+        }
+        .score-float {
+            animation: scoreFloatUp 1.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        @keyframes logoBob {
+            0%, 100% { transform: translateY(0px) rotate(-1.2deg); }
+            50% { transform: translateY(-7px) rotate(1.2deg); }
+        }
+        .logo-bob {
+            animation: logoBob 3.6s ease-in-out infinite;
+        }
+        @keyframes pulseBlink {
+            0%, 100% { opacity: 0.96; }
+            50% { opacity: 0.38; }
+        }
+        .blink-prompt {
+            animation: pulseBlink 1.7s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body class="relative w-full h-full overflow-hidden">
+
+    <!-- ==========================================
+         3D THREE.JS WEBGL VIEWPORT
+         ========================================== -->
+    <div id="gameCanvasContainer"></div>
+
+    <!-- ==========================================
+         3D WORLD FLOATING POPUP CONTAINER
+         ========================================== -->
+    <div id="worldPopupLayer" class="pointer-events-none fixed inset-0 z-20 overflow-hidden"></div>
+
+    <!-- ==========================================
+         TOP OPEN-WORLD STATUS BAR HUD
+         ========================================== -->
+    <header id="topHudBar" class="hidden fixed top-0 inset-x-0 z-30 h-11 bg-[#F4EFE6]/95 backdrop-blur-md border-b border-stone-400/80 px-3 sm:px-5 flex items-center justify-between text-stone-800 shadow-md">
+        <!-- Left: Cash/Score + Streak + Active Subscribers + Basket -->
+        <div class="flex items-center gap-3 sm:gap-5">
+            <div class="relative flex items-center gap-1.5">
+                <span class="text-xs font-mono-score font-bold text-emerald-700 bg-emerald-100 border border-emerald-400/60 px-1.5 py-0.5 rounded">$</span>
+                <span id="hudCashText" class="font-mono-score text-lg sm:text-xl font-extrabold tracking-tight text-stone-900">00250</span>
+                <div id="hudScorePopupAnchor" class="absolute left-0 top-9 pointer-events-none flex flex-col gap-1 min-w-[170px]"></div>
+            </div>
+
+            <!-- Streak Multiplier Pill -->
+            <div id="hudStreakBadge" class="px-2 py-0.5 rounded-full bg-amber-500/20 border border-amber-500/50 font-mono-score text-[11px] font-extrabold text-amber-900">
+                🔥 x1
+            </div>
+
+            <!-- Edition & Active Deliveries -->
+            <div class="flex items-center gap-1.5 text-[11px] font-mono-score uppercase tracking-wider text-stone-600 border-l border-stone-300 pl-3">
+                <span class="hidden md:inline">Edition <strong id="hudEditionNum" class="text-stone-900">#1</strong>:</span>
+                <span>Subscribers</span>
+                <strong id="hudDeliveredText" class="text-emerald-700 font-extrabold text-xs">0 / 14</strong>
+            </div>
+
+            <!-- Visual Handlebar Paper Basket Counter -->
+            <div class="hidden sm:flex items-center gap-1.5 border-l border-stone-300 pl-3" title="Rolled Newspapers in Handlebar Basket">
+                <span class="text-[10px] font-mono-score uppercase tracking-wider text-stone-500">Basket:</span>
+                <div id="hudPaperIcons" class="flex items-center gap-0.5"></div>
+                <span id="hudPaperCountNum" class="font-mono-score text-xs font-extrabold text-stone-900 ml-1">18/18</span>
+            </div>
+        </div>
+
+        <!-- Center District & Target Lock Status -->
+        <div class="hidden xl:flex items-center gap-2">
+            <div id="hudDistrictPill" class="px-3 py-1 rounded-full bg-stone-900 text-amber-300 font-mono-score text-[11px] font-bold tracking-wider uppercase shadow-xs">
+                📍 Daily Press Plaza
+            </div>
+            <div id="hudTargetLockBadge" class="px-3 py-1 rounded-full bg-emerald-950/90 text-emerald-300 border border-emerald-500/40 font-mono-score text-[11px] font-semibold flex items-center gap-1.5">
+                <span id="hudTargetDot" class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                <span id="hudTargetText">READY TO THROW [SPACE / CLICK]</span>
+            </div>
+        </div>
+
+        <!-- Right: Interactive World Map [M], Bike Upgrades [U], Depot Teleport [R], Camera & Sound -->
+        <div class="flex items-center gap-1 sm:gap-2 text-xs font-mono-score">
+            <a href="/" title="Back to AirGames" aria-label="Back to AirGames homepage" class="px-2 py-1 rounded bg-stone-800 text-amber-200 font-bold hover:bg-stone-950">⌂</a>
+            <button id="hudMapBtn" class="px-2.5 py-1 rounded bg-stone-800 hover:bg-stone-950 text-[#F4EFE6] font-bold flex items-center gap-1 shadow-xs transition-colors cursor-pointer" title="Open Full World Map (M)">
+                <span>🗺️ Map</span>
+                <span class="hidden md:inline text-[10px] text-amber-300">[M]</span>
+            </button>
+            <button id="hudUpgradeBtn" class="px-2.5 py-1 rounded bg-emerald-700 hover:bg-emerald-800 text-white font-bold flex items-center gap-1 shadow-xs transition-colors cursor-pointer" title="Open Bike Upgrade Shop (U)">
+                <span>🔧 Shop</span>
+                <span class="hidden md:inline text-[10px] text-emerald-200">[U]</span>
+            </button>
+            <button id="hudDepotBtn" class="px-2 py-1 rounded bg-amber-600/20 hover:bg-amber-600/35 border border-amber-700/40 text-amber-950 font-bold hidden md:inline-block transition-colors cursor-pointer" title="Return to Press Depot & Refill (R)">
+                Depot [R]
+            </button>
+            <button id="hudCameraBtn" class="px-2 py-1 rounded hover:bg-stone-300/60 text-stone-700 font-semibold hidden sm:inline-block cursor-pointer" title="Switch Camera View (C)">
+                Cam [C]
+            </button>
+            <button id="hudSoundBtn" class="px-2 py-1 rounded hover:bg-stone-300/60 text-stone-700 font-semibold cursor-pointer">
+                🔊 ON
+            </button>
+        </div>
+    </header>
+
+    <!-- ==========================================
+         LIVE 2D RADAR MINIMAP OVERLAY (TOP-RIGHT)
+         ========================================== -->
+    <div id="minimapWidget" class="hidden fixed top-14 right-3 sm:right-4 z-30 flex flex-col items-end gap-1.5 select-none">
+        <div id="minimapContainer" class="relative w-36 h-36 sm:w-44 sm:h-44 rounded-2xl bg-[#16222F]/90 border-2 border-[#F4EFE6]/85 shadow-2xl overflow-hidden cursor-pointer group" title="Click or press [M] to expand Full Colony & Market Map">
+            <canvas id="minimapCanvas" width="220" height="220" class="w-full h-full block"></canvas>
+            <!-- Cardinal Directions -->
+            <span class="absolute top-1 left-1/2 -translate-x-1/2 font-mono-score text-[9px] font-extrabold text-amber-300 bg-black/60 px-1 rounded">N</span>
+            <div class="absolute bottom-1 inset-x-1.5 flex items-center justify-between text-[9px] font-mono-score text-white/90 bg-black/65 px-1.5 py-0.5 rounded backdrop-blur-xs">
+                <span id="minimapZoneLabel" class="truncate font-bold text-emerald-300">Sunrise Colony</span>
+                <span class="text-amber-300 font-bold group-hover:underline">[M]</span>
+            </div>
+        </div>
+        <!-- Nearest Target / Waypoint Distance Readout -->
+        <div id="minimapCompassBar" class="px-2.5 py-1 rounded-full bg-stone-900/85 backdrop-blur-md border border-white/15 text-[10px] font-mono-score text-stone-200 flex items-center gap-1.5 shadow">
+            <span id="compassArrowIcon" class="text-emerald-400 font-extrabold">▲</span>
+            <span id="compassTargetLabel">Nearest Subscriber: 38m</span>
+        </div>
+    </div>
+
+    <!-- ==========================================
+         CENTER CELEBRATION / TOAST BANNER
+         ========================================== -->
+    <div id="centerBannerWrap" class="hidden fixed top-16 left-1/2 -translate-x-1/2 z-30 pointer-events-none flex flex-col items-center gap-1.5">
+        <div id="centerBannerCard" class="px-5 py-2 rounded-full bg-stone-900/90 backdrop-blur-md border-2 border-amber-400/80 text-white font-mono-score text-xs sm:text-sm font-extrabold tracking-wide shadow-2xl flex items-center gap-2">
+            <span id="centerBannerText">🗞️ Welcome to Sunrise Colony & Market!</span>
+        </div>
+    </div>
+
+    <!-- ==========================================
+         CHARGE THROW POWER METER (ABOVE BOTTOM BAR)
+         ========================================== -->
+    <div id="throwChargeHud" class="hidden fixed bottom-20 left-1/2 -translate-x-1/2 z-30 pointer-events-none flex flex-col items-center gap-1">
+        <div class="px-3 py-0.5 rounded-full bg-black/75 text-white font-mono-score text-[10px] uppercase tracking-widest border border-white/20">
+            <span id="throwChargeLabel">Aiming Parabolic Arc...</span>
+        </div>
+        <div class="w-44 h-2.5 rounded-full bg-black/70 p-0.5 border border-white/30 overflow-hidden shadow-lg">
+            <div id="throwChargeFill" class="h-full w-0 rounded-full bg-gradient-to-r from-emerald-400 via-amber-300 to-rose-500"></div>
+        </div>
+    </div>
+
+    <!-- ==========================================
+         SCREEN 1: COMIC "PAPER ROUTE: OPEN COLONY & MARKET" TITLE OVERLAY
+         ========================================== -->
+    <div id="titleOverlay" class="fixed inset-0 z-40 flex flex-col items-center justify-between py-8 px-4 cursor-pointer select-none bg-gradient-to-b from-black/25 via-transparent to-black/50 transition-opacity duration-500">
+        <div class="text-center mt-2 flex flex-col items-center gap-3">
+            <a href="/" onclick="event.stopPropagation()" aria-label="Back to AirGames homepage" class="px-4 py-2 rounded-full bg-stone-900/90 border border-amber-300/70 text-amber-100 text-xs font-mono-score font-bold hover:bg-stone-800 shadow-lg">← AirGames · WorksBeyond</a>
+            <span class="px-3.5 py-1 rounded-full bg-white/90 backdrop-blur-md border border-stone-300 text-[11px] font-mono-score uppercase tracking-widest text-stone-900 font-bold shadow">
+                AirGames by WorksBeyond • Colony, Market & Coastal Bay
+            </span>
+        </div>
+
+        <div class="logo-bob flex flex-col items-center justify-center max-w-xl w-full px-2">
+            <svg viewBox="0 0 700 330" class="w-full max-w-[560px] drop-shadow-[0_14px_26px_rgba(0,0,0,0.65)]">
+                <defs>
+                    <linearGradient id="paperLogoFill" x1="0%" y1="0%" x2="0%" y2="100%">
+                        <stop offset="0%" stop-color="#FFFFFF" />
+                        <stop offset="55%" stop-color="#F5F2EB" />
+                        <stop offset="100%" stop-color="#DCD6C8" />
+                    </linearGradient>
+                    <filter id="comicShadow" x="-10%" y="-10%" width="125%" height="125%">
+                        <feDropShadow dx="6" dy="9" stdDeviation="0" flood-color="#111111" flood-opacity="1" />
+                    </filter>
+                </defs>
+                <g transform="translate(490, 18) rotate(15)">
+                    <rect x="0" y="0" width="135" height="38" rx="16" fill="#F6F1E3" stroke="#111" stroke-width="6"/>
+                    <line x1="18" y1="13" x2="115" y2="13" stroke="#555" stroke-width="3" stroke-linecap="round"/>
+                    <line x1="18" y1="24" x2="98" y2="24" stroke="#777" stroke-width="3" stroke-linecap="round"/>
+                    <rect x="58" y="-3" width="16" height="44" rx="4" fill="#D93829" stroke="#111" stroke-width="4"/>
+                </g>
+                <g filter="url(#comicShadow)">
+                    <text x="350" y="138" text-anchor="middle"
+                          font-family="'Bangers', Impact, sans-serif"
+                          font-size="110"
+                          letter-spacing="6"
+                          fill="url(#paperLogoFill)"
+                          stroke="#111111"
+                          stroke-width="16"
+                          stroke-linejoin="round"
+                          paint-order="stroke fill"
+                          transform="rotate(-2.5, 350, 120)">
+                        AIRPAPER
+                    </text>
+                    <text x="350" y="258" text-anchor="middle"
+                          font-family="'Bangers', Impact, sans-serif"
+                          font-size="138"
+                          letter-spacing="5"
+                          fill="url(#paperLogoFill)"
+                          stroke="#111111"
+                          stroke-width="16"
+                          stroke-linejoin="round"
+                          paint-order="stroke fill"
+                          transform="rotate(1.5, 350, 240)">
+                        ROUTE
+                    </text>
+                    <rect x="145" y="278" width="410" height="38" rx="8" fill="#18603C" stroke="#111111" stroke-width="6"/>
+                    <text x="350" y="303" text-anchor="middle"
+                          font-family="'JetBrains Mono', monospace"
+                          font-weight="800"
+                          font-size="18"
+                          letter-spacing="3"
+                          fill="#FFE57F">
+                        OPEN COLONY &amp; MARKET WORLD
+                    </text>
+                </g>
+            </svg>
+        </div>
+
+        <div class="mb-2 flex flex-col items-center gap-2">
+            <div class="blink-prompt px-5 py-2.5 rounded-full bg-black/65 backdrop-blur-md text-white font-mono-score text-xs sm:text-sm tracking-widest uppercase border border-white/30 shadow-lg">
+                Press Any Key or Tap Anywhere to Enter Town
+            </div>
+        </div>
+    </div>
+
+    <!-- ==========================================
+         SCREEN 2: "THE PAPERROUTE POST" OPEN-WORLD BRIEFING MODAL
+         ========================================== -->
+    <div id="briefingModal" class="hidden fixed inset-0 z-40 flex items-center justify-center p-4 bg-black/45 backdrop-blur-xs">
+        <div class="newsprint-card w-full max-w-[520px] rounded-sm p-5 sm:p-7 text-stone-900 border border-stone-400 relative max-h-[92vh] overflow-y-auto">
+            <div class="text-center border-b-2 border-stone-800 pb-2">
+                <div class="text-[9px] font-mono-score uppercase tracking-[0.22em] text-stone-500">
+                    OPEN-WORLD TOWN EDITION • NO TIME LIMITS • FREE ROAM
+                </div>
+                <h1 class="font-newspaper text-2xl sm:text-3xl font-extrabold tracking-tight text-stone-900 mt-0.5">
+                    The AirPaperRoute Post
+                </h1>
+                <div class="mt-1 pt-1 border-t border-stone-400/80 flex items-center justify-between text-[9px] font-mono-score uppercase tracking-wider text-stone-600">
+                    <span>SUNRISE COLONY</span>
+                    <span>MAIN BAZAAR MARKET</span>
+                    <span>COASTAL BOARDWALK</span>
+                </div>
+            </div>
+
+            <div class="text-center py-3.5 border-b border-stone-300">
+                <h2 class="font-newspaper text-xl sm:text-2xl font-bold leading-tight text-stone-900">
+                    Explore the Colony &amp; Bustling Market!
+                </h2>
+                <p class="text-xs text-stone-600 mt-1 font-medium">
+                    Roam freely in 360° across interconnected streets. Complete editions endlessly, restock at The Daily Press Depot, and upgrade your bike!
+                </p>
+            </div>
+
+            <!-- 4-Feature Open World Guide -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 py-3.5 border-b border-stone-300 text-center">
+                <div class="p-2 rounded bg-stone-800/[0.04] border border-stone-300/90">
+                    <div class="text-lg">🏡</div>
+                    <div class="font-mono-score text-[10px] font-bold text-stone-900 mt-0.5">SUNRISE COLONY</div>
+                    <div class="text-[10px] text-stone-600 leading-tight mt-0.5">16 villas, mailboxes, sprinklers &amp; dogs</div>
+                </div>
+                <div class="p-2 rounded bg-stone-800/[0.04] border border-stone-300/90">
+                    <div class="text-lg">🏪</div>
+                    <div class="font-mono-score text-[10px] font-bold text-stone-900 mt-0.5">MAIN BAZAAR</div>
+                    <div class="text-[10px] text-stone-600 leading-tight mt-0.5">Bakery, Grocery, Chai Stall, Pharmacy</div>
+                </div>
+                <div class="p-2 rounded bg-stone-800/[0.04] border border-stone-300/90">
+                    <div class="text-lg">🗞️</div>
+                    <div class="font-mono-score text-[10px] font-bold text-stone-900 mt-0.5">PRESS DEPOT</div>
+                    <div class="text-[10px] text-stone-600 leading-tight mt-0.5">Drive into gold ring to refill basket</div>
+                </div>
+                <div class="p-2 rounded bg-stone-800/[0.04] border border-stone-300/90">
+                    <div class="text-lg">🗺️</div>
+                    <div class="font-mono-score text-[10px] font-bold text-stone-900 mt-0.5">WORLD MAP [M]</div>
+                    <div class="text-[10px] text-stone-600 leading-tight mt-0.5">Click any shop or house for 3D GPS</div>
+                </div>
+            </div>
+
+            <!-- Controls & Payouts -->
+            <div class="py-3 space-y-1.5 text-xs text-stone-700 font-mono-score">
+                <div class="flex items-center gap-2">
+                    <span class="px-1.5 py-0.5 rounded bg-stone-200 border border-stone-400 text-[10px] font-bold text-stone-900">W / S / A / D</span>
+                    <span>Pedal forward, brake/reverse &amp; steer 360° around corners</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="px-1.5 py-0.5 rounded bg-stone-200 border border-stone-400 text-[10px] font-bold text-stone-900">SPACE / CLICK</span>
+                    <span>Tap for smart auto-throw (left or right!) or HOLD to sweep distance</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="px-1.5 py-0.5 rounded bg-amber-500 text-stone-950 text-[10px] font-extrabold">+$250</span>
+                    <span>Mailbox / Shop Counter Bullseye &nbsp;•&nbsp; <strong class="text-emerald-800">+$150</strong> Porch / Storefront</span>
+                </div>
+            </div>
+
+            <button id="startRouteBtn" class="mt-2 w-full py-3 px-4 rounded-sm bg-[#23201C] hover:bg-[#11100E] active:scale-[0.99] text-[#F4EFE6] font-mono-score text-xs uppercase tracking-widest font-bold flex items-center justify-between shadow-md transition-all cursor-pointer">
+                <span>Enter Open Colony &amp; Market World</span>
+                <span class="text-base leading-none">→</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- ==========================================
+         MODAL 3: INTERACTIVE FULL-SCREEN WORLD MAP [M]
+         ========================================== -->
+    <div id="worldMapModal" class="hidden fixed inset-0 z-40 flex items-center justify-center p-3 sm:p-6 bg-black/65 backdrop-blur-xs">
+        <div class="newsprint-card w-full max-w-[780px] rounded-md p-4 sm:p-6 text-stone-900 border-2 border-stone-700 flex flex-col gap-3 max-h-[94vh]">
+            <div class="flex items-center justify-between border-b-2 border-stone-800 pb-2">
+                <div>
+                    <div class="text-[10px] font-mono-score uppercase tracking-widest text-stone-500">INTERACTIVE GPS DIRECTORY • CLICK ANY LOCATION TO SET 3D WAYPOINT</div>
+                    <h2 class="font-newspaper text-xl sm:text-2xl font-extrabold text-stone-900">Sunrise Colony, Main Bazaar &amp; Coastal Bay Map</h2>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button id="clearWaypointBtn" class="px-2.5 py-1 rounded bg-stone-200 hover:bg-stone-300 border border-stone-400 font-mono-score text-xs font-bold text-stone-800 cursor-pointer">
+                        Clear GPS
+                    </button>
+                    <button id="closeMapModalBtn" class="px-3 py-1 rounded bg-stone-900 hover:bg-black text-white font-mono-score text-xs font-bold cursor-pointer">
+                        Close [M]
+                    </button>
+                </div>
+            </div>
+
+            <!-- Interactive Map Canvas Wrapper -->
+            <div class="relative w-full aspect-square max-h-[58vh] mx-auto bg-[#162432] rounded border-2 border-stone-800 overflow-hidden shadow-inner">
+                <canvas id="fullMapCanvas" width="680" height="680" class="w-full h-full block cursor-crosshair"></canvas>
+            </div>
+
+            <!-- Map Legend -->
+            <div class="flex flex-wrap items-center justify-between gap-2 pt-1 text-[11px] font-mono-score text-stone-700">
+                <div class="flex flex-wrap items-center gap-3">
+                    <span class="flex items-center gap-1"><i class="w-3 h-3 rounded-full bg-emerald-400 inline-block border border-black"></i> Active Subscriber</span>
+                    <span class="flex items-center gap-1"><i class="w-3 h-3 rounded-xs bg-amber-400 inline-block border border-black"></i> Daily Press Depot (Refill)</span>
+                    <span class="flex items-center gap-1"><i class="w-3 h-3 rounded-xs bg-cyan-400 inline-block border border-black"></i> Bike Upgrade Garage</span>
+                    <span class="flex items-center gap-1"><i class="w-3 h-3 rounded-xs bg-orange-400 inline-block border border-black"></i> Market Shop</span>
+                    <span class="flex items-center gap-1"><i class="w-3 h-3 rounded-full bg-fuchsia-400 inline-block border border-black"></i> 3D GPS Waypoint</span>
+                </div>
+                <span id="fullMapClickedInfo" class="font-bold text-emerald-800">Click anywhere on the map to place a 3D sky-beam beacon!</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==========================================
+         MODAL 4: TURBO BIKE UPGRADE GARAGE [U]
+         ========================================== -->
+    <div id="upgradeModal" class="hidden fixed inset-0 z-40 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+        <div class="newsprint-card w-full max-w-[540px] rounded-md p-5 sm:p-6 text-stone-900 border-2 border-stone-800">
+            <div class="flex items-center justify-between border-b-2 border-stone-800 pb-2">
+                <div>
+                    <div class="text-[10px] font-mono-score uppercase tracking-widest text-emerald-800 font-bold">MAIN BAZAAR GARAGE • CUSTOM PERFORMANCE PARTS</div>
+                    <h2 class="font-newspaper text-2xl font-extrabold text-stone-900">Turbo Cycle &amp; Pitcher Upgrades</h2>
+                </div>
+                <div class="text-right font-mono-score">
+                    <div class="text-[10px] uppercase text-stone-500">Available Cash</div>
+                    <div id="shopCashDisplay" class="text-lg font-extrabold text-emerald-700">$250</div>
+                </div>
+            </div>
+
+            <div id="upgradeItemsContainer" class="py-3 space-y-2.5 max-h-[60vh] overflow-y-auto">
+                <!-- Populated dynamically by JS -->
+            </div>
+
+            <div class="pt-3 border-t border-stone-300 flex items-center justify-between">
+                <span class="text-[11px] font-mono-score text-stone-600">Deliver papers to Colony homes &amp; Market shops to earn cash!</span>
+                <button id="closeUpgradeModalBtn" class="px-4 py-2 rounded bg-stone-900 hover:bg-black text-white font-mono-score text-xs font-bold uppercase tracking-wider cursor-pointer">
+                    Back to Street [U]
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==========================================
+         BOTTOM CONTROLS & SPEEDOMETER BAR
+         ========================================== -->
+    <div id="touchControlsBar" class="hidden fixed bottom-3 inset-x-0 z-30 px-3 sm:px-5 pointer-events-none flex items-end justify-between">
+        <!-- Left: Touch D-Pad for Steering + Pedal/Brake -->
+        <div class="pointer-events-auto flex flex-col gap-1.5">
+            <div class="flex items-center gap-1.5">
+                <button id="btnPedalUp" class="w-12 h-11 rounded-xl bg-emerald-700/90 active:bg-emerald-800 text-white border border-white/30 shadow-lg font-mono-score text-xs font-bold flex items-center justify-center">
+                    ▲ GO
+                </button>
+                <button id="btnBrakeDown" class="w-12 h-11 rounded-xl bg-stone-800/90 active:bg-stone-950 text-white border border-white/25 shadow-lg font-mono-score text-xs font-bold flex items-center justify-center">
+                    ▼ REV
+                </button>
+            </div>
+            <div class="flex items-center gap-1.5">
+                <button id="btnSteerLeft" aria-label="Turn Left" class="w-14 h-12 rounded-2xl bg-stone-900/85 active:bg-stone-950 text-white border border-white/25 backdrop-blur-md shadow-lg flex items-center justify-center font-mono-score text-base active:scale-95 transition-transform">
+                    ◄
+                </button>
+                <button id="btnSteerRight" aria-label="Turn Right" class="w-14 h-12 rounded-2xl bg-stone-900/85 active:bg-stone-950 text-white border border-white/25 backdrop-blur-md shadow-lg flex items-center justify-center font-mono-score text-base active:scale-95 transition-transform">
+                    ►
+                </button>
+            </div>
+        </div>
+
+        <!-- Center: Speedometer & Open-World Controls Legend -->
+        <div class="hidden md:flex items-center gap-3 px-4 py-1.5 rounded-full bg-black/65 backdrop-blur-md text-white/95 font-mono-score text-[11px] border border-white/20 shadow-lg">
+            <span id="hudSpeedReadout" class="text-emerald-400 font-extrabold min-w-[68px]">18 MPH</span>
+            <span class="text-white/30">|</span>
+            <span><strong>[W/S]</strong> Pedal / Reverse</span>
+            <span>•</span>
+            <span><strong>[A/D]</strong> Turn 360°</span>
+            <span>•</span>
+            <span><strong>[SPACE / CLICK]</strong> Throw Paper</span>
+            <span>•</span>
+            <span><strong>[M]</strong> Map</span>
+        </div>
+
+        <!-- Right: Refill Quick Button & Big Throw Button -->
+        <div class="pointer-events-auto flex items-center gap-2">
+            <button id="btnThrowPaper" class="px-5 h-14 sm:h-12 rounded-2xl bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white border-2 border-white/40 shadow-xl flex items-center gap-2 font-mono-score text-xs sm:text-sm font-extrabold uppercase tracking-wider active:scale-95 transition-all cursor-pointer">
+                <span>🗞️ Throw</span>
+                <span class="hidden sm:inline text-[10px] bg-black/25 px-1.5 py-0.5 rounded">SPACE</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- ==========================================
+         MAIN 3D OPEN-WORLD ENGINE (THREE.JS + SYNTH AUDIO)
+         ========================================== -->
+    <script>
+        /**************************************************************
+         * 1. WEB AUDIO SYNTHESIS ENGINE
+         **************************************************************/
+        class PaperRouteAudio {
+            constructor() {
+                this.enabled = true;
+                this.ctx = null;
+            }
+            init() {
+                if (!this.ctx) {
+                    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                    if (AudioCtx) this.ctx = new AudioCtx();
+                }
+                if (this.ctx && this.ctx.state === 'suspended') {
+                    this.ctx.resume();
+                }
+            }
+            playWhoosh(powerRatio = 0.5) {
+                if (!this.enabled) return;
+                this.init();
+                if (!this.ctx) return;
+                const now = this.ctx.currentTime;
+                const bufferSize = Math.floor(this.ctx.sampleRate * 0.18);
+                const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) {
+                    data[i] = (Math.random() * 2 - 1) * Math.sin((i / bufferSize) * Math.PI);
+                }
+                const noise = this.ctx.createBufferSource();
+                noise.buffer = buffer;
+                const filter = this.ctx.createBiquadFilter();
+                filter.type = 'bandpass';
+                filter.frequency.setValueAtTime(480 + powerRatio * 340, now);
+                filter.frequency.exponentialRampToValueAtTime(160, now + 0.17);
+                const gain = this.ctx.createGain();
+                gain.gain.setValueAtTime(0.22, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+                noise.connect(filter);
+                filter.connect(gain);
+                gain.connect(this.ctx.destination);
+                noise.start(now);
+            }
+            playPaperThud() {
+                if (!this.enabled) return;
+                this.init();
+                if (!this.ctx) return;
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(135, now);
+                osc.frequency.exponentialRampToValueAtTime(42, now + 0.09);
+                gain.gain.setValueAtTime(0.16, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.095);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.1);
+            }
+            playDeliveryChime(isMailboxBonus = false) {
+                if (!this.enabled) return;
+                this.init();
+                if (!this.ctx) return;
+                const now = this.ctx.currentTime;
+                const notes = isMailboxBonus ? [587.33, 783.99, 987.77, 1174.66] : [523.25, 659.25, 783.99];
+                notes.forEach((freq, i) => {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(freq, now + i * 0.055);
+                    gain.gain.setValueAtTime(0.001, now + i * 0.055);
+                    gain.gain.linearRampToValueAtTime(0.17, now + i * 0.055 + 0.012);
+                    gain.gain.exponentialRampToValueAtTime(0.0008, now + i * 0.055 + 0.36);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(now + i * 0.055);
+                    osc.stop(now + i * 0.055 + 0.37);
+                });
+            }
+            playGlassShatter() {
+                if (!this.enabled) return;
+                this.init();
+                if (!this.ctx) return;
+                const now = this.ctx.currentTime;
+                [1950, 2520, 3200, 1540, 2890].forEach((f, idx) => {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(f, now + idx * 0.018);
+                    osc.frequency.exponentialRampToValueAtTime(f * 0.55, now + idx * 0.018 + 0.14);
+                    gain.gain.setValueAtTime(0.085, now + idx * 0.018);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.018 + 0.15);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(now + idx * 0.018);
+                    osc.stop(now + idx * 0.018 + 0.16);
+                });
+            }
+            playTrashClatter() {
+                if (!this.enabled) return;
+                this.init();
+                if (!this.ctx) return;
+                const now = this.ctx.currentTime;
+                [320, 470, 240].forEach((f, idx) => {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'square';
+                    osc.frequency.setValueAtTime(f, now + idx * 0.04);
+                    osc.frequency.exponentialRampToValueAtTime(85, now + idx * 0.04 + 0.12);
+                    gain.gain.setValueAtTime(0.11, now + idx * 0.04);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.04 + 0.13);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(now + idx * 0.04);
+                    osc.stop(now + idx * 0.04 + 0.14);
+                });
+            }
+            playRefillChime() {
+                if (!this.enabled) return;
+                this.init();
+                if (!this.ctx) return;
+                const now = this.ctx.currentTime;
+                [440, 554.37, 659.25, 880].forEach((f, i) => {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(f, now + i * 0.045);
+                    gain.gain.setValueAtTime(0.14, now + i * 0.045);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.045 + 0.25);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(now + i * 0.045);
+                    osc.stop(now + i * 0.045 + 0.26);
+                });
+            }
+            playDogBark() {
+                if (!this.enabled) return;
+                this.init();
+                if (!this.ctx) return;
+                const now = this.ctx.currentTime;
+                [0, 0.16].forEach(offset => {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(190, now + offset);
+                    osc.frequency.linearRampToValueAtTime(290, now + offset + 0.04);
+                    osc.frequency.exponentialRampToValueAtTime(115, now + offset + 0.12);
+                    gain.gain.setValueAtTime(0.001, now + offset);
+                    gain.gain.linearRampToValueAtTime(0.16, now + offset + 0.015);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + offset + 0.13);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(now + offset);
+                    osc.stop(now + offset + 0.135);
+                });
+            }
+            playCrash() {
+                if (!this.enabled) return;
+                this.init();
+                if (!this.ctx) return;
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(150, now);
+                osc.frequency.exponentialRampToValueAtTime(42, now + 0.32);
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.34);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.35);
+            }
+            playBikeBell() {
+                if (!this.enabled) return;
+                this.init();
+                if (!this.ctx) return;
+                const now = this.ctx.currentTime;
+                [1318.5, 1567.98].forEach((freq, i) => {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(freq, now + i * 0.07);
+                    gain.gain.setValueAtTime(0.12, now + i * 0.07);
+                    gain.gain.exponentialRampToValueAtTime(0.0005, now + i * 0.07 + 0.45);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(now + i * 0.07);
+                    osc.stop(now + i * 0.07 + 0.46);
+                });
+            }
+        }
+
+        const sfx = new PaperRouteAudio();
+
+        /**************************************************************
+         * 2. OPEN-WORLD GEOMETRY & ROAD NETWORK CONFIGURATION
+         **************************************************************/
+        const WORLD_HALF_SIZE = 195;
+        const HORIZ_ROADS_Z = [-130, -55, 15, 95];
+        const VERT_ROADS_X = [-135, -45, 45, 135];
+        const ROAD_WIDTH = 11.5;
+
+        // Gentle terrain elevation (slight coastal slope toward the South beach Z > 105)
+        function getGroundY(x, z) {
+            if (z > 108) {
+                return Math.max(-1.8, -(z - 108) * 0.08);
+            }
+            return 0;
+        }
+
+        /**************************************************************
+         * 3. GAME STATE, UPGRADES & OMNIDIRECTIONAL AIMING STATE
+         **************************************************************/
+        const state = {
+            phase: 'TITLE', // 'TITLE' | 'BRIEFING' | 'PLAYING' | 'MAP' | 'SHOP'
+            editionNumber: 1,
+            cash: 250,
+            streak: 1,
+            deliveredCount: 0,
+            editionTargetCount: 14,
+            maxPapers: 18,
+            papersLeft: 18,
+            cameraMode: 0,
+            invulnerableTimer: 0,
+
+            // Bike Upgrade Levels
+            upgrades: {
+                basket: { level: 1, maxLevel: 4, name: 'Bigger Handlebar Basket', desc: 'Carry more rolled newspapers per trip (18 → 26 → 36 → 50)', costs: [0, 300, 650, 1200], capacities: [18, 26, 36, 50] },
+                sprocket: { level: 1, maxLevel: 4, name: 'Carbon Sprocket & Turbo Pedals', desc: 'Boosts top pedaling speed & cornering acceleration', costs: [0, 350, 750, 1400], speeds: [21, 25, 29, 34] },
+                pitcher: { level: 1, maxLevel: 4, name: 'Pro Pitcher Arm', desc: 'Extends throw distance & smart target lock radius', costs: [0, 400, 850, 1500], ranges: [24, 29, 34, 40] },
+                magnet: { level: 1, maxLevel: 4, name: 'Magnetic Bullseye Spin', desc: 'Curves newspapers in mid-air toward Mailboxes & Shop Counters', costs: [0, 450, 950, 1600], homing: [0.18, 0.42, 0.68, 0.95] }
+            },
+
+            // 360-Degree Free-Roaming Player Cyclist
+            player: {
+                x: 0,
+                z: 15,
+                y: 0,
+                heading: -Math.PI / 2, // Facing West along Central Blvd initially
+                speed: 0,
+                steerAngle: 0,
+                tilt: 0,
+                pedalPhase: 0,
+                throwAnimTimer: 0,
+                throwSide: 1, // +1 left, -1 right
+                throwCooldown: 0,
+                knockVx: 0,
+                knockVz: 0
+            },
+
+            // Aiming & Parabolic Arc State
+            aim: {
+                charging: false,
+                chargeStart: 0,
+                power: 0.45,
+                landingPos: new THREE.Vector3(),
+                launchVel: new THREE.Vector3(),
+                lockedTarget: null, // { type: 'MAILBOX'|'PORCH'|'SHOP'|'WINDOW'|'TRASH', building, pos, points }
+                mouseNDC: { x: 0, y: 0 }
+            },
+
+            // Custom 3D GPS Waypoint set from World Map [M]
+            waypoint: {
+                active: false,
+                x: 0,
+                z: 0,
+                label: ''
+            },
+
+            keys: { left: false, right: false, up: false, down: false },
+
+            // World Entities
+            buildings: [],     // Both Colony Houses & Market Shops
+            thrownPapers: [],
+            cars: [],
+            dogs: [],
+            trashCans: [],
+            paperPickups: [],
+            sprinklers: [],
+            chimneys: [],
+            particles: [],
+            glassShards: [],
+            shockwaves: []
+        };
+
+        /**************************************************************
+         * 4. THREE.JS SCENE, LIGHTING & MATERIALS
+         **************************************************************/
+        const container = document.getElementById('gameCanvasContainer');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x69A8E3);
+        scene.fog = new THREE.FogExp2(0x8EC2EE, 0.0018);
+
+        const camera = new THREE.PerspectiveCamera(54, window.innerWidth / window.innerHeight, 0.5, 900);
+        const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.outputEncoding = THREE.sRGBEncoding;
+        container.appendChild(renderer.domElement);
+
+        const hemiLight = new THREE.HemisphereLight(0xE2F2FF, 0x5E7A48, 0.72);
+        scene.add(hemiLight);
+
+        const sunLight = new THREE.DirectionalLight(0xFFF6E0, 1.15);
+        sunLight.position.set(70, 130, 50);
+        sunLight.castShadow = true;
+        sunLight.shadow.mapSize.width = 2048;
+        sunLight.shadow.mapSize.height = 2048;
+        sunLight.shadow.camera.near = 10;
+        sunLight.shadow.camera.far = 360;
+        const shadowD = 120;
+        sunLight.shadow.camera.left = -shadowD;
+        sunLight.shadow.camera.right = shadowD;
+        sunLight.shadow.camera.top = shadowD;
+        sunLight.shadow.camera.bottom = -shadowD;
+        sunLight.shadow.bias = -0.0005;
+        scene.add(sunLight);
+
+        const MATS = {
+            asphalt: new THREE.MeshStandardMaterial({ color: 0x383E44, roughness: 0.88 }),
+            sidewalk: new THREE.MeshStandardMaterial({ color: 0xD8D3C6, roughness: 0.85 }),
+            grass: new THREE.MeshStandardMaterial({ color: 0x599644, roughness: 0.92 }),
+            parkGrass: new THREE.MeshStandardMaterial({ color: 0x4E8E3B, roughness: 0.9 }),
+            yellowLine: new THREE.MeshBasicMaterial({ color: 0xE8B93B }),
+            whiteStripe: new THREE.MeshBasicMaterial({ color: 0xF4F4F0 }),
+            picketFence: new THREE.MeshStandardMaterial({ color: 0xF4F2EC, roughness: 0.6 }),
+            brickWall: new THREE.MeshStandardMaterial({ color: 0x8F4132, roughness: 0.85 }),
+            trunk: new THREE.MeshStandardMaterial({ color: 0x5C4028, roughness: 0.9 }),
+            leaves1: new THREE.MeshStandardMaterial({ color: 0x3D7E31, roughness: 0.75 }),
+            leaves2: new THREE.MeshStandardMaterial({ color: 0x549B3F, roughness: 0.75 }),
+            pole: new THREE.MeshStandardMaterial({ color: 0x4A3B2C, roughness: 0.85 }),
+            wire: new THREE.LineBasicMaterial({ color: 0x22252A }),
+            paperWhite: new THREE.MeshStandardMaterial({ color: 0xFAF6EC, roughness: 0.45 }),
+            paperInner: new THREE.MeshStandardMaterial({ color: 0xE2DAC9, roughness: 0.65 }),
+            paperBand: new THREE.MeshStandardMaterial({ color: 0xD93829, roughness: 0.4 }),
+            trashMetal: new THREE.MeshStandardMaterial({ color: 0x6D767E, metalness: 0.45, roughness: 0.45 }),
+            goldPickup: new THREE.MeshStandardMaterial({ color: 0xFFD43B, emissive: 0xB87D00, emissiveIntensity: 0.35, roughness: 0.3 })
+        };
+
+        const worldGroup = new THREE.Group();
+        scene.add(worldGroup);
+
+        const buildingsGroup = new THREE.Group();
+        scene.add(buildingsGroup);
+
+        const dynamicGroup = new THREE.Group();
+        scene.add(dynamicGroup);
+
+        /**************************************************************
+         * 5. HELPER: 3D SIGNBOARD TEXTURE GENERATOR (FOR SHOPS & ARCHES)
+         **************************************************************/
+        function createSignboardMesh(text, subtext, bgHex, textHex, width = 6.2, height = 1.45) {
+            const cvs = document.createElement('canvas');
+            cvs.width = 512;
+            cvs.height = 128;
+            const ctx = cvs.getContext('2d');
+
+            ctx.fillStyle = bgHex;
+            ctx.fillRect(0, 0, 512, 128);
+            ctx.strokeStyle = textHex;
+            ctx.lineWidth = 8;
+            ctx.strokeRect(8, 8, 496, 112);
+
+            ctx.fillStyle = textHex;
+            ctx.font = '800 40px "Inter", sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(text.toUpperCase(), 256, subtext ? 50 : 64);
+
+            if (subtext) {
+                ctx.font = '700 22px "JetBrains Mono", monospace';
+                ctx.fillStyle = '#FFE082';
+                ctx.fillText(subtext.toUpperCase(), 256, 94);
+            }
+
+            const tex = new THREE.CanvasTexture(cvs);            tex.encoding = THREE.sRGBEncoding;
+            const mat = new THREE.MeshBasicMaterial({ map: tex });
+            return new THREE.Mesh(new THREE.BoxGeometry(width, height, 0.25), mat);
+        }
+
+        /**************************************************************
+         * 6. BUILD THE 3D OPEN-WORLD TOWN (ROADS, COLONY, MARKET, PARK, BAY)
+         **************************************************************/
+        let pressRefillRing = null;
+        let garageZoneRing = null;
+        let pressRotorSign = null;
+        let lighthouseBeam = null;
+
+        function buildOpenWorldEnvironment() {
+            // 1. Main Town Grass Ground Plane
+            const ground = new THREE.Mesh(new THREE.PlaneGeometry(390, 290), MATS.grass);
+            ground.rotation.x = -Math.PI / 2;
+            ground.position.set(0, 0, -35);
+            ground.receiveShadow = true;
+            worldGroup.add(ground);
+
+            // 2. Horizontal Roads (East-West)
+            HORIZ_ROADS_Z.forEach(rz => {
+                const road = new THREE.Mesh(new THREE.PlaneGeometry(350, ROAD_WIDTH), MATS.asphalt);
+                road.rotation.x = -Math.PI / 2;
+                road.position.set(0, 0.03, rz);
+                road.receiveShadow = true;
+                worldGroup.add(road);
+
+                // Sidewalks along road
+                [-ROAD_WIDTH / 2 - 1.2, ROAD_WIDTH / 2 + 1.2].forEach(offsetZ => {
+                    const sw = new THREE.Mesh(new THREE.BoxGeometry(350, 0.12, 2.2), MATS.sidewalk);
+                    sw.position.set(0, 0.06, rz + offsetZ);
+                    sw.receiveShadow = true;
+                    worldGroup.add(sw);
+                });
+
+                // Dashed Yellow Center Line
+                const dashGeo = new THREE.PlaneGeometry(3.2, 0.2);
+                dashGeo.rotateX(-Math.PI / 2);
+                for (let x = -165; x <= 165; x += 8) {
+                    const dash = new THREE.Mesh(dashGeo, MATS.yellowLine);
+                    dash.position.set(x, 0.05, rz);
+                    worldGroup.add(dash);
+                }
+            });
+
+            // 3. Vertical Roads (North-South)
+            VERT_ROADS_X.forEach(rx => {
+                const road = new THREE.Mesh(new THREE.PlaneGeometry(ROAD_WIDTH, 280), MATS.asphalt);
+                road.rotation.x = -Math.PI / 2;
+                road.position.set(rx, 0.035, -20);
+                road.receiveShadow = true;
+                worldGroup.add(road);
+
+                [-ROAD_WIDTH / 2 - 1.2, ROAD_WIDTH / 2 + 1.2].forEach(offsetX => {
+                    const sw = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.12, 280), MATS.sidewalk);
+                    sw.position.set(rx + offsetX, 0.06, -20);
+                    sw.receiveShadow = true;
+                    worldGroup.add(sw);
+                });
+
+                const dashGeo = new THREE.PlaneGeometry(0.2, 3.2);
+                dashGeo.rotateX(-Math.PI / 2);
+                for (let z = -152; z <= 108; z += 8) {
+                    const dash = new THREE.Mesh(dashGeo, MATS.yellowLine);
+                    dash.position.set(rx, 0.055, z);
+                    worldGroup.add(dash);
+                }
+            });
+
+            // 4. Crosswalk Zebra Stripes at Every Intersection
+            const stripeGeo = new THREE.PlaneGeometry(0.45, 2.2);
+            stripeGeo.rotateX(-Math.PI / 2);
+            HORIZ_ROADS_Z.forEach(rz => {
+                VERT_ROADS_X.forEach(rx => {
+                    for (let s = -4; s <= 4; s += 1.1) {
+                        const zStripe1 = new THREE.Mesh(stripeGeo, MATS.whiteStripe);
+                        zStripe1.position.set(rx + s, 0.06, rz - 7.2);
+                        const zStripe2 = zStripe1.clone();
+                        zStripe2.position.set(rx + s, 0.06, rz + 7.2);
+                        worldGroup.add(zStripe1, zStripe2);
+                    }
+                });
+            });
+
+            // 5. SUNRISE COLONY ENTRANCE ARCHWAY (at X = -45, Z = -22) & WATER TANK TOWER
+            buildSunriseColonyLandmarks();
+
+            // 6. THE DAILY PRESS DEPOT (Central Hub at X = 0, Z = -8)
+            buildDailyPressDepot();
+
+            // 7. TURBO CYCLE UPGRADE GARAGE (at X = +88, Z = +15)
+            buildBikeUpgradeGarage();
+
+            // 8. CENTRAL PARK & FOUNTAIN PLAZA (X = 0, Z = +55)
+            buildCentralParkPlaza();
+
+            // 9. SOUTHERN COASTAL BOARDWALK, BEACH, OCEAN BAY & LIGHTHOUSE (Z > +105)
+            buildCoastalPromenadeAndBay();
+
+            // 10. Utility Poles with Catenary Wires, Streetlights & Trees
+            buildTownTreesAndPoles();
+        }
+
+        function buildSunriseColonyLandmarks() {
+            // Colony Welcome Archway over Colony Gate Road (X = -45, Z = -22)
+            const archGroup = new THREE.Group();
+            archGroup.position.set(-45, 0, -22);
+
+            const pillarGeo = new THREE.BoxGeometry(1.1, 7.2, 1.1);
+            const leftPillar = new THREE.Mesh(pillarGeo, MATS.brickWall);
+            leftPillar.position.set(-6.6, 3.6, 0);
+            leftPillar.castShadow = true;
+            const rightPillar = leftPillar.clone();
+            rightPillar.position.set(6.6, 3.6, 0);
+
+            const signBoard = createSignboardMesh('SUNRISE COLONY', 'RESIDENTIAL WELFARE BLOCKS A-D', '#184E35', '#FFF8E7', 14.5, 1.75);
+            signBoard.position.set(0, 6.8, 0);
+            archGroup.add(leftPillar, rightPillar, signBoard);
+            worldGroup.add(archGroup);
+
+            // Speed Breaker Stripes under the Colony Archway
+            const hump = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.22, 0.22, ROAD_WIDTH - 0.6, 12),
+                new THREE.MeshStandardMaterial({ color: 0xF5B727, roughness: 0.7 })
+            );
+            hump.rotation.z = Math.PI / 2;
+            hump.position.set(-45, 0.02, -22);
+            worldGroup.add(hump);
+
+            // Overhead Cylindrical Colony Water Tank Tower (X = -92, Z = -92)
+            const tankGroup = new THREE.Group();
+            tankGroup.position.set(-92, 0, -92);
+            const concreteMat = new THREE.MeshStandardMaterial({ color: 0xDEDAD0, roughness: 0.8 });
+            [[-2.2, -2.2], [2.2, -2.2], [-2.2, 2.2], [2.2, 2.2]].forEach(([lx, lz]) => {
+                const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.4, 14, 8), concreteMat);
+                leg.position.set(lx, 7, lz);
+                leg.castShadow = true;
+                tankGroup.add(leg);
+            });
+            const drum = new THREE.Mesh(new THREE.CylinderGeometry(4.2, 4.2, 5.2, 16), concreteMat);
+            drum.position.y = 16.2;
+            drum.castShadow = true;
+            const stripe = new THREE.Mesh(
+                new THREE.CylinderGeometry(4.26, 4.26, 1.2, 16),
+                new THREE.MeshStandardMaterial({ color: 0x2E7D5B })
+            );
+            stripe.position.y = 16.2;
+            tankGroup.add(drum, stripe);
+            worldGroup.add(tankGroup);
+        }
+
+        function buildDailyPressDepot() {
+            const depot = new THREE.Group();
+            depot.position.set(0, 0, -10);
+
+            const body = new THREE.Mesh(new THREE.BoxGeometry(16, 8.5, 11), MATS.brickWall);
+            body.position.y = 4.25;
+            body.castShadow = true;
+            body.receiveShadow = true;
+            depot.add(body);
+
+            const roofTrim = new THREE.Mesh(
+                new THREE.BoxGeometry(16.6, 0.8, 11.6),
+                new THREE.MeshStandardMaterial({ color: 0x23272D })
+            );
+            roofTrim.position.y = 8.7;
+            depot.add(roofTrim);
+
+            // Signboard facing South toward Central Blvd (Z = +15)
+            const sign = createSignboardMesh('THE DAILY PRESS DEPOT', 'DRIVE INTO GOLD RING TO REFILL BASKET', '#1B222C', '#FFD54F', 13.5, 1.8);
+            sign.position.set(0, 7.1, 5.6);
+            depot.add(sign);
+
+            // Giant Rotating Newspaper Roll Emblem on the Roof
+            pressRotorSign = new THREE.Group();
+            pressRotorSign.position.set(0, 11.2, 0);
+            const giantRoll = new THREE.Mesh(new THREE.CylinderGeometry(1.1, 1.1, 4.8, 16), MATS.paperWhite);
+            giantRoll.rotation.z = Math.PI / 2;
+            const giantBand = new THREE.Mesh(new THREE.CylinderGeometry(1.16, 1.16, 0.75, 16), MATS.paperBand);
+            giantBand.rotation.z = Math.PI / 2;
+            pressRotorSign.add(giantRoll, giantBand);
+            depot.add(pressRotorSign);
+
+            // Glowing Gold Drive-Thru "PRESS REFILL DOCK" Ring at (X = 0, Z = +3)
+            const ringGeo = new THREE.RingGeometry(3.4, 4.2, 32);
+            ringGeo.rotateX(-Math.PI / 2);
+            pressRefillRing = new THREE.Mesh(
+                ringGeo,
+                new THREE.MeshBasicMaterial({ color: 0xFFD43B, side: THREE.DoubleSide, transparent: true, opacity: 0.85 })
+            );
+            pressRefillRing.position.set(0, 0.12, 13);
+            depot.add(pressRefillRing);
+
+            worldGroup.add(depot);
+        }
+
+        function buildBikeUpgradeGarage() {
+            const garage = new THREE.Group();
+            garage.position.set(88, 0, -3);
+
+            const body = new THREE.Mesh(
+                new THREE.BoxGeometry(12, 6.2, 9.5),
+                new THREE.MeshStandardMaterial({ color: 0x2C3E50, roughness: 0.7 })
+            );
+            body.position.y = 3.1;
+            body.castShadow = true;
+            garage.add(body);
+
+            const sign = createSignboardMesh('TURBO CYCLE GARAGE', 'BIKE & PITCHER UPGRADES [PRESS U]', '#0E4B5A', '#4DD0E1', 11.2, 1.55);
+            sign.position.set(0, 5.4, 4.85);
+            garage.add(sign);
+
+            // Glowing Cyan Drive-In Upgrade Ring at (X = 88, Z = +6)
+            const ringGeo = new THREE.RingGeometry(2.8, 3.5, 28);
+            ringGeo.rotateX(-Math.PI / 2);
+            garageZoneRing = new THREE.Mesh(
+                ringGeo,
+                new THREE.MeshBasicMaterial({ color: 0x00E5FF, side: THREE.DoubleSide, transparent: true, opacity: 0.8 })
+            );
+            garageZoneRing.position.set(0, 0.12, 9.0);
+            garage.add(garageZoneRing);
+
+            worldGroup.add(garage);
+        }
+
+        function buildCentralParkPlaza() {
+            const park = new THREE.Group();
+            park.position.set(0, 0, 55);
+
+            const lawn = new THREE.Mesh(new THREE.PlaneGeometry(72, 62), MATS.parkGrass);
+            lawn.rotation.x = -Math.PI / 2;
+            lawn.position.y = 0.02;
+            lawn.receiveShadow = true;
+            park.add(lawn);
+
+            // Circular Stone Plaza & Multi-Tiered Fountain
+            const plaza = new THREE.Mesh(new THREE.CylinderGeometry(11, 11, 0.14, 28), MATS.sidewalk);
+            plaza.position.y = 0.07;
+            plaza.receiveShadow = true;
+            park.add(plaza);
+
+            const basin = new THREE.Mesh(
+                new THREE.CylinderGeometry(4.8, 5.2, 1.1, 20),
+                new THREE.MeshStandardMaterial({ color: 0xB8B4A8, roughness: 0.6 })
+            );
+            basin.position.y = 0.55;
+            const water = new THREE.Mesh(
+                new THREE.CylinderGeometry(4.4, 4.4, 0.9, 20),
+                new THREE.MeshStandardMaterial({ color: 0x29B6F6, roughness: 0.2 })
+            );
+            water.position.y = 0.62;
+            const centerSpire = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.6, 0.9, 3.2, 12),
+                new THREE.MeshStandardMaterial({ color: 0xB8B4A8 })
+            );
+            centerSpire.position.y = 1.6;
+            park.add(basin, water, centerSpire);
+
+            // Register fountain as a sprinkler emitter for sparkling water droplets
+            state.sprinklers.push({
+                x: 0,
+                y: 3.1,
+                z: 55,
+                angle: 0,
+                headMesh: centerSpire
+            });
+
+            worldGroup.add(park);
+        }
+
+        function buildCoastalPromenadeAndBay() {
+            // Sandy Beach Strip South of Coastal Drive (Z = +104 to +155)
+            const beach = new THREE.Mesh(
+                new THREE.PlaneGeometry(460, 60),
+                new THREE.MeshStandardMaterial({ color: 0xE5D4A7, roughness: 0.9 })
+            );
+            beach.rotation.x = -Math.PI / 2;
+            beach.position.set(0, -0.4, 132);
+            worldGroup.add(beach);
+
+            // Sparkling Ocean Water Plane
+            const ocean = new THREE.Mesh(
+                new THREE.PlaneGeometry(1400, 700),
+                new THREE.MeshStandardMaterial({ color: 0x1976D2, roughness: 0.22, metalness: 0.12 })
+            );
+            ocean.rotation.x = -Math.PI / 2;
+            ocean.position.set(0, -1.2, 420);
+            worldGroup.add(ocean);
+
+            // Coastal Lighthouse at (X = +152, Z = +128)
+            const lhGroup = new THREE.Group();
+            lhGroup.position.set(152, 0, 128);
+            const tower = new THREE.Mesh(
+                new THREE.CylinderGeometry(1.8, 3.2, 22, 16),
+                new THREE.MeshStandardMaterial({ color: 0xF5F5F0, roughness: 0.6 })
+            );
+            tower.position.y = 11;
+            tower.castShadow = true;
+            const redBand = new THREE.Mesh(
+                new THREE.CylinderGeometry(2.35, 2.75, 5.5, 16),
+                new THREE.MeshStandardMaterial({ color: 0xD32F2F })
+            );
+            redBand.position.y = 11;
+            const lantern = new THREE.Mesh(
+                new THREE.CylinderGeometry(1.6, 1.6, 2.6, 12),
+                new THREE.MeshBasicMaterial({ color: 0xFFF59D })
+            );
+            lantern.position.y = 23.2;
+            const dome = new THREE.Mesh(
+                new THREE.ConeGeometry(2.1, 2.4, 12),
+                new THREE.MeshStandardMaterial({ color: 0xB71C1C })
+            );
+            dome.position.y = 25.5;
+
+            // Rotating Light Beam Cone
+            lighthouseBeam = new THREE.Group();
+            lighthouseBeam.position.y = 23.2;
+            const beamCone = new THREE.Mesh(
+                new THREE.ConeGeometry(6, 36, 12, 1, true),
+                new THREE.MeshBasicMaterial({ color: 0xFFF9C4, transparent: true, opacity: 0.18, side: THREE.DoubleSide })
+            );
+            beamCone.rotation.z = Math.PI / 2;
+            beamCone.position.x = 18;
+            lighthouseBeam.add(beamCone);
+
+            lhGroup.add(tower, redBand, lantern, dome, lighthouseBeam);
+            worldGroup.add(lhGroup);
+        }
+
+        function createStylizedTree(x, z, scale = 1.0) {
+            const tree = new THREE.Group();
+            tree.position.set(x, 0, z);
+            const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.26 * scale, 0.42 * scale, 3.4 * scale, 7), MATS.trunk);
+            trunk.position.y = 1.7 * scale;
+            trunk.castShadow = true;
+            tree.add(trunk);
+
+            [
+                [0, 4.2, 0, 2.1, MATS.leaves1],
+                [-1.0, 3.6, 0.7, 1.5, MATS.leaves2],
+                [1.0, 3.7, -0.6, 1.55, MATS.leaves1]
+            ].forEach(([px, py, pz, rad, mat]) => {
+                const foliage = new THREE.Mesh(new THREE.DodecahedronGeometry(rad * scale, 1), mat);
+                foliage.position.set(px * scale, py * scale, pz * scale);
+                foliage.castShadow = true;
+                tree.add(foliage);
+            });
+            worldGroup.add(tree);
+        }
+
+        function buildTownTreesAndPoles() {
+            // Trees around Park, Colony & Coastal Promenade
+            const treeCoords = [
+                [-26, 40], [26, 40], [-28, 72], [28, 72], [-18, 55], [18, 55],
+                [-160, -100], [-160, -20], [-160, 50], [162, -90], [162, -15], [162, 55],
+                [-88, 45], [-88, 75], [88, 45], [88, 75],
+                [-110, 106], [-65, 106], [-15, 106], [35, 106], [85, 106], [125, 106]
+            ];
+            treeCoords.forEach(([tx, tz], i) => {
+                createStylizedTree(tx, tz, 0.95 + (i % 3) * 0.18);
+            });
+
+            // Utility Poles with Catenary Hanging Wires along Sunrise Colony Main Street (Z = -55)
+            const poleGeo = new THREE.CylinderGeometry(0.14, 0.18, 8.6, 7);
+            const armGeo = new THREE.BoxGeometry(0.16, 0.16, 2.2);
+            let prevPoleX = null;
+            for (let x = -155; x <= 155; x += 38) {
+                const pole = new THREE.Mesh(poleGeo, MATS.pole);
+                pole.position.set(x, 4.3, -62.2);
+                pole.castShadow = true;
+                const arm = new THREE.Mesh(armGeo, MATS.pole);
+                arm.position.set(x, 8.0, -62.2);
+                worldGroup.add(pole, arm);
+
+                if (prevPoleX !== null) {
+                    [-0.8, 0.8].forEach(zOff => {
+                        const pts = [];
+                        for (let s = 0; s <= 10; s++) {
+                            const t = s / 10;
+                            const wx = prevPoleX + (x - prevPoleX) * t;
+                            const sag = Math.sin(t * Math.PI) * 0.85;
+                            pts.push(new THREE.Vector3(wx, 8.0 - sag, -62.2 + zOff));
+                        }
+                        const lineGeo = new THREE.BufferGeometry().setFromPoints(pts);
+                        worldGroup.add(new THREE.Line(lineGeo, MATS.wire));
+                    });
+                }
+                prevPoleX = x;
+            }
+        }
+
+        /**************************************************************
+         * 7. BUILD 16 SUNRISE COLONY HOUSES & 8 MAIN BAZAAR MARKET SHOPS
+         **************************************************************/
+        const COLONY_HOUSE_CATALOG = [
+            // North Colony Avenue (Z = -130, houses on North side Z = -146 facing South +Z)
+            { id: 'H1', name: 'Colony Villa A-1', x: -112, z: -146, facingZ: 1, wall: 0xF2EFE9, roof: 0xB84A39, stories: 2 },
+            { id: 'H2', name: 'Maple Bungalow A-2', x: -72, z: -146, facingZ: 1, wall: 0x7A9A7E, roof: 0x4A5459, stories: 1 },
+            { id: 'H3', name: 'Rosewood Duplex A-3', x: -15, z: -146, facingZ: 1, wall: 0xDFB45B, roof: 0x6E473B, stories: 2 },
+            { id: 'H4', name: 'Jasmine Cottage A-4', x: 18, z: -146, facingZ: 1, wall: 0x6684A1, roof: 0x3A434D, stories: 1 },
+            { id: 'H5', name: 'Palm View House A-5', x: 75, z: -146, facingZ: 1, wall: 0xE6C8B0, roof: 0xA84232, stories: 2 },
+            { id: 'H6', name: 'Veranda Residence A-6', x: 112, z: -146, facingZ: 1, wall: 0x93A383, roof: 0x4E4239, stories: 1 },
+
+            // North Colony Avenue South Side (Z = -114 facing North -Z)
+            { id: 'H7', name: 'Bougainvillea Villa B-1', x: -115, z: -114, facingZ: -1, wall: 0xEDE0C4, roof: 0x8F4336, stories: 2 },
+            { id: 'H8', name: 'Cypress Corner B-2', x: -68, z: -114, facingZ: -1, wall: 0x82A898, roof: 0x3B4B47, stories: 1 },
+            { id: 'H9', name: 'Amber Brick House B-3', x: -18, z: -114, facingZ: -1, wall: 0xC97D60, roof: 0x473830, stories: 2 },
+            { id: 'H10', name: 'Gulmohar Bungalow B-4', x: 18, z: -114, facingZ: -1, wall: 0xF4EFE6, roof: 0x2F5E4E, stories: 1 },
+
+            // Sunrise Colony Main Street (Z = -55, houses on North Z = -71 & South Z = -39)
+            { id: 'H11', name: 'Sunrise Manor C-1', x: -115, z: -71, facingZ: 1, wall: 0x7994A0, roof: 0x333B42, stories: 2 },
+            { id: 'H12', name: 'Ashoka Cottage C-2', x: -72, z: -71, facingZ: 1, wall: 0xEBD6B7, roof: 0x9A3E2E, stories: 1 },
+            { id: 'H13', name: 'Lotus Duplex C-3', x: -18, z: -71, facingZ: 1, wall: 0x9DB08F, roof: 0x473C35, stories: 2 },
+            { id: 'H14', name: 'Parkside Villa D-1', x: -115, z: -39, facingZ: -1, wall: 0xE3B778, roof: 0x5E3A2E, stories: 2 },
+            { id: 'H15', name: 'Teakwood House D-2', x: -72, z: -39, facingZ: -1, wall: 0xD8E2DC, roof: 0x8D3B32, stories: 1 },
+            { id: 'H16', name: 'Baybreeze Villa D-3', x: -92, z: -1, facingZ: 1, wall: 0xB8C4BB, roof: 0x3A4E48, stories: 2 }
+        ];
+
+        const MARKET_SHOP_CATALOG = [
+            // Main Bazaar & Market District (East & Central Commercial Blocks)
+            { id: 'S1', name: 'Sunrise Bakery & Cafe', sub: 'FRESH CROISSANTS & COFFEE', x: 20, z: -71, facingZ: 1, wall: 0xF5E6D3, awning: 0xD93829 },
+            { id: 'S2', name: 'Fresh Mart Grocery', sub: 'ORGANIC FRUITS & VEGGIES', x: 74, z: -71, facingZ: 1, wall: 0xE8F5E9, awning: 0x2E7D32 },
+            { id: 'S3', name: 'Corner Pharmacy', sub: 'CHEMIST & HEALTHCARE 24/7', x: 112, z: -71, facingZ: 1, wall: 0xE3F2FD, awning: 0x0288D1 },
+            { id: 'S4', name: 'Golden Chai & Snacks', sub: 'HOT MASALA CHAI & SAMOSA', x: 74, z: -39, facingZ: -1, wall: 0xFFF3E0, awning: 0xEF6C00 },
+            { id: 'S5', name: 'Town Hardware & Elec.', sub: 'TOOLS, RADIOS & APPLIANCES', x: 112, z: -39, facingZ: -1, wall: 0xECEFF1, awning: 0x37474F },
+            { id: 'S6', name: 'Metro Barber & Salon', sub: 'CLASSIC CUTS & SHAVES', x: 74, z: -1, facingZ: 1, wall: 0xFCE4EC, awning: 0xC2185B },
+            { id: 'S7', name: 'Oceanview Bookstore', sub: 'BOOKS, MAGAZINES & MAPS', x: 112, z: -1, facingZ: 1, wall: 0xEFEBE9, awning: 0x00695C },
+            { id: 'S8', name: 'Bazaar Sweet Emporium', sub: 'SWEETS, SPICES & DRY FRUITS', x: 88, z: 31, facingZ: -1, wall: 0xFFF8E1, awning: 0xB71C1C }
+        ];
+
+        function buildColonyAndMarketBuildings() {
+            while (buildingsGroup.children.length > 0) {
+                buildingsGroup.remove(buildingsGroup.children[0]);
+            }
+            state.buildings = [];
+            state.chimneys = [];
+            state.trashCans = [];
+
+            // 1. Construct 16 Residential Colony Houses
+            COLONY_HOUSE_CATALOG.forEach((cfg, idx) => {
+                const hGroup = new THREE.Group();
+                hGroup.position.set(cfg.x, 0, cfg.z);
+                if (cfg.facingZ === -1) {
+                    hGroup.rotation.y = Math.PI;
+                }
+
+                const bodyH = cfg.stories === 2 ? 6.6 : 4.3;
+                const bodyW = 9.4;
+                const bodyD = 9.2;
+
+                const wallMat = new THREE.MeshStandardMaterial({ color: cfg.wall, roughness: 0.82 });
+                const roofMat = new THREE.MeshStandardMaterial({ color: cfg.roof, roughness: 0.75 });
+                const trimMat = new THREE.MeshStandardMaterial({ color: 0xFFFFFF, roughness: 0.6 });
+
+                const bodyMesh = new THREE.Mesh(new THREE.BoxGeometry(bodyW, bodyH, bodyD), wallMat);
+                bodyMesh.position.y = bodyH / 2;
+                bodyMesh.castShadow = true;
+                bodyMesh.receiveShadow = true;
+                hGroup.add(bodyMesh);
+
+                // Pitched Roof
+                const roofCone = new THREE.Mesh(new THREE.ConeGeometry(7.5, 3.4, 4), roofMat);
+                roofCone.position.set(0, bodyH + 1.7, 0);
+                roofCone.rotation.y = Math.PI / 4;
+                roofCone.castShadow = true;
+                hGroup.add(roofCone);
+
+                // Chimney + Smoke Emitter
+                const chimney = new THREE.Mesh(new THREE.BoxGeometry(0.85, 2.5, 0.85), MATS.brickWall);
+                chimney.position.set(-2.2, bodyH + 1.9, -1.5);
+                hGroup.add(chimney);
+                state.chimneys.push({
+                    x: cfg.x - 2.2 * cfg.facingZ,
+                    y: bodyH + 3.2,
+                    z: cfg.z - 1.5 * cfg.facingZ,
+                    timer: Math.random()
+                });
+
+                // Front Porch & Welcome Mat facing local +Z (street side)
+                const porch = new THREE.Mesh(new THREE.BoxGeometry(4.4, 0.32, 2.8), trimMat);
+                porch.position.set(0, 0.16, bodyD / 2 + 1.3);
+                porch.receiveShadow = true;
+                hGroup.add(porch);
+
+                const welcomeMat = new THREE.Mesh(
+                    new THREE.BoxGeometry(1.7, 0.06, 1.1),
+                    new THREE.MeshStandardMaterial({ color: 0x8D4E2A, roughness: 0.95 })
+                );
+                welcomeMat.position.set(0, 0.34, bodyD / 2 + 1.45);
+                hGroup.add(welcomeMat);
+
+                // Breakable Glass Windows on Front Facade
+                const windows = [];
+                [-2.7, 2.7].forEach(wx => {
+                    const winMat = new THREE.MeshStandardMaterial({
+                        color: 0x99D1F2,
+                        emissive: 0xFFE6A3,
+                        emissiveIntensity: 0.28,
+                        roughness: 0.15
+                    });
+                    const winMesh = new THREE.Mesh(new THREE.BoxGeometry(1.5, 1.5, 0.22), winMat);
+                    winMesh.position.set(wx, 2.2, bodyD / 2 + 0.05);
+                    hGroup.add(winMesh);
+
+                    const worldWinX = cfg.x + wx * cfg.facingZ;
+                    const worldWinZ = cfg.z + (bodyD / 2 + 0.15) * cfg.facingZ;
+                    windows.push({
+                        mesh: winMesh,
+                        broken: false,
+                        worldPos: new THREE.Vector3(worldWinX, 2.2, worldWinZ)
+                    });
+                });
+
+                // Street-Side Red Subscriber Mailbox with Mechanical Flag
+                const mbLocalX = 3.2;
+                const mbLocalZ = bodyD / 2 + 3.5;
+                const mbGroup = new THREE.Group();
+                mbGroup.position.set(mbLocalX, 0, mbLocalZ);
+                const mbPost = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 1.25, 6), MATS.picketFence);
+                mbPost.position.y = 0.62;
+                const mbBoxMat = new THREE.MeshStandardMaterial({ color: 0xD93829, roughness: 0.4 });
+                const mbBox = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.45, 0.78), mbBoxMat);
+                mbBox.position.y = 1.32;
+                mbBox.castShadow = true;
+
+                const flagPivot = new THREE.Group();
+                flagPivot.position.set(0.28, 1.38, 0.12);
+                flagPivot.rotation.x = Math.PI / 2;
+                const flagStaff = new THREE.Mesh(
+                    new THREE.BoxGeometry(0.04, 0.36, 0.06),
+                    new THREE.MeshStandardMaterial({ color: 0xFFCC00 })
+                );
+                flagStaff.position.y = 0.16;
+                flagPivot.add(flagStaff);
+
+                mbGroup.add(mbPost, mbBox, flagPivot);
+                hGroup.add(mbGroup);
+
+                // Glowing Target Zone on Front Porch / Walkway
+                const zoneGroup = new THREE.Group();
+                zoneGroup.position.set(0, 0.14, bodyD / 2 + 2.1);
+                const zoneMat = new THREE.MeshBasicMaterial({
+                    color: 0x38F26A,
+                    transparent: true,
+                    opacity: 0.45,
+                    side: THREE.DoubleSide
+                });
+                const targetZoneMesh = new THREE.Mesh(new THREE.PlaneGeometry(4.6, 3.8), zoneMat);
+                targetZoneMesh.rotation.x = -Math.PI / 2;
+                const borderGeo = new THREE.EdgesGeometry(new THREE.BoxGeometry(4.65, 0.14, 3.85));
+                const targetBorderMesh = new THREE.LineSegments(borderGeo, new THREE.LineBasicMaterial({ color: 0x7CFF9B }));
+                zoneGroup.add(targetZoneMesh, targetBorderMesh);
+                hGroup.add(zoneGroup);
+
+                // Rotating Lawn Sprinkler on every even house
+                if (idx % 2 === 0) {
+                    const spBase = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.25, 0.15, 8), MATS.trashMetal);
+                    spBase.position.set(-3.4, 0.08, bodyD / 2 + 2.4);
+                    hGroup.add(spBase);
+                    state.sprinklers.push({
+                        x: cfg.x - 3.4 * cfg.facingZ,
+                        y: 0.25,
+                        z: cfg.z + (bodyD / 2 + 2.4) * cfg.facingZ,
+                        angle: Math.random() * Math.PI * 2,
+                        headMesh: spBase
+                    });
+                }
+
+                // Curbside Knockable Metal Trash Can
+                const tcWorldX = cfg.x - 3.8 * cfg.facingZ;
+                const tcWorldZ = cfg.z + (bodyD / 2 + 3.9) * cfg.facingZ;
+                const tcGroup = new THREE.Group();
+                tcGroup.position.set(tcWorldX, 0, tcWorldZ);
+                const tcBody = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.29, 0.88, 10), MATS.trashMetal);
+                tcBody.position.y = 0.44;
+                tcBody.castShadow = true;
+                tcGroup.add(tcBody);
+                buildingsGroup.add(tcGroup);
+                state.trashCans.push({
+                    mesh: tcGroup,
+                    x: tcWorldX,
+                    y: 0,
+                    z: tcWorldZ,
+                    vx: 0,
+                    vy: 0,
+                    vz: 0,
+                    knocked: false
+                });
+
+                buildingsGroup.add(hGroup);
+
+                const worldPorchX = cfg.x;
+                const worldPorchZ = cfg.z + (bodyD / 2 + 2.1) * cfg.facingZ;
+                const worldMbX = cfg.x + mbLocalX * cfg.facingZ;
+                const worldMbZ = cfg.z + mbLocalZ * cfg.facingZ;
+
+                state.buildings.push({
+                    id: cfg.id,
+                    kind: 'COLONY',
+                    name: cfg.name,
+                    x: cfg.x,
+                    z: cfg.z,
+                    porchPos: new THREE.Vector3(worldPorchX, 0.25, worldPorchZ),
+                    mailboxPos: new THREE.Vector3(worldMbX, 1.32, worldMbZ),
+                    isSubscriber: true,
+                    delivered: false,
+                    targetZoneMesh,
+                    targetBorderMesh,
+                    mbBoxMesh: mbBox,
+                    flagPivot,
+                    flagTargetAngle: Math.PI / 2,
+                    windows
+                });
+            });
+
+            // 2. Construct 8 Main Bazaar & Market District Shops
+            MARKET_SHOP_CATALOG.forEach((shop) => {
+                const sGroup = new THREE.Group();
+                sGroup.position.set(shop.x, 0, shop.z);
+                if (shop.facingZ === -1) {
+                    sGroup.rotation.y = Math.PI;
+                }
+
+                const bodyW = 10.6;
+                const bodyH = 6.2;
+                const bodyD = 9.0;
+
+                const bodyMesh = new THREE.Mesh(
+                    new THREE.BoxGeometry(bodyW, bodyH, bodyD),
+                    new THREE.MeshStandardMaterial({ color: shop.wall, roughness: 0.78 })
+                );
+                bodyMesh.position.y = bodyH / 2;
+                bodyMesh.castShadow = true;
+                bodyMesh.receiveShadow = true;
+                sGroup.add(bodyMesh);
+
+                // Colorful Striped Storefront Awning
+                const awning = new THREE.Mesh(
+                    new THREE.BoxGeometry(bodyW + 0.4, 0.45, 2.6),
+                    new THREE.MeshStandardMaterial({ color: shop.awning, roughness: 0.6 })
+                );
+                awning.position.set(0, 3.65, bodyD / 2 + 1.2);
+                awning.rotation.x = 0.22;
+                awning.castShadow = true;
+                sGroup.add(awning);
+
+                // Readable Rooftop Signboard
+                const sign = createSignboardMesh(shop.name, shop.sub, '#1A2028', '#FFFFFF', 9.8, 1.45);
+                sign.position.set(0, bodyH + 0.85, bodyD / 2 - 0.2);
+                sGroup.add(sign);
+
+                // Storefront Display Windows (shatterable!)
+                const windows = [];
+                [-2.8, 2.8].forEach(wx => {
+                    const winMat = new THREE.MeshStandardMaterial({
+                        color: 0xB3E5FC,
+                        emissive: 0xFFF59D,
+                        emissiveIntensity: 0.35,
+                        roughness: 0.12
+                    });
+                    const winMesh = new THREE.Mesh(new THREE.BoxGeometry(2.2, 2.0, 0.2), winMat);
+                    winMesh.position.set(wx, 1.8, bodyD / 2 + 0.05);
+                    sGroup.add(winMesh);
+
+                    windows.push({
+                        mesh: winMesh,
+                        broken: false,
+                        worldPos: new THREE.Vector3(shop.x + wx * shop.facingZ, 1.8, shop.z + (bodyD / 2 + 0.15) * shop.facingZ)
+                    });
+                });
+
+                // Market Newspaper Drop Stand / Counter Box (Bullseye +250)
+                const standLocalX = 3.6;
+                const standLocalZ = bodyD / 2 + 3.2;
+                const standGroup = new THREE.Group();
+                standGroup.position.set(standLocalX, 0, standLocalZ);
+                const standBoxMat = new THREE.MeshStandardMaterial({ color: 0xFFB300, roughness: 0.35 });
+                const standBox = new THREE.Mesh(new THREE.BoxGeometry(0.85, 1.15, 0.75), standBoxMat);
+                standBox.position.y = 0.58;
+                standBox.castShadow = true;
+
+                const flagPivot = new THREE.Group();
+                flagPivot.position.set(0, 1.15, 0);
+                flagPivot.rotation.x = Math.PI / 2;
+                const flagBanner = new THREE.Mesh(
+                    new THREE.BoxGeometry(0.45, 0.45, 0.08),
+                    new THREE.MeshBasicMaterial({ color: 0x00E676 })
+                );
+                flagBanner.position.y = 0.25;
+                flagPivot.add(flagBanner);
+
+                standGroup.add(standBox, flagPivot);
+                sGroup.add(standGroup);
+
+                // Glowing Storefront Delivery Drop-Zone
+                const zoneGroup = new THREE.Group();
+                zoneGroup.position.set(0, 0.14, bodyD / 2 + 2.2);
+                const zoneMat = new THREE.MeshBasicMaterial({
+                    color: 0x00E676,
+                    transparent: true,
+                    opacity: 0.48,
+                    side: THREE.DoubleSide
+                });
+                const targetZoneMesh = new THREE.Mesh(new THREE.PlaneGeometry(5.2, 3.8), zoneMat);
+                targetZoneMesh.rotation.x = -Math.PI / 2;
+                const borderGeo = new THREE.EdgesGeometry(new THREE.BoxGeometry(5.25, 0.14, 3.85));
+                const targetBorderMesh = new THREE.LineSegments(borderGeo, new THREE.LineBasicMaterial({ color: 0xA7FFEB }));
+                zoneGroup.add(targetZoneMesh, targetBorderMesh);
+                sGroup.add(zoneGroup);
+
+                buildingsGroup.add(sGroup);
+
+                const worldPorchX = shop.x;
+                const worldPorchZ = shop.z + (bodyD / 2 + 2.2) * shop.facingZ;
+                const worldMbX = shop.x + standLocalX * shop.facingZ;
+                const worldMbZ = shop.z + standLocalZ * shop.facingZ;
+
+                state.buildings.push({
+                    id: shop.id,
+                    kind: 'MARKET',
+                    name: shop.name,
+                    x: shop.x,
+                    z: shop.z,
+                    porchPos: new THREE.Vector3(worldPorchX, 0.25, worldPorchZ),
+                    mailboxPos: new THREE.Vector3(worldMbX, 1.0, worldMbZ),
+                    isSubscriber: true,
+                    delivered: false,
+                    targetZoneMesh,
+                    targetBorderMesh,
+                    mbBoxMesh: standBox,
+                    flagPivot,
+                    flagTargetAngle: Math.PI / 2,
+                    windows
+                });
+            });
+        }
+
+        function assignNewSubscriberEdition() {
+            state.deliveredCount = 0;
+            // Shuffle all 24 buildings and activate 14 subscribers across Colony & Market
+            const indices = state.buildings.map((_, i) => i);
+            for (let i = indices.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [indices[i], indices[j]] = [indices[j], indices[i]];
+            }
+            const activeSet = new Set(indices.slice(0, state.editionTargetCount));
+
+            state.buildings.forEach((b, idx) => {
+                const active = activeSet.has(idx);
+                b.isSubscriber = active;
+                b.delivered = false;
+                b.flagTargetAngle = Math.PI / 2;
+                if (b.flagPivot) b.flagPivot.rotation.x = Math.PI / 2;
+
+                if (b.targetZoneMesh && b.targetBorderMesh) {
+                    b.targetZoneMesh.visible = active;
+                    b.targetBorderMesh.visible = active;
+                    if (active) {
+                        b.targetZoneMesh.material.color.setHex(b.kind === 'MARKET' ? 0x00E676 : 0x38F26A);
+                        b.targetZoneMesh.material.opacity = 0.46;
+                        b.targetBorderMesh.material.color.setHex(0x7CFF9B);
+                    }
+                }
+                if (b.mbBoxMesh) {
+                    b.mbBoxMesh.material.color.setHex(active ? (b.kind === 'MARKET' ? 0xFFB300 : 0xD93829) : 0x6D757D);
+                }
+            });
+
+            updateHudBar();
+        }
+
+        /**************************************************************
+         * 8. BUILD 360° CYCLIST, HANDLEBAR BASKET, AIM ARC & GPS ARROW
+         **************************************************************/
+        const playerGroup = new THREE.Group();
+        scene.add(playerGroup);
+
+        const bikeRig = {
+            tiltGroup: null,
+            frontWheel: null,
+            rearWheel: null,
+            leftLeg: null,
+            rightLeg: null,
+            leftArm: null,
+            rightArm: null,
+            handPaperMesh: null,
+            basketRolls: [],
+            gpsArrowGroup: null
+        };
+
+        function createDetailedPaperRollMesh(scale = 1.0) {
+            const g = new THREE.Group();
+            const outer = new THREE.Mesh(new THREE.CylinderGeometry(0.115 * scale, 0.115 * scale, 0.58 * scale, 12), MATS.paperWhite);
+            outer.rotation.z = Math.PI / 2;
+            outer.castShadow = true;
+            const core = new THREE.Mesh(new THREE.CylinderGeometry(0.068 * scale, 0.068 * scale, 0.60 * scale, 10), MATS.paperInner);
+            core.rotation.z = Math.PI / 2;
+            const band = new THREE.Mesh(new THREE.CylinderGeometry(0.123 * scale, 0.123 * scale, 0.10 * scale, 12), MATS.paperBand);
+            band.rotation.z = Math.PI / 2;
+            g.add(outer, core, band);
+            return g;
+        }
+
+        function buildPlayerCyclist() {
+            const tiltGroup = new THREE.Group();
+            playerGroup.add(tiltGroup);
+            bikeRig.tiltGroup = tiltGroup;
+
+            const frameMat = new THREE.MeshStandardMaterial({ color: 0xE03C28, metalness: 0.35, roughness: 0.4 });
+            const tireMat = new THREE.MeshStandardMaterial({ color: 0x1E2022, roughness: 0.9 });
+            const rimMat = new THREE.MeshStandardMaterial({ color: 0xDCDCDC, metalness: 0.6, roughness: 0.3 });
+
+            const createWheel = () => {
+                const wg = new THREE.Group();
+                const tire = new THREE.Mesh(new THREE.TorusGeometry(0.46, 0.075, 10, 20), tireMat);
+                tire.rotation.y = Math.PI / 2;
+                tire.castShadow = true;
+                wg.add(tire);
+                const spoke = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.88, 6), rimMat);
+                const spoke2 = spoke.clone();
+                spoke2.rotation.z = Math.PI / 2;
+                spoke2.rotation.y = Math.PI / 2;
+                wg.add(spoke, spoke2);
+                return wg;
+            };
+
+            const rearWheel = createWheel();
+            rearWheel.position.set(0, 0.52, 0.68);
+            const frontWheel = createWheel();
+            frontWheel.position.set(0, 0.52, -0.68);
+            tiltGroup.add(rearWheel, frontWheel);
+            bikeRig.rearWheel = rearWheel;
+            bikeRig.frontWheel = frontWheel;
+
+            // Bicycle Frame
+            const topTube = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 1.15, 8), frameMat);
+            topTube.position.set(0, 1.02, 0);
+            topTube.rotation.x = Math.PI / 2;
+            const downTube = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 1.1, 8), frameMat);
+            downTube.position.set(0, 0.78, -0.22);
+            downTube.rotation.x = Math.PI / 3;
+            const seatPost = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.75, 8), frameMat);
+            seatPost.position.set(0, 0.88, 0.35);
+            seatPost.rotation.x = -0.22;
+            tiltGroup.add(topTube, downTube, seatPost);
+
+            // Handlebars & Wire Basket with Visible Rolled Newspapers
+            const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.038, 0.038, 0.72, 8), rimMat);            stem.position.set(0, 1.05, -0.58);
+            stem.rotation.x = 0.2;
+            const bar = new THREE.Mesh(new THREE.CylinderGeometry(0.032, 0.032, 0.78, 8), rimMat);
+            bar.position.set(0, 1.38, -0.52);
+            bar.rotation.z = Math.PI / 2;
+            tiltGroup.add(stem, bar);
+
+            const basketGroup = new THREE.Group();
+            basketGroup.position.set(0, 1.16, -0.78);
+            const basketCage = new THREE.Mesh(
+                new THREE.BoxGeometry(0.58, 0.34, 0.38),
+                new THREE.MeshStandardMaterial({ color: 0x3A3F45, wireframe: true })
+            );
+            basketGroup.add(basketCage);
+
+            for (let r = 0; r < 8; r++) {
+                const miniRoll = createDetailedPaperRollMesh(0.42);
+                miniRoll.position.set(((r % 2) - 0.5) * 0.2, 0.05 + Math.floor(r / 2) * 0.075, ((r % 3) - 1) * 0.06);
+                basketGroup.add(miniRoll);
+                bikeRig.basketRolls.push(miniRoll);
+            }
+            tiltGroup.add(basketGroup);
+
+            // Cyclist Rider
+            const skinMat = new THREE.MeshStandardMaterial({ color: 0xF0B892, roughness: 0.7 });
+            const jerseyMat = new THREE.MeshStandardMaterial({ color: 0xE5A93B, roughness: 0.75 });
+            const vestMat = new THREE.MeshStandardMaterial({ color: 0x2E6B47, roughness: 0.8 });
+            const shortsMat = new THREE.MeshStandardMaterial({ color: 0x2B4C7E, roughness: 0.85 });
+            const helmetMat = new THREE.MeshStandardMaterial({ color: 0x357A5B, roughness: 0.4 });
+
+            const torso = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.72, 0.32), jerseyMat);
+            torso.position.set(0, 1.62, 0.14);
+            torso.rotation.x = -0.32;
+            torso.castShadow = true;
+            const vest = new THREE.Mesh(new THREE.BoxGeometry(0.54, 0.36, 0.34), vestMat);
+            vest.position.set(0, 1.58, 0.15);
+            vest.rotation.x = -0.32;
+            const head = new THREE.Mesh(new THREE.SphereGeometry(0.21, 12, 12), skinMat);
+            head.position.set(0, 2.12, -0.02);
+            const helmet = new THREE.Mesh(new THREE.SphereGeometry(0.24, 12, 10, 0, Math.PI * 2, 0, Math.PI * 0.62), helmetMat);
+            helmet.position.set(0, 2.16, -0.02);
+            tiltGroup.add(torso, vest, head, helmet);
+
+            const legGeo = new THREE.BoxGeometry(0.17, 0.62, 0.19);
+            const leftLeg = new THREE.Mesh(legGeo, shortsMat);
+            leftLeg.position.set(-0.16, 1.02, 0.22);
+            const rightLeg = new THREE.Mesh(legGeo, shortsMat);
+            rightLeg.position.set(0.16, 1.02, 0.22);
+            tiltGroup.add(leftLeg, rightLeg);
+            bikeRig.leftLeg = leftLeg;
+            bikeRig.rightLeg = rightLeg;
+
+            const armGeo = new THREE.BoxGeometry(0.14, 0.56, 0.14);
+            const rightArm = new THREE.Mesh(armGeo, skinMat);
+            rightArm.position.set(0.28, 1.56, -0.22);
+            rightArm.rotation.x = 0.85;
+            const leftArm = new THREE.Mesh(armGeo, skinMat);
+            leftArm.position.set(-0.28, 1.56, -0.22);
+            leftArm.rotation.x = 0.85;
+
+            const handRoll = createDetailedPaperRollMesh(0.56);
+            handRoll.position.set(-0.14, -0.24, 0);
+            leftArm.add(handRoll);
+            bikeRig.handPaperMesh = handRoll;
+
+            tiltGroup.add(rightArm, leftArm);
+            bikeRig.rightArm = rightArm;
+            bikeRig.leftArm = leftArm;
+
+            // Floating 3D Directional Guide Arrow above Player (points to GPS Waypoint or Nearest Subscriber)
+            const gpsArrowGroup = new THREE.Group();
+            gpsArrowGroup.position.set(0, 3.25, 0);
+            const arrowCone = new THREE.Mesh(
+                new THREE.ConeGeometry(0.28, 0.75, 8),
+                new THREE.MeshBasicMaterial({ color: 0x00E676 })
+            );
+            arrowCone.rotation.x = -Math.PI / 2;
+            arrowCone.position.z = -0.2;
+            gpsArrowGroup.add(arrowCone);
+            playerGroup.add(gpsArrowGroup);
+            bikeRig.gpsArrowGroup = gpsArrowGroup;
+            bikeRig.gpsArrowMat = arrowCone.material;
+        }
+
+        // 3D Parabolic Trajectory Aiming Visuals & Sky-Beam Waypoint Beacon
+        const aimTrajectoryGroup = new THREE.Group();
+        scene.add(aimTrajectoryGroup);
+        const AIM_ARC_DOT_COUNT = 28;
+        const aimArcDots = [];
+        let aimReticleGroup = null;
+        let aimReticleInner = null;
+        let aimReticleOuter = null;
+        let waypointBeamMesh = null;
+
+        function buildAimingAndWaypointVisuals() {
+            const dotGeo = new THREE.SphereGeometry(0.13, 8, 8);
+            for (let i = 0; i < AIM_ARC_DOT_COUNT; i++) {
+                const mat = new THREE.MeshBasicMaterial({ color: 0x38F26A, transparent: true, opacity: 0.85 });
+                const dot = new THREE.Mesh(dotGeo, mat);
+                aimTrajectoryGroup.add(dot);
+                aimArcDots.push(dot);
+            }
+
+            aimReticleGroup = new THREE.Group();
+            aimReticleOuter = new THREE.Mesh(
+                new THREE.RingGeometry(0.85, 1.12, 24),
+                new THREE.MeshBasicMaterial({ color: 0x38F26A, side: THREE.DoubleSide, transparent: true, opacity: 0.9 })
+            );
+            aimReticleOuter.rotation.x = -Math.PI / 2;
+            aimReticleInner = new THREE.Mesh(
+                new THREE.RingGeometry(0.25, 0.42, 16),
+                new THREE.MeshBasicMaterial({ color: 0xFFFFFF, side: THREE.DoubleSide, transparent: true, opacity: 0.95 })
+            );
+            aimReticleInner.rotation.x = -Math.PI / 2;
+            aimReticleGroup.add(aimReticleOuter, aimReticleInner);
+            aimTrajectoryGroup.add(aimReticleGroup);
+
+            // 3D Sky-Beam GPS Waypoint Beacon
+            waypointBeamMesh = new THREE.Mesh(
+                new THREE.CylinderGeometry(1.4, 1.4, 95, 16, 1, true),
+                new THREE.MeshBasicMaterial({ color: 0xE040FB, transparent: true, opacity: 0.35, side: THREE.DoubleSide })
+            );
+            waypointBeamMesh.visible = false;
+            scene.add(waypointBeamMesh);
+        }
+
+        /**************************************************************
+         * 9. SPAWN TRAFFIC CARS, YARD DOGS & GOLDEN PAPER REFILL BUNDLES
+         **************************************************************/
+        function createCarMesh(colorHex) {
+            const car = new THREE.Group();
+            const bodyMat = new THREE.MeshStandardMaterial({ color: colorHex, roughness: 0.45, metalness: 0.15 });
+            const glassMat = new THREE.MeshStandardMaterial({ color: 0x283542, roughness: 0.15 });
+            const wheelMat = new THREE.MeshStandardMaterial({ color: 0x1B1B1B, roughness: 0.9 });
+
+            const lower = new THREE.Mesh(new THREE.BoxGeometry(2.3, 0.82, 4.5), bodyMat);
+            lower.position.y = 0.68;
+            lower.castShadow = true;
+            const cabin = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.72, 2.3), bodyMat);
+            cabin.position.set(0, 1.42, -0.15);
+            const windshield = new THREE.Mesh(new THREE.BoxGeometry(1.88, 0.58, 2.38), glassMat);
+            windshield.position.set(0, 1.4, -0.15);
+            car.add(lower, cabin, windshield);
+
+            const wGeo = new THREE.CylinderGeometry(0.38, 0.38, 0.28, 10);
+            [[-1.12, 1.35], [1.12, 1.35], [-1.12, -1.35], [1.12, -1.35]].forEach(([wx, wz]) => {
+                const w = new THREE.Mesh(wGeo, wheelMat);
+                w.rotation.z = Math.PI / 2;
+                w.position.set(wx, 0.38, wz);
+                car.add(w);
+            });
+            return car;
+        }
+
+        function createDogMesh() {
+            const dog = new THREE.Group();
+            const furMat = new THREE.MeshStandardMaterial({ color: 0x8A5632, roughness: 0.85 });
+            const darkFurMat = new THREE.MeshStandardMaterial({ color: 0x4E2E18, roughness: 0.9 });
+            const torso = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.48, 0.95), furMat);
+            torso.position.y = 0.56;
+            const head = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.38, 0.42), furMat);
+            head.position.set(0, 0.84, 0.48);
+            const snout = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.2, 0.28), darkFurMat);
+            snout.position.set(0, 0.78, 0.74);
+            const legs = [];
+            const legGeo = new THREE.BoxGeometry(0.12, 0.42, 0.12);
+            [[-0.15, 0.32], [0.15, 0.32], [-0.15, -0.32], [0.15, -0.32]].forEach(([lx, lz]) => {
+                const l = new THREE.Mesh(legGeo, furMat);
+                l.position.set(lx, 0.21, lz);
+                dog.add(l);
+                legs.push(l);
+            });
+            dog.add(torso, head, snout);
+            dog.userData.legs = legs;
+            return dog;
+        }
+
+        function spawnDynamicWorldEntities() {
+            while (dynamicGroup.children.length > 0) {
+                dynamicGroup.remove(dynamicGroup.children[0]);
+            }
+            state.cars = [];
+            state.dogs = [];
+            state.paperPickups = [];
+
+            const carColors = [0xA8382B, 0xD2BC9A, 0x3D6380, 0x3A5F47, 0xB85A32, 0x5E4B8B];
+            // Horizontal Road Patrol Cars
+            HORIZ_ROADS_Z.forEach((rz, idx) => {
+                [-1, 1].forEach((dir, dIdx) => {
+                    const mesh = createCarMesh(carColors[(idx + dIdx) % carColors.length]);
+                    const startX = -120 + idx * 65 + dIdx * 90;
+                    const laneZ = rz + (dir === 1 ? 2.6 : -2.6);
+                    mesh.position.set(startX, 0, laneZ);
+                    mesh.rotation.y = dir === 1 ? Math.PI / 2 : -Math.PI / 2;
+                    dynamicGroup.add(mesh);
+                    state.cars.push({ axis: 'X', x: startX, z: laneZ, dir, speed: 12 + (idx % 3) * 2, mesh });
+                });
+            });
+
+            // Vertical Road Patrol Cars
+            VERT_ROADS_X.forEach((rx, idx) => {
+                const dir = idx % 2 === 0 ? 1 : -1;
+                const mesh = createCarMesh(carColors[(idx + 2) % carColors.length]);
+                const startZ = -90 + idx * 45;
+                const laneX = rx + (dir === 1 ? -2.6 : 2.6);
+                mesh.position.set(laneX, 0, startZ);
+                mesh.rotation.y = dir === 1 ? 0 : Math.PI;
+                dynamicGroup.add(mesh);
+                state.cars.push({ axis: 'Z', x: laneX, z: startZ, dir, speed: 13, mesh });
+            });
+
+            // Neighborhood Yard Dogs in Sunrise Colony
+            [
+                [-112, -135], [-18, -135], [-72, -60], [-115, -48]
+            ].forEach(([dx, dz]) => {
+                const mesh = createDogMesh();
+                mesh.position.set(dx, 0, dz);
+                dynamicGroup.add(mesh);
+                state.dogs.push({ mesh, homeX: dx, homeZ: dz, x: dx, z: dz, chasing: false, barkCooldown: 0 });
+            });
+
+            // Golden Paper Refill Bundles (+6 PAPERS) on Town Intersections
+            [
+                [-45, -55], [45, -55], [-45, 15], [45, 15], [-135, -55], [135, 15], [0, 95]
+            ].forEach(([px, pz]) => {
+                const bundleGroup = new THREE.Group();
+                bundleGroup.position.set(px, 0.55, pz);
+                for (let b = 0; b < 3; b++) {
+                    const roll = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.85, 10), MATS.goldPickup);
+                    roll.rotation.z = Math.PI / 2;
+                    roll.position.y = b * 0.22;
+                    bundleGroup.add(roll);
+                }
+                const ring = new THREE.Mesh(
+                    new THREE.RingGeometry(1.0, 1.3, 20),
+                    new THREE.MeshBasicMaterial({ color: 0xFFD43B, side: THREE.DoubleSide })
+                );
+                ring.rotation.x = -Math.PI / 2;
+                ring.position.y = -0.45;
+                bundleGroup.add(ring);
+                dynamicGroup.add(bundleGroup);
+                state.paperPickups.push({ mesh: bundleGroup, x: px, z: pz, cooldown: 0 });
+            });
+        }
+
+        /**************************************************************
+         * 10. OMNIDIRECTIONAL 360° AIM SOLVER & PAPER THROWING PHYSICS
+         **************************************************************/
+        const GRAVITY_ACCEL = -18.5;
+
+        function computeOmnidirectionalAim() {
+            const p = state.player;
+            const throwRange = state.upgrades.pitcher.ranges[state.upgrades.pitcher.level - 1];
+
+            // Cyclist forward vector & left/right normal vectors
+            const fwdX = Math.sin(p.heading);
+            const fwdZ = -Math.cos(p.heading);
+            const leftX = - Math.cos(p.heading);
+            const leftZ = - Math.sin(p.heading);
+
+            let bestCandidate = null;
+            let bestScore = Infinity;
+
+            // Scan all buildings (Colony Houses & Market Shops) within throwRange
+            for (const b of state.buildings) {
+                const distCenter = Math.hypot(b.x - p.x, b.z - p.z);
+                if (distCenter > throwRange + 12) continue;
+
+                if (b.isSubscriber && !b.delivered) {
+                    // 1. Mailbox / Shop Counter Bullseye
+                    const dMb = Math.hypot(b.mailboxPos.x - p.x, b.mailboxPos.z - p.z);
+                    if (dMb < throwRange && dMb > 3.5) {
+                        const score = dMb * 0.72;
+                        if (score < bestScore) {
+                            bestScore = score;
+                            bestCandidate = { type: 'MAILBOX', building: b, pos: b.mailboxPos.clone(), points: 250 };
+                        }
+                    }
+                    // 2. Porch / Storefront Drop Zone
+                    const dPorch = Math.hypot(b.porchPos.x - p.x, b.porchPos.z - p.z);
+                    if (dPorch < throwRange && dPorch > 3.5) {
+                        const score = dPorch * 0.88;
+                        if (score < bestScore) {
+                            bestScore = score;
+                            bestCandidate = { type: 'PORCH', building: b, pos: b.porchPos.clone(), points: 150 };
+                        }
+                    }
+                } else {
+                    // Non-subscriber or already delivered: allow Glass Window lock if holding charge
+                    if (state.aim.charging) {
+                        for (const w of b.windows) {
+                            if (w.broken) continue;
+                            const dWin = Math.hypot(w.worldPos.x - p.x, w.worldPos.z - p.z);
+                            if (dWin < throwRange && dWin > 4.0 && dWin < bestScore) {
+                                bestScore = dWin;
+                                bestCandidate = { type: 'WINDOW', building: b, windowObj: w, pos: w.worldPos.clone(), points: 75 };
+                            }
+                        }
+                    }
+                }
+            }
+
+            let targetPos = new THREE.Vector3();
+
+            if (bestCandidate && !state.aim.charging) {
+                state.aim.lockedTarget = bestCandidate;
+                targetPos.copy(bestCandidate.pos);
+            } else {
+                // Manual sweeping throw based on mouse side (left or right of screen) and charge power
+                const sideSign = state.aim.mouseNDC.x > 0.15 ? -1 : 1; // +1 = Left of bike, -1 = Right of bike
+                const dist = 8.5 + state.aim.power * (throwRange - 6);
+                targetPos.set(
+                    p.x + leftX * sideSign * dist + fwdX * (p.speed * 0.35 + state.aim.mouseNDC.y * 4),
+                    0.22,
+                    p.z + leftZ * sideSign * dist + fwdZ * (p.speed * 0.35 + state.aim.mouseNDC.y * 4)
+                );
+
+                // Snap to nearby target if close to manual reticle
+                state.aim.lockedTarget = null;
+                if (bestCandidate && targetPos.distanceTo(bestCandidate.pos) < 5.5) {
+                    state.aim.lockedTarget = bestCandidate;
+                    targetPos.lerp(bestCandidate.pos, 0.72);
+                }
+            }
+
+            state.aim.landingPos.copy(targetPos);
+
+            // Determine whether target is on left or right side of bike for arm animation
+            const toTargetX = targetPos.x - p.x;
+            const toTargetZ = targetPos.z - p.z;
+            const dotLeft = toTargetX * leftX + toTargetZ * leftZ;
+            p.throwSide = dotLeft >= 0 ? 1 : -1;
+
+            // Compute exact parabolic launch velocity vector from hand to landingPos
+            const startX = p.x + leftX * p.throwSide * 0.45;
+            const startY = 1.55;
+            const startZ = p.z + leftZ * p.throwSide * 0.45;
+
+            const distH = Math.hypot(targetPos.x - startX, targetPos.z - startZ);
+            const flightTime = Math.max(0.36, Math.min(0.82, distH / 23.0));
+            const vx = (targetPos.x - startX) / flightTime;
+            const vz = (targetPos.z - startZ) / flightTime;
+            const vy = (targetPos.y - startY - 0.5 * GRAVITY_ACCEL * flightTime * flightTime) / flightTime;
+
+            state.aim.launchVel.set(vx, vy, vz);
+            updateAimArcVisuals(startX, startY, startZ, flightTime);
+        }
+
+        function updateAimArcVisuals(startX, startY, startZ, flightTime) {
+            if (state.phase !== 'PLAYING' || state.papersLeft <= 0) {
+                aimTrajectoryGroup.visible = false;
+                return;
+            }
+            aimTrajectoryGroup.visible = true;
+
+            let arcColorHex = 0xFFFFFF;
+            const lock = state.aim.lockedTarget;
+            const badge = document.getElementById('hudTargetText');
+            const dotInd = document.getElementById('hudTargetDot');
+
+            if (lock) {
+                if (lock.type === 'MAILBOX') {
+                    arcColorHex = 0xFFD43B;
+                    if (badge) badge.textContent = `📫 LOCKED: ${lock.building.name} (+250)`;
+                    if (dotInd) dotInd.className = 'w-2 h-2 rounded-full bg-amber-400 animate-ping';
+                } else if (lock.type === 'PORCH') {
+                    arcColorHex = 0x38F26A;
+                    if (badge) badge.textContent = `🏡 LOCKED: ${lock.building.name} (+150)`;
+                    if (dotInd) dotInd.className = 'w-2 h-2 rounded-full bg-emerald-400 animate-ping';
+                } else if (lock.type === 'WINDOW') {
+                    arcColorHex = 0x38D9F5;
+                    if (badge) badge.textContent = `🪟 TARGET: GLASS WINDOW (+75)`;
+                    if (dotInd) dotInd.className = 'w-2 h-2 rounded-full bg-cyan-400 animate-ping';
+                }
+            } else {
+                arcColorHex = state.aim.charging ? 0xFFAA33 : 0xA8F0C6;
+                if (badge) badge.textContent = `🗞️ AUTO-LOCK READY [SPACE / CLICK]`;
+                if (dotInd) dotInd.className = 'w-2 h-2 rounded-full bg-emerald-400';
+            }
+
+            const v = state.aim.launchVel;
+            const pulseOffset = (performance.now() * 0.004) % 1;
+
+            for (let i = 0; i < AIM_ARC_DOT_COUNT; i++) {
+                const tNorm = i / (AIM_ARC_DOT_COUNT - 1);
+                const t = tNorm * flightTime;
+                const dot = aimArcDots[i];
+                dot.position.set(
+                    startX + v.x * t,
+                    startY + v.y * t + 0.5 * GRAVITY_ACCEL * t * t,
+                    startZ + v.z * t
+                );
+                dot.material.color.setHex(arcColorHex);
+                const wave = 0.7 + 0.45 * Math.sin((tNorm - pulseOffset) * Math.PI * 4);
+                dot.scale.setScalar((state.aim.charging ? 1.15 : 0.82) * wave);
+            }
+
+            aimReticleGroup.position.copy(state.aim.landingPos);
+            aimReticleGroup.position.y = 0.16;
+            aimReticleOuter.material.color.setHex(arcColorHex);
+            aimReticleOuter.rotation.z += 0.04;
+        }
+
+        function createRibbonTrailMesh(colorHex = 0xFFFFFF) {
+            const maxPts = 18;
+            const geom = new THREE.BufferGeometry();
+            const positions = new Float32Array(maxPts * 2 * 3);
+            const indices = [];
+            for (let i = 0; i < maxPts - 1; i++) {
+                const a = i * 2, b = a + 1, c = a + 2, d = a + 3;
+                indices.push(a, b, c, b, d, c);
+            }
+            geom.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            geom.setIndex(indices);
+            const mat = new THREE.MeshBasicMaterial({ color: colorHex, side: THREE.DoubleSide, transparent: true, opacity: 0.55 });
+            return { mesh: new THREE.Mesh(geom, mat), history: [] };
+        }
+
+        function executePaperThrow() {
+            if (state.phase !== 'PLAYING') return;
+            if (state.player.throwCooldown > 0 || state.papersLeft <= 0) {
+                if (state.papersLeft <= 0) {
+                    showCenterBanner('🧺 Basket Empty! Ride into the Gold Ring at The Daily Press Depot or grab a Golden Bundle!');
+                }
+                return;
+            }
+
+            computeOmnidirectionalAim();
+
+            state.papersLeft--;
+            state.player.throwCooldown = 0.22;
+            state.player.throwAnimTimer = 0.28;
+            sfx.playWhoosh(state.aim.power);
+            updateHudBar();
+
+            const p = state.player;
+            const leftX = -Math.cos(p.heading) * p.throwSide;
+            const leftZ = -Math.sin(p.heading) * p.throwSide;
+            const startX = p.x + leftX * 0.45;
+            const startY = 1.55;
+            const startZ = p.z + leftZ * 0.45;
+
+            const paperMesh = createDetailedPaperRollMesh(1.1);
+            paperMesh.position.set(startX, startY, startZ);
+            dynamicGroup.add(paperMesh);
+
+            const isBullseyeLock = state.aim.lockedTarget && state.aim.lockedTarget.type === 'MAILBOX';
+            const ribbon = createRibbonTrailMesh(isBullseyeLock ? 0xFFE066 : 0xFFFFFF);
+            dynamicGroup.add(ribbon.mesh);
+
+            state.thrownPapers.push({
+                mesh: paperMesh,
+                ribbon,
+                x: startX,
+                y: startY,
+                z: startZ,
+                vx: state.aim.launchVel.x,
+                vy: state.aim.launchVel.y,
+                vz: state.aim.launchVel.z,
+                lockedTarget: state.aim.lockedTarget,
+                spinX: 16 + Math.random() * 6,
+                spinY: 12 + Math.random() * 5,
+                bounces: 0,
+                landed: false,
+                scored: false,
+                age: 0,
+                flutterTimer: 0
+            });
+        }
+
+        /**************************************************************
+         * 11. IMPACT EFFECTS, SHATTERING WINDOWS & EDITION COMPLETION
+         **************************************************************/
+        function spawnImpactShockwave(x, y, z, colorHex = 0x38F26A, maxRadius = 2.8) {
+            const ring = new THREE.Mesh(
+                new THREE.RingGeometry(0.2, 0.45, 24),
+                new THREE.MeshBasicMaterial({ color: colorHex, side: THREE.DoubleSide, transparent: true, opacity: 0.92 })
+            );
+            ring.rotation.x = -Math.PI / 2;
+            ring.position.set(x, y + 0.08, z);
+            dynamicGroup.add(ring);
+            state.shockwaves.push({ mesh: ring, age: 0, duration: 0.48, maxScale: maxRadius * 2.2 });
+        }
+
+        function spawn3DParticleBurst(x, y, z, colorHex = 0x48FF7A, count = 14) {
+            const geo = new THREE.BoxGeometry(0.18, 0.18, 0.18);
+            const mat = new THREE.MeshBasicMaterial({ color: colorHex });
+            for (let i = 0; i < count; i++) {
+                const p = new THREE.Mesh(geo, mat);
+                p.position.set(x, y, z);
+                dynamicGroup.add(p);
+                const angle = (Math.PI * 2 * i) / count + Math.random() * 0.4;
+                const spd = 2.5 + Math.random() * 4.5;
+                state.particles.push({
+                    mesh: p,
+                    vx: Math.cos(angle) * spd,
+                    vy: 2.5 + Math.random() * 4.0,
+                    vz: Math.sin(angle) * spd,
+                    gravity: 9.8,
+                    life: 0.55
+                });
+            }
+        }
+
+        function shatterWindowPane(winObj) {
+            if (!winObj || winObj.broken) return;
+            winObj.broken = true;
+            sfx.playGlassShatter();
+
+            winObj.mesh.material.color.setHex(0x182028);
+            winObj.mesh.material.emissiveIntensity = 0;
+
+            const shardGeo = new THREE.TetrahedronGeometry(0.16, 0);
+            const shardMat = new THREE.MeshStandardMaterial({ color: 0xB8ECFF, roughness: 0.1, metalness: 0.5 });
+            const wp = winObj.worldPos;
+            for (let i = 0; i < 20; i++) {
+                const shard = new THREE.Mesh(shardGeo, shardMat);
+                shard.position.set(wp.x + (Math.random() - 0.5) * 0.9, wp.y + (Math.random() - 0.5) * 0.9, wp.z);
+                dynamicGroup.add(shard);
+                state.glassShards.push({
+                    mesh: shard,
+                    vx: (Math.random() - 0.5) * 6,
+                    vy: 1.5 + Math.random() * 3.5,
+                    vz: (Math.random() - 0.5) * 6,
+                    life: 1.3
+                });
+            }
+        }
+
+        function showFloatingScorePopup(pointsText, worldPos = null, isBonus = false) {
+            const hudAnchor = document.getElementById('hudScorePopupAnchor');
+            if (hudAnchor) {
+                const badge = document.createElement('div');
+                badge.className = `score-float font-mono-score text-xs sm:text-sm font-extrabold drop-shadow-[0_2px_4px_rgba(0,0,0,0.75)] ${
+                    isBonus ? 'text-amber-300' : 'text-emerald-300'
+                }`;
+                badge.textContent = pointsText;
+                hudAnchor.appendChild(badge);
+                setTimeout(() => badge.remove(), 1350);
+            }
+
+            if (worldPos) {
+                const projected = worldPos.clone().project(camera);
+                if (projected.z < 1) {
+                    const sx = (projected.x * 0.5 + 0.5) * window.innerWidth;
+                    const sy = (-projected.y * 0.5 + 0.5) * window.innerHeight;
+                    const layer = document.getElementById('worldPopupLayer');
+                    const floatEl = document.createElement('div');
+                    floatEl.className = `score-float absolute font-mono-score text-sm sm:text-base font-extrabold px-2.5 py-0.5 rounded bg-black/75 ${
+                        isBonus ? 'text-amber-300 border-amber-400' : 'text-emerald-300 border-emerald-400'
+                    } border shadow-xl whitespace-nowrap`;
+                    floatEl.style.left = `${sx - 40}px`;
+                    floatEl.style.top = `${sy - 24}px`;
+                    floatEl.textContent = pointsText;
+                    layer.appendChild(floatEl);
+                    setTimeout(() => floatEl.remove(), 1350);
+                }
+            }
+        }
+
+        function showCenterBanner(msg, duration = 3000) {
+            const wrap = document.getElementById('centerBannerWrap');
+            const text = document.getElementById('centerBannerText');
+            if (!wrap || !text) return;
+            text.textContent = msg;
+            wrap.classList.remove('hidden');
+            clearTimeout(wrap.hideTimer);
+            wrap.hideTimer = setTimeout(() => wrap.classList.add('hidden'), duration);
+        }
+
+        function markBuildingDelivered(b, basePts, label, impactPos, isBullseye) {
+            b.delivered = true;
+            state.deliveredCount++;
+            const earned = basePts * state.streak;
+            state.cash += earned;
+            state.streak = Math.min(5, state.streak + 1);
+
+            if (isBullseye) {
+                b.flagTargetAngle = 0; // Flip mailbox/counter flag UP
+                state.papersLeft = Math.min(state.maxPapers, state.papersLeft + 2);
+            }
+
+            if (b.targetZoneMesh) {
+                b.targetZoneMesh.material.color.setHex(0xFFD43B);
+                b.targetZoneMesh.material.opacity = 0.16;
+            }
+            if (b.targetBorderMesh) {
+                b.targetBorderMesh.material.color.setHex(0xFFD43B);
+            }
+            if (b.mbBoxMesh) {
+                b.mbBoxMesh.material.color.setHex(0x2EA856);
+            }
+
+            sfx.playDeliveryChime(isBullseye);
+            spawnImpactShockwave(impactPos.x, 0.15, impactPos.z, isBullseye ? 0xFFD43B : 0x38F26A, 3.2);
+            spawn3DParticleBurst(impactPos.x, impactPos.y + 0.4, impactPos.z, isBullseye ? 0xFFD43B : 0x38F26A, 18);
+            showFloatingScorePopup(`+$${earned} ${label}`, impactPos, isBullseye);
+
+            // Check if all 14 subscribers in the current Edition are completed!
+            if (state.deliveredCount >= state.editionTargetCount) {
+                state.editionNumber++;
+                state.cash += 500;
+                state.papersLeft = state.maxPapers;
+                sfx.playRefillChime();
+                showCenterBanner(`🎉 EDITION #${state.editionNumber - 1} COMPLETE! +$500 BONUS — EDITION #${state.editionNumber} DISPATCHED!`, 4800);
+                setTimeout(() => assignNewSubscriberEdition(), 1200);
+            }
+
+            updateHudBar();
+        }
+
+        function evaluatePaperImpact(paper) {
+            if (paper.scored) return false;
+            const pVec = new THREE.Vector3(paper.x, paper.y, paper.z);
+
+            // 1. Check Trash Cans
+            for (const tc of state.trashCans) {
+                if (!tc.knocked && Math.hypot(paper.x - tc.x, paper.z - tc.z) < 1.25 && paper.y < 1.4) {
+                    tc.knocked = true;
+                    tc.vx = paper.vx * 0.35;
+                    tc.vy = 4.2;
+                    tc.vz = paper.vz * 0.35;
+                    paper.scored = true;
+                    state.cash += 40;
+                    sfx.playTrashClatter();
+                    spawnImpactShockwave(tc.x, 0.1, tc.z, 0xFFA94D, 1.8);
+                    showFloatingScorePopup('+$40 TRASH CAN!', pVec, false);
+                    updateHudBar();
+                    return true;
+                }
+            }
+
+            // 2. Check Colony Houses & Market Shops
+            for (const b of state.buildings) {
+                // Direct Mailbox / Shop Counter Bullseye
+                if (b.isSubscriber && !b.delivered && pVec.distanceTo(b.mailboxPos) < 2.2) {
+                    paper.scored = true;
+                    markBuildingDelivered(b, 250, b.kind === 'MARKET' ? 'SHOP COUNTER!' : 'MAILBOX!', b.mailboxPos, true);
+                    return true;
+                }
+
+                // Glass Window Shatter
+                for (const w of b.windows) {
+                    if (!w.broken && pVec.distanceTo(w.worldPos) < 1.75) {
+                        shatterWindowPane(w);
+                        paper.scored = true;
+                        state.cash += 75;
+                        showFloatingScorePopup('+$75 GLASS SHATTER!', w.worldPos, false);
+                        updateHudBar();
+                        return true;
+                    }
+                }
+
+                // Porch / Storefront Delivery Zone (check on landing or low height)
+                if (paper.y < 1.1 && b.isSubscriber && !b.delivered) {
+                    const dx = Math.abs(paper.x - b.porchPos.x);
+                    const dz = Math.abs(paper.z - b.porchPos.z);
+                    if (dx < 3.4 && dz < 3.4) {
+                        paper.scored = true;
+                        markBuildingDelivered(b, 150, b.kind === 'MARKET' ? b.name.toUpperCase() : 'PORCH DELIVERY', pVec, false);
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        /**************************************************************
+         * 12. LIVE 2D RADAR MINIMAP + FULL-SCREEN WORLD MAP [M]
+         **************************************************************/
+        const minimapCvs = document.getElementById('minimapCanvas');
+        const minimapCtx = minimapCvs.getContext('2d');
+        const fullMapCvs = document.getElementById('fullMapCanvas');
+        const fullMapCtx = fullMapCvs.getContext('2d');
+
+        function getDistrictNameAt(x, z) {
+            if (z > 82) return 'Coastal Boardwalk & Bay';
+            if (Math.abs(x) < 38 && z > 25 && z <= 82) return 'Central Park Fountain Plaza';
+            if (Math.abs(x) < 28 && Math.abs(z - 5) < 22) return 'Daily Press Depot Plaza';
+            if (x > 25) return 'Main Bazaar & Market District';
+            return 'Sunrise Residential Colony';
+        }
+
+        function renderTownMapOnCanvas(ctx, size, isFullMap = false) {
+            ctx.clearRect(0, 0, size, size);
+            const scale = size / (WORLD_HALF_SIZE * 2);
+            const toPx = (wx) => (wx + WORLD_HALF_SIZE) * scale;
+            const toPz = (wz) => (wz + WORLD_HALF_SIZE) * scale;
+
+            // 1. Grass Background & Southern Ocean Bay
+            ctx.fillStyle = '#243B27';
+            ctx.fillRect(0, 0, size, size);
+
+            // Central Park Patch
+            ctx.fillStyle = '#2E5732';
+            ctx.fillRect(toPx(-36), toPz(24), 72 * scale, 62 * scale);
+
+            // Beach & Ocean at South Edge
+            ctx.fillStyle = '#C5B386';
+            ctx.fillRect(0, toPz(104), size, 24 * scale);
+            ctx.fillStyle = '#155A8A';
+            ctx.fillRect(0, toPz(124), size, size - toPz(124));
+
+            // 2. Road Grid
+            ctx.fillStyle = '#4B535B';
+            HORIZ_ROADS_Z.forEach(rz => {
+                ctx.fillRect(toPx(-175), toPz(rz - 6), 350 * scale, 12 * scale);
+            });
+            VERT_ROADS_X.forEach(rx => {
+                ctx.fillRect(toPx(rx - 6), toPz(-160), 12 * scale, 270 * scale);
+            });
+
+            // 3. The Daily Press Depot (Gold Hub)
+            ctx.fillStyle = '#FFD43B';
+            ctx.fillRect(toPx(-9), toPz(-16), 18 * scale, 14 * scale);
+            if (isFullMap) {
+                ctx.fillStyle = '#FFF';
+                ctx.font = 'bold 11px "JetBrains Mono", monospace';
+                ctx.textAlign = 'center';
+                ctx.fillText('🗞️ PRESS DEPOT (REFILL)', toPx(0), toPz(-20));
+            }
+
+            // 4. Bike Upgrade Garage (Cyan Hub)
+            ctx.fillStyle = '#00E5FF';
+            ctx.fillRect(toPx(81), toPz(-9), 14 * scale, 11 * scale);
+            if (isFullMap) {
+                ctx.fillStyle = '#80DEEA';
+                ctx.fillText('🔧 BIKE GARAGE [U]', toPx(88), toPz(-13));
+            }
+
+            // 5. Colony Houses & Market Shops
+            const pulse = 0.5 + 0.5 * Math.sin(performance.now() * 0.008);
+            state.buildings.forEach(b => {
+                const bx = toPx(b.x);
+                const bz = toPz(b.z);
+                const bw = 10 * scale;
+
+                if (b.isSubscriber && !b.delivered) {
+                    ctx.fillStyle = b.kind === 'MARKET' ? '#00E676' : '#40FF78';
+                } else {
+                    ctx.fillStyle = b.kind === 'MARKET' ? '#D97724' : '#78828A';
+                }
+                ctx.fillRect(bx - bw / 2, bz - bw / 2, bw, bw);
+
+                // Pulsing Beacon Ring for Active Subscribers
+                if (b.isSubscriber && !b.delivered) {
+                    ctx.strokeStyle = '#AAFFCC';
+                    ctx.lineWidth = isFullMap ? 2 : 1.2;
+                    ctx.beginPath();
+                    ctx.arc(bx, bz, bw * (0.65 + pulse * 0.45), 0, Math.PI * 2);
+                    ctx.stroke();
+                }
+
+                if (isFullMap) {
+                    ctx.fillStyle = b.isSubscriber && !b.delivered ? '#B9F6CA' : '#D6D3CD';
+                    ctx.font = '600 9px "Inter", sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(b.name, bx, bz + bw * 0.9 + 6);
+                }
+            });
+
+            // 6. Moving Traffic Cars
+            ctx.fillStyle = '#FF5252';
+            state.cars.forEach(c => {
+                ctx.beginPath();
+                ctx.arc(toPx(c.x), toPz(c.z), isFullMap ? 3.5 : 2.2, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // 7. Active 3D GPS Waypoint Line & Pin
+            const px = toPx(state.player.x);
+            const pz = toPz(state.player.z);
+
+            if (state.waypoint.active) {
+                const wx = toPx(state.waypoint.x);
+                const wz = toPz(state.waypoint.z);
+                ctx.strokeStyle = '#E040FB';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([4, 4]);
+                ctx.beginPath();
+                ctx.moveTo(px, pz);
+                ctx.lineTo(wx, wz);
+                ctx.stroke();
+                ctx.setLineDash([]);
+
+                ctx.fillStyle = '#E040FB';
+                ctx.beginPath();
+                ctx.arc(wx, wz, isFullMap ? 7 : 4.5, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // 8. District Labels on Full Map
+            if (isFullMap) {
+                ctx.fillStyle = 'rgba(255, 235, 130, 0.9)';
+                ctx.font = '800 13px "JetBrains Mono", monospace';
+                ctx.textAlign = 'left';
+                ctx.fillText('SUNRISE RESIDENTIAL COLONY', toPx(-168), toPz(-158));
+                ctx.textAlign = 'right';
+                ctx.fillText('MAIN BAZAAR & MARKET', toPx(168), toPz(-88));
+                ctx.textAlign = 'center';
+                ctx.fillText('CENTRAL PARK PLAZA', toPx(0), toPz(56));
+                ctx.fillText('COASTAL BOARDWALK & BAY', toPx(0), toPz(115));
+            }
+
+            // 9. Player Cyclist Position & Heading Arrow
+            ctx.save();
+            ctx.translate(px, pz);
+            ctx.rotate(state.player.heading);
+            ctx.fillStyle = '#FFFFFF';
+            ctx.strokeStyle = '#111111';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(0, - (isFullMap ? 9 : 6));
+            ctx.lineTo(isFullMap ? 6.5 : 4.5, isFullMap ? 7 : 5);
+            ctx.lineTo(0, isFullMap ? 4 : 2.5);
+            ctx.lineTo(-(isFullMap ? 6.5 : 4.5), isFullMap ? 7 : 5);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        function updateCompassAndDistrictHud() {
+            const p = state.player;
+            const dName = getDistrictNameAt(p.x, p.z);
+            document.getElementById('hudDistrictPill').textContent = `📍 ${dName}`;
+            document.getElementById('minimapZoneLabel').textContent = dName;
+
+            // Find target for 3D overhead GPS arrow (either user GPS Waypoint or nearest active subscriber)
+            let targetX = 0, targetZ = 0, label = '';
+            if (state.waypoint.active) {
+                targetX = state.waypoint.x;
+                targetZ = state.waypoint.z;
+                const dist = Math.round(Math.hypot(targetX - p.x, targetZ - p.z));
+                label = `GPS Waypoint (${state.waypoint.label}): ${dist}m`;
+                bikeRig.gpsArrowMat.color.setHex(0xE040FB);
+                if (dist < 9) {
+                    state.waypoint.active = false;
+                    waypointBeamMesh.visible = false;
+                    showCenterBanner('📍 Arrived at GPS Waypoint!');
+                }
+            } else if (state.papersLeft === 0) {
+                // Point to Daily Press Depot Refill Ring
+                targetX = 0;
+                targetZ = 3;
+                const dist = Math.round(Math.hypot(targetX - p.x, targetZ - p.z));
+                label = `Press Depot Refill: ${dist}m`;
+                bikeRig.gpsArrowMat.color.setHex(0xFFD43B);
+            } else {
+                let nearestB = null;                let minD = Infinity;
+                for (const b of state.buildings) {
+                    if (b.isSubscriber && !b.delivered) {
+                        const d = Math.hypot(b.porchPos.x - p.x, b.porchPos.z - p.z);
+                        if (d < minD) {
+                            minD = d;
+                            nearestB = b;
+                        }
+                    }
+                }
+                if (nearestB) {
+                    targetX = nearestB.porchPos.x;
+                    targetZ = nearestB.porchPos.z;
+                    label = `${nearestB.name}: ${Math.round(minD)}m`;
+                    bikeRig.gpsArrowMat.color.setHex(0x00E676);
+                }
+            }
+
+            if (bikeRig.gpsArrowGroup) {
+                const worldAngle = Math.atan2(targetX - p.x, -(targetZ - p.z));
+                bikeRig.gpsArrowGroup.rotation.y = -(worldAngle - p.heading);
+            }
+            document.getElementById('compassTargetLabel').textContent = label || 'All Clear!';
+        }
+
+        /**************************************************************
+         * 13. BIKE UPGRADE SHOP MODAL [U] & HUD MANAGEMENT
+         **************************************************************/
+        function updateHudBar() {
+            state.maxPapers = state.upgrades.basket.capacities[state.upgrades.basket.level - 1];
+            document.getElementById('hudCashText').textContent = String(state.cash).padStart(5, '0');
+            document.getElementById('hudStreakBadge').textContent = `🔥 x${state.streak}`;
+            document.getElementById('hudEditionNum').textContent = `#${state.editionNumber}`;
+            document.getElementById('hudDeliveredText').textContent = `${state.deliveredCount} / ${state.editionTargetCount}`;
+            document.getElementById('hudPaperCountNum').textContent = `${state.papersLeft}/${state.maxPapers}`;
+
+            const paperIconsEl = document.getElementById('hudPaperIcons');
+            if (paperIconsEl) {
+                const shown = Math.min(8, state.papersLeft);
+                let html = '';
+                for (let i = 0; i < shown; i++) {
+                    html += `<span class="inline-block w-2 h-1.5 bg-stone-800 rounded-xs border border-stone-400"></span>`;
+                }
+                paperIconsEl.innerHTML = html;
+            }
+
+            if (bikeRig.basketRolls.length > 0) {
+                const visibleRolls = Math.ceil((state.papersLeft / state.maxPapers) * bikeRig.basketRolls.length);
+                bikeRig.basketRolls.forEach((r, idx) => {
+                    r.visible = idx < visibleRolls;
+                });
+            }
+            if (bikeRig.handPaperMesh) {
+                bikeRig.handPaperMesh.visible = state.papersLeft > 0 && state.player.throwCooldown <= 0.08;
+            }
+        }
+
+        function renderUpgradeShopModal() {
+            document.getElementById('shopCashDisplay').textContent = `$${state.cash}`;
+            const containerEl = document.getElementById('upgradeItemsContainer');
+            containerEl.innerHTML = '';
+
+            Object.entries(state.upgrades).forEach(([key, upg]) => {
+                const isMax = upg.level >= upg.maxLevel;
+                const nextCost = isMax ? 0 : upg.costs[upg.level];
+                const canAfford = !isMax && state.cash >= nextCost;
+
+                const row = document.createElement('div');
+                row.className = 'p-3 rounded bg-stone-900/[0.04] border border-stone-300 flex items-center justify-between gap-3';
+                row.innerHTML = `
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="font-mono-score text-xs font-extrabold text-stone-900">${upg.name}</span>
+                            <span class="px-1.5 py-0.5 rounded bg-stone-800 text-amber-300 font-mono-score text-[10px] font-bold">LVL ${upg.level}/${upg.maxLevel}</span>
+                        </div>
+                        <p class="text-[11px] text-stone-600 mt-0.5">${upg.desc}</p>
+                    </div>
+                    <button data-upg="${key}" class="px-3 py-2 rounded font-mono-score text-xs font-extrabold uppercase tracking-wider shrink-0 transition-all cursor-pointer ${
+                        isMax
+                            ? 'bg-stone-300 text-stone-600 cursor-default'
+                            : canAfford
+                                ? 'bg-emerald-700 hover:bg-emerald-800 text-white shadow'
+                                : 'bg-stone-300 text-stone-500 cursor-not-allowed'
+                    }">
+                        ${isMax ? 'MAXED ★' : `BUY $${nextCost}`}
+                    </button>
+                `;
+                const btn = row.querySelector('button');
+                if (!isMax && canAfford) {
+                    btn.addEventListener('click', () => {
+                        state.cash -= nextCost;
+                        upg.level++;
+                        if (key === 'basket') {
+                            state.maxPapers = upg.capacities[upg.level - 1];
+                            state.papersLeft = state.maxPapers;
+                        }
+                        sfx.playRefillChime();
+                        updateHudBar();
+                        renderUpgradeShopModal();
+                    });
+                }
+                containerEl.appendChild(row);
+            });
+        }
+
+        function toggleWorldMapModal() {
+            const modal = document.getElementById('worldMapModal');
+            if (state.phase === 'PLAYING') {
+                state.phase = 'MAP';
+                modal.classList.remove('hidden');
+                renderTownMapOnCanvas(fullMapCtx, fullMapCvs.width, true);
+            } else if (state.phase === 'MAP') {
+                state.phase = 'PLAYING';
+                modal.classList.add('hidden');
+            }
+        }
+
+        function toggleUpgradeShopModal() {
+            const modal = document.getElementById('upgradeModal');
+            if (state.phase === 'PLAYING') {
+                state.phase = 'SHOP';
+                renderUpgradeShopModal();
+                modal.classList.remove('hidden');
+            } else if (state.phase === 'SHOP') {
+                state.phase = 'PLAYING';
+                modal.classList.add('hidden');
+            }
+        }
+
+        /**************************************************************
+         * 14. MAIN 360° OPEN-WORLD UPDATE LOOP
+         **************************************************************/
+        let lastFrameTime = performance.now();
+
+        function updateGame(dt) {
+            const p = state.player;
+
+            if (pressRotorSign) pressRotorSign.rotation.y += dt * 1.4;
+            if (lighthouseBeam) lighthouseBeam.rotation.y += dt * 0.9;
+
+            if (state.phase === 'TITLE' || state.phase === 'BRIEFING') {
+                // Scenic Orbit Camera around the Central Press Depot & Colony Archway
+                const t = performance.now() * 0.00028;
+                camera.position.set(Math.cos(t) * 48, 22, -20 + Math.sin(t) * 48);
+                camera.lookAt(0, 3, -25);
+                return;
+            }
+
+            if (state.phase === 'MAP') {
+                renderTownMapOnCanvas(fullMapCtx, fullMapCvs.width, true);
+                return;
+            }
+
+            if (state.phase !== 'PLAYING') return;
+
+            if (state.invulnerableTimer > 0) {
+                state.invulnerableTimer = Math.max(0, state.invulnerableTimer - dt);
+                playerGroup.visible = Math.floor(state.invulnerableTimer * 14) % 2 === 0;
+            } else {
+                playerGroup.visible = true;
+            }
+
+            if (p.throwCooldown > 0) {
+                p.throwCooldown = Math.max(0, p.throwCooldown - dt);
+                if (p.throwCooldown === 0) updateHudBar();
+            }
+
+            // Update Hold-to-Charge Throw Power
+            if (state.aim.charging) {
+                const elapsed = (performance.now() - state.aim.chargeStart) / 1000;
+                state.aim.power = 0.5 + 0.5 * Math.sin(elapsed * 3.8 - Math.PI / 2);
+                const fillEl = document.getElementById('throwChargeFill');
+                if (fillEl) fillEl.style.width = `${Math.round(state.aim.power * 100)}%`;
+            }
+
+            // 1. 360-DEGREE BICYCLE STEERING & PEDALING PHYSICS
+            const topSpeed = state.upgrades.sprocket.speeds[state.upgrades.sprocket.level - 1];
+            const steerInput = (state.keys.right ? 1 : 0) - (state.keys.left ? 1 : 0);
+
+            if (state.keys.up) {
+                p.speed = Math.min(topSpeed, p.speed + 24 * dt);
+            } else if (state.keys.down) {
+                p.speed = Math.max(-9, p.speed - 28 * dt);
+            } else {
+                // Natural coasting friction
+                p.speed *= Math.pow(0.28, dt);
+                if (Math.abs(p.speed) < 0.15) p.speed = 0;
+            }
+
+            // Turn heading smoothly (can turn in place or while moving)
+            const turnRate = 2.45 * (Math.abs(p.speed) > 1 ? 1 : 0.75);
+            const reverseSign = p.speed < -0.5 ? -1 : 1;
+            p.heading += steerInput * turnRate * reverseSign * dt;
+
+            // Forward velocity + knockback decay
+            const moveVx = Math.sin(p.heading) * p.speed + p.knockVx;
+            const moveVz = -Math.cos(p.heading) * p.speed + p.knockVz;
+            p.knockVx *= Math.pow(0.05, dt);
+            p.knockVz *= Math.pow(0.05, dt);
+
+            let nextX = p.x + moveVx * dt;
+            let nextZ = p.z + moveVz * dt;
+
+            // Keep inside town boundaries
+            nextX = Math.max(-172, Math.min(172, nextX));
+            nextZ = Math.max(-158, Math.min(108, nextZ));
+
+            // Soft building footprints collision push-out so bike rides around shops/houses smoothly
+            for (const b of state.buildings) {
+                const dx = nextX - b.x;
+                const dz = nextZ - b.z;
+                const halfW = 5.4;
+                const halfD = 5.0;
+                if (Math.abs(dx) < halfW && Math.abs(dz) < halfD) {
+                    if (Math.abs(dx) > Math.abs(dz)) {
+                        nextX = b.x + Math.sign(dx) * halfW;
+                    } else {
+                        nextZ = b.z + Math.sign(dz) * halfD;
+                    }
+                    p.speed *= 0.65;
+                }
+            }
+
+            p.x = nextX;
+            p.z = nextZ;
+            p.y = getGroundY(p.x, p.z);
+
+            playerGroup.position.set(p.x, p.y, p.z);
+            playerGroup.rotation.y = -p.heading;
+
+            // Lean bike into turns
+            const targetTilt = -steerInput * Math.min(0.32, Math.abs(p.speed) * 0.015);
+            p.tilt += (targetTilt - p.tilt) * Math.min(1, dt * 10);
+            bikeRig.tiltGroup.rotation.z = p.tilt;
+
+            // Spin wheels & animate legs
+            const wheelSpin = p.speed * dt * 1.85;
+            bikeRig.frontWheel.rotation.x -= wheelSpin;
+            bikeRig.rearWheel.rotation.x -= wheelSpin;
+
+            p.pedalPhase += dt * Math.abs(p.speed) * 0.65;
+            bikeRig.leftLeg.position.y = 1.02 + Math.sin(p.pedalPhase) * 0.16;
+            bikeRig.rightLeg.position.y = 1.02 - Math.sin(p.pedalPhase) * 0.16;
+
+            // Left or Right Arm throwing swing
+            if (p.throwAnimTimer > 0) {
+                p.throwAnimTimer = Math.max(0, p.throwAnimTimer - dt);
+                const swing = 1.45 * Math.sin((p.throwAnimTimer / 0.28) * Math.PI);
+                if (p.throwSide >= 0) {
+                    bikeRig.leftArm.rotation.z = swing;
+                    bikeRig.rightArm.rotation.z = 0;
+                } else {
+                    bikeRig.rightArm.rotation.z = -swing;
+                    bikeRig.leftArm.rotation.z = 0;
+                }
+            } else {
+                bikeRig.leftArm.rotation.z = 0;
+                bikeRig.rightArm.rotation.z = 0;
+            }
+
+            // Speedometer readout
+            const mph = Math.round(Math.abs(p.speed) * 1.15);
+            const spdEl = document.getElementById('hudSpeedReadout');
+            if (spdEl) spdEl.textContent = `${mph} MPH`;
+
+            // 2. Check Drive-Thru Press Refill Dock (at X = 0, Z = +3) & Garage Ring (X = 88, Z = +6)
+            if (Math.hypot(p.x - 0, p.z - 3) < 4.4 && state.papersLeft < state.maxPapers) {
+                state.papersLeft = state.maxPapers;
+                sfx.playRefillChime();
+                spawnImpactShockwave(0, 0.15, 3, 0xFFD43B, 4.0);
+                showFloatingScorePopup('BASKET REFILLED!', new THREE.Vector3(0, 1.8, 3), true);
+                showCenterBanner('🗞️ The Daily Press Depot: Handlebar Basket Refilled to Full!');
+                updateHudBar();
+            }
+
+            // Check Golden Paper Bundles on Streets
+            for (const pk of state.paperPickups) {
+                if (pk.cooldown > 0) {
+                    pk.cooldown = Math.max(0, pk.cooldown - dt);
+                    pk.mesh.visible = pk.cooldown === 0;
+                    continue;
+                }
+                pk.mesh.rotation.y += dt * 2.4;
+                if (Math.hypot(p.x - pk.x, p.z - pk.z) < 2.2) {
+                    pk.cooldown = 18; // Respawns after 18s
+                    pk.mesh.visible = false;
+                    state.papersLeft = Math.min(state.maxPapers, state.papersLeft + 6);
+                    state.cash += 50;
+                    sfx.playRefillChime();
+                    showFloatingScorePopup('+6 PAPERS!', new THREE.Vector3(pk.x, 1.4, pk.z), true);
+                    updateHudBar();
+                }
+            }
+
+            // 3. Update Aiming Parabolic Trajectory Arc
+            computeOmnidirectionalAim();
+
+            // 4. Animate Mailbox Flags
+            for (const b of state.buildings) {
+                if (b.flagPivot) {
+                    b.flagPivot.rotation.x += (b.flagTargetAngle - b.flagPivot.rotation.x) * Math.min(1, dt * 12);
+                }
+            }
+
+            // 5. Update Thrown Rolled Newspapers & Magnetic Homing
+            const homingStrength = state.upgrades.magnet.homing[state.upgrades.magnet.level - 1];
+            for (let i = state.thrownPapers.length - 1; i >= 0; i--) {
+                const tp = state.thrownPapers[i];
+                tp.age += dt;
+
+                if (!tp.landed) {
+                    // Subtle magnetic curve toward locked Mailbox/Porch
+                    if (tp.lockedTarget && tp.bounces === 0) {
+                        const tPos = tp.lockedTarget.pos;
+                        const dx = tPos.x - tp.x;
+                        const dz = tPos.z - tp.z;
+                        tp.vx += dx * homingStrength * dt * 3.5;
+                        tp.vz += dz * homingStrength * dt * 3.5;
+                    }
+
+                    tp.x += tp.vx * dt;
+                    tp.y += tp.vy * dt;
+                    tp.z += tp.vz * dt;
+                    tp.vy += GRAVITY_ACCEL * dt;
+
+                    tp.mesh.position.set(tp.x, tp.y, tp.z);
+                    tp.mesh.rotation.x += tp.spinX * dt;
+                    tp.mesh.rotation.y += tp.spinY * dt;
+
+                    // Update aerodynamic ribbon trail
+                    if (tp.ribbon) {
+                        tp.ribbon.history.unshift({
+                            left: new THREE.Vector3(tp.x - 0.16, tp.y, tp.z),
+                            right: new THREE.Vector3(tp.x + 0.16, tp.y, tp.z)
+                        });
+                        if (tp.ribbon.history.length > 18) tp.ribbon.history.pop();
+                        const posAttr = tp.ribbon.mesh.geometry.attributes.position;
+                        for (let k = 0; k < 18; k++) {
+                            const pt = tp.ribbon.history[Math.min(k, tp.ribbon.history.length - 1)];
+                            posAttr.setXYZ(k * 2, pt.left.x, pt.left.y, pt.left.z);
+                            posAttr.setXYZ(k * 2 + 1, pt.right.x, pt.right.y, pt.right.z);
+                        }
+                        posAttr.needsUpdate = true;
+                    }
+
+                    if (evaluatePaperImpact(tp)) {
+                        tp.vx *= 0.25;
+                        tp.vz *= 0.25;
+                    }
+
+                    const gY = getGroundY(tp.x, tp.z) + 0.14;
+                    if (tp.y <= gY) {
+                        tp.y = gY;
+                        evaluatePaperImpact(tp);
+                        if (tp.bounces < 1 && Math.abs(tp.vy) > 3.0) {
+                            tp.bounces++;
+                            tp.vy = -tp.vy * 0.34;
+                            tp.vx *= 0.48;
+                            tp.vz *= 0.48;
+                            sfx.playPaperThud();
+                        } else {
+                            tp.landed = true;
+                            tp.mesh.position.y = gY;
+                            tp.mesh.rotation.set(0, tp.mesh.rotation.y, 0);
+                            if (tp.ribbon) {
+                                dynamicGroup.remove(tp.ribbon.mesh);
+                                tp.ribbon = null;
+                            }
+                        }
+                    }
+                } else if (tp.age > 5.0) {
+                    dynamicGroup.remove(tp.mesh);
+                    state.thrownPapers.splice(i, 1);
+                }
+            }
+
+            // 6. Update Knocked Curbside Trash Cans
+            for (const tc of state.trashCans) {
+                if (tc.knocked && tc.vy !== 0) {
+                    tc.x += tc.vx * dt;
+                    tc.y += tc.vy * dt;
+                    tc.z += tc.vz * dt;
+                    tc.vy -= 14 * dt;
+                    tc.mesh.position.set(tc.x, Math.max(0, tc.y), tc.z);
+                    tc.mesh.rotation.x += 6 * dt;
+                    if (tc.y <= 0) {
+                        tc.y = 0;
+                        tc.vy = 0;
+                    }
+                }
+            }
+
+            // 7. Update Town Traffic Cars (Never-Ending Bump Physics)
+            for (const car of state.cars) {
+                if (car.axis === 'X') {
+                    car.x += car.dir * car.speed * dt;
+                    if (car.x > 175) car.x = -175;
+                    if (car.x < -175) car.x = 175;
+                } else {
+                    car.z += car.dir * car.speed * dt;
+                    if (car.z > 108) car.z = -158;
+                    if (car.z < -158) car.z = 108;
+                }
+                car.mesh.position.set(car.x, 0, car.z);
+
+                if (state.invulnerableTimer <= 0 && Math.hypot(p.x - car.x, p.z - car.z) < 2.35) {
+                    sfx.playCrash();
+                    state.invulnerableTimer = 1.5;
+                    state.streak = 1;
+                    p.knockVx = (p.x - car.x) * 5.5;
+                    p.knockVz = (p.z - car.z) * 5.5;
+                    if (state.papersLeft > 0) state.papersLeft--;
+                    spawn3DParticleBurst(p.x, 1.2, p.z, 0xFF5533, 14);
+                    showCenterBanner('🚗 Bumped into Town Traffic! (-1 Paper)');
+                    updateHudBar();
+                }
+            }
+
+            // 8. Update Sunrise Colony Guard Dogs
+            for (const dog of state.dogs) {
+                const distToPlayer = Math.hypot(p.x - dog.x, p.z - dog.z);
+                if (distToPlayer < 19) {
+                    if (dog.barkCooldown <= 0) {
+                        sfx.playDogBark();
+                        dog.barkCooldown = 4.0;
+                    }
+                    const dx = p.x - dog.x;
+                    const dz = p.z - dog.z;
+                    const len = Math.hypot(dx, dz) || 1;
+                    dog.x += (dx / len) * 11.5 * dt;
+                    dog.z += (dz / len) * 11.5 * dt;
+                    dog.mesh.rotation.y = Math.atan2(dx, dz);
+                } else {
+                    // Return to yard gate
+                    const dx = dog.homeX - dog.x;
+                    const dz = dog.homeZ - dog.z;
+                    const len = Math.hypot(dx, dz);
+                    if (len > 0.5) {
+                        dog.x += (dx / len) * 6 * dt;
+                        dog.z += (dz / len) * 6 * dt;
+                        dog.mesh.rotation.y = Math.atan2(dx, dz);
+                    }
+                }
+                if (dog.barkCooldown > 0) dog.barkCooldown -= dt;
+                dog.mesh.position.set(dog.x, 0, dog.z);
+
+                if (state.invulnerableTimer <= 0 && distToPlayer < 1.15) {
+                    sfx.playDogBark();
+                    state.invulnerableTimer = 1.4;
+                    p.knockVx = (p.x - dog.x) * 6;
+                    p.knockVz = (p.z - dog.z) * 6;
+                    showCenterBanner('🐕 Nipped by a Colony Yard Dog! Pedal faster!');
+                }
+            }
+
+            // 9. Update Sprinklers, Chimney Smoke, Glass Shards & Shockwaves
+            for (const sp of state.sprinklers) {
+                sp.angle += dt * 5;
+                if (Math.hypot(p.x - sp.x, p.z - sp.z) < 65 && Math.random() < 0.35) {
+                    const drop = new THREE.Mesh(
+                        new THREE.BoxGeometry(0.1, 0.1, 0.1),
+                        new THREE.MeshBasicMaterial({ color: 0x74C0FC })
+                    );
+                    drop.position.set(sp.x, sp.y, sp.z);
+                    dynamicGroup.add(drop);
+                    state.particles.push({
+                        mesh: drop,
+                        vx: Math.cos(sp.angle) * 3.6,
+                        vy: 3.2,
+                        vz: Math.sin(sp.angle) * 3.6,
+                        gravity: 9.8,
+                        life: 0.45
+                    });
+                }
+            }
+
+            for (let i = state.glassShards.length - 1; i >= 0; i--) {
+                const gs = state.glassShards[i];
+                gs.life -= dt;
+                gs.mesh.position.x += gs.vx * dt;
+                gs.mesh.position.y += gs.vy * dt;
+                gs.mesh.position.z += gs.vz * dt;
+                gs.vy -= 14 * dt;
+                if (gs.mesh.position.y < 0.08) {
+                    gs.mesh.position.y = 0.08;
+                    gs.vy = -gs.vy * 0.3;
+                }
+                if (gs.life <= 0) {
+                    dynamicGroup.remove(gs.mesh);
+                    state.glassShards.splice(i, 1);
+                }
+            }
+
+            for (let i = state.shockwaves.length - 1; i >= 0; i--) {
+                const sw = state.shockwaves[i];
+                sw.age += dt;
+                const prog = sw.age / sw.duration;
+                if (prog >= 1) {
+                    dynamicGroup.remove(sw.mesh);
+                    state.shockwaves.splice(i, 1);
+                } else {
+                    sw.mesh.scale.setScalar(1 + prog * sw.maxScale);
+                    sw.mesh.material.opacity = (1 - prog) * 0.85;
+                }
+            }
+
+            for (let i = state.particles.length - 1; i >= 0; i--) {
+                const pt = state.particles[i];
+                pt.life -= dt;
+                pt.mesh.position.x += pt.vx * dt;
+                pt.mesh.position.y += pt.vy * dt;
+                pt.mesh.position.z += pt.vz * dt;
+                pt.vy -= pt.gravity * dt;
+                pt.mesh.scale.setScalar(Math.max(0.01, pt.life * 1.6));
+                if (pt.life <= 0) {
+                    dynamicGroup.remove(pt.mesh);
+                    state.particles.splice(i, 1);
+                }
+            }
+
+            // 10. 360-Degree Chase Camera Following Player Heading
+            const camDist = state.cameraMode === 0 ? 8.2 : 13.5;
+            const camHeight = state.cameraMode === 0 ? 3.6 : 7.5;
+            const targetCamX = p.x - Math.sin(p.heading) * camDist;
+            const targetCamZ = p.z + Math.cos(p.heading) * camDist;
+            const targetCamY = p.y + camHeight;
+
+            camera.position.x += (targetCamX - camera.position.x) * Math.min(1, dt * 8);
+            camera.position.y += (targetCamY - camera.position.y) * Math.min(1, dt * 8);
+            camera.position.z += (targetCamZ - camera.position.z) * Math.min(1, dt * 8);
+
+            const lookAheadX = p.x + Math.sin(p.heading) * 10;
+            const lookAheadZ = p.z - Math.cos(p.heading) * 10;
+            camera.lookAt(lookAheadX, p.y + 1.4, lookAheadZ);
+
+            // Keep Sun Shadow Centered Around Player
+            sunLight.position.set(p.x + 55, 115, p.z + 45);
+            sunLight.target.position.set(p.x, 0, p.z);
+            sunLight.target.updateMatrixWorld();
+
+            // 11. Update Live 2D Radar Minimap & Compass
+            renderTownMapOnCanvas(minimapCtx, minimapCvs.width, false);
+            updateCompassAndDistrictHud();
+        }
+
+        function animateLoop(now) {
+            const dt = Math.min(0.05, (now - lastFrameTime) / 1000);
+            lastFrameTime = now;
+            updateGame(dt);
+            renderer.render(scene, camera);
+            requestAnimationFrame(animateLoop);
+        }
+
+        /**************************************************************
+         * 15. CONTROLS, WORLD MAP CLICK WAYPOINT & INITIALIZATION
+         **************************************************************/
+        function startOpenWorldSession() {
+            document.getElementById('briefingModal').classList.add('hidden');
+            document.getElementById('topHudBar').classList.remove('hidden');
+            document.getElementById('minimapWidget').classList.remove('hidden');
+            document.getElementById('touchControlsBar').classList.remove('hidden');
+
+            state.phase = 'PLAYING';
+            sfx.playBikeBell();
+            showCenterBanner('🗞️ Explore Sunrise Colony & Main Bazaar! Press [M] for Interactive Town Map!');
+            updateHudBar();
+        }
+
+        function teleportToPressDepot() {
+            state.player.x = 0;
+            state.player.z = 15;
+            state.player.heading = -Math.PI / 2;
+            state.player.speed = 0;
+            state.papersLeft = state.maxPapers;
+            sfx.playRefillChime();
+            updateHudBar();
+            showCenterBanner('📍 Returned to The Daily Press Depot & Refilled Basket!');
+        }
+
+        function setupControls() {
+            document.getElementById('titleOverlay').addEventListener('click', () => {
+                if (state.phase === 'TITLE') {
+                    state.phase = 'BRIEFING';
+                    sfx.playBikeBell();
+                    document.getElementById('titleOverlay').classList.add('opacity-0', 'pointer-events-none');
+                    setTimeout(() => document.getElementById('titleOverlay').classList.add('hidden'), 400);
+                    document.getElementById('briefingModal').classList.remove('hidden');
+                }
+            });
+
+            document.getElementById('startRouteBtn').addEventListener('click', startOpenWorldSession);
+
+            // HUD Buttons
+            document.getElementById('hudMapBtn').addEventListener('click', toggleWorldMapModal);
+            document.getElementById('minimapContainer').addEventListener('click', toggleWorldMapModal);
+            document.getElementById('closeMapModalBtn').addEventListener('click', toggleWorldMapModal);
+
+            document.getElementById('clearWaypointBtn').addEventListener('click', () => {
+                state.waypoint.active = false;
+                waypointBeamMesh.visible = false;
+                document.getElementById('fullMapClickedInfo').textContent = '3D GPS Waypoint Cleared.';
+            });
+
+            // Click on Full-Screen World Map Canvas to set a 3D Sky-Beam GPS Waypoint
+            fullMapCvs.addEventListener('click', (e) => {
+                const rect = fullMapCvs.getBoundingClientRect();
+                const normX = (e.clientX - rect.left) / rect.width;
+                const normZ = (e.clientY - rect.top) / rect.height;
+                const wx = (normX - 0.5) * (WORLD_HALF_SIZE * 2);
+                const wz = (normZ - 0.5) * (WORLD_HALF_SIZE * 2);
+
+                // Snap to closest building if clicked near one
+                let snapLabel = getDistrictNameAt(wx, wz);
+                let finalX = wx, finalZ = wz;
+                for (const b of state.buildings) {
+                    if (Math.hypot(b.x - wx, b.z - wz) < 14) {
+                        finalX = b.porchPos.x;
+                        finalZ = b.porchPos.z;
+                        snapLabel = b.name;
+                        break;
+                    }
+                }
+
+                state.waypoint.active = true;
+                state.waypoint.x = finalX;
+                state.waypoint.z = finalZ;
+                state.waypoint.label = snapLabel;
+
+                waypointBeamMesh.position.set(finalX, 47.5, finalZ);
+                waypointBeamMesh.visible = true;
+                sfx.playBikeBell();
+                document.getElementById('fullMapClickedInfo').textContent = `📍 Waypoint Set: ${snapLabel}`;
+                renderTownMapOnCanvas(fullMapCtx, fullMapCvs.width, true);
+            });
+
+            document.getElementById('hudUpgradeBtn').addEventListener('click', toggleUpgradeShopModal);
+            document.getElementById('closeUpgradeModalBtn').addEventListener('click', toggleUpgradeShopModal);
+            document.getElementById('hudDepotBtn').addEventListener('click', teleportToPressDepot);
+
+            document.getElementById('hudCameraBtn').addEventListener('click', () => {
+                state.cameraMode = (state.cameraMode + 1) % 2;
+            });
+
+            document.getElementById('hudSoundBtn').addEventListener('click', (e) => {
+                sfx.enabled = !sfx.enabled;
+                e.target.textContent = sfx.enabled ? '🔊 ON' : '🔇 OFF';
+            });
+
+            // Start & Release Charge Throw Helper
+            const startChargeThrow = () => {
+                if (state.phase !== 'PLAYING' || state.aim.charging) return;
+                if (state.papersLeft <= 0) {
+                    executePaperThrow();
+                    return;
+                }
+                state.aim.charging = true;
+                state.aim.chargeStart = performance.now();
+                document.getElementById('throwChargeHud').classList.remove('hidden');
+            };
+
+            const releaseChargeThrow = () => {
+                if (!state.aim.charging) return;
+                state.aim.charging = false;
+                document.getElementById('throwChargeHud').classList.add('hidden');
+                executePaperThrow();
+            };
+
+            window.addEventListener('keydown', (e) => {
+                if (state.phase === 'TITLE') {
+                    document.getElementById('titleOverlay').click();
+                    return;
+                }
+                if (state.phase === 'BRIEFING' && (e.code === 'Space' || e.code === 'Enter')) {
+                    e.preventDefault();
+                    startOpenWorldSession();
+                    return;
+                }
+
+                if (e.code === 'KeyM') {
+                    e.preventDefault();
+                    toggleWorldMapModal();
+                    return;
+                }
+                if (e.code === 'KeyU') {
+                    e.preventDefault();
+                    toggleUpgradeShopModal();
+                    return;
+                }
+                if (e.code === 'KeyR' && state.phase === 'PLAYING') {
+                    e.preventDefault();
+                    teleportToPressDepot();
+                    return;
+                }
+                if (e.code === 'KeyC' && state.phase === 'PLAYING') {
+                    state.cameraMode = (state.cameraMode + 1) % 2;
+                }
+
+                if (e.code === 'KeyA' || e.code === 'ArrowLeft') state.keys.left = true;
+                if (e.code === 'KeyD' || e.code === 'ArrowRight') state.keys.right = true;
+                if (e.code === 'KeyW' || e.code === 'ArrowUp') state.keys.up = true;
+                if (e.code === 'KeyS' || e.code === 'ArrowDown') state.keys.down = true;
+
+                if ((e.code === 'Space' || e.code === 'KeyE') && !e.repeat) {
+                    e.preventDefault();
+                    startChargeThrow();
+                }
+            });
+
+            window.addEventListener('keyup', (e) => {
+                if (e.code === 'KeyA' || e.code === 'ArrowLeft') state.keys.left = false;
+                if (e.code === 'KeyD' || e.code === 'ArrowRight') state.keys.right = false;
+                if (e.code === 'KeyW' || e.code === 'ArrowUp') state.keys.up = false;
+                if (e.code === 'KeyS' || e.code === 'ArrowDown') state.keys.down = false;
+
+                if (e.code === 'Space' || e.code === 'KeyE') {
+                    e.preventDefault();
+                    releaseChargeThrow();
+                }
+            });
+
+            window.addEventListener('pointermove', (e) => {
+                state.aim.mouseNDC.x = (e.clientX / window.innerWidth) * 2 - 1;
+                state.aim.mouseNDC.y = -(e.clientY / window.innerHeight) * 2 + 1;
+            });
+
+            renderer.domElement.addEventListener('pointerdown', (e) => {
+                if (state.phase === 'PLAYING') {
+                    state.aim.mouseNDC.x = (e.clientX / window.innerWidth) * 2 - 1;
+                    state.aim.mouseNDC.y = -(e.clientY / window.innerHeight) * 2 + 1;
+                    startChargeThrow();
+                }
+            });
+
+            window.addEventListener('pointerup', () => {
+                if (state.aim.charging) releaseChargeThrow();
+            });
+
+            // Mobile Touch Hold Buttons
+            const bindHoldButton = (btnId, keyName) => {
+                const btn = document.getElementById(btnId);
+                if (!btn) return;
+                const start = (e) => { e.preventDefault(); e.stopPropagation(); state.keys[keyName] = true; };
+                const stop = (e) => { e.preventDefault(); e.stopPropagation(); state.keys[keyName] = false; };
+                btn.addEventListener('pointerdown', start);
+                btn.addEventListener('pointerup', stop);
+                btn.addEventListener('pointerleave', stop);
+                btn.addEventListener('pointercancel', stop);
+            };
+            bindHoldButton('btnSteerLeft', 'left');
+            bindHoldButton('btnSteerRight', 'right');
+            bindHoldButton('btnPedalUp', 'up');
+            bindHoldButton('btnBrakeDown', 'down');
+
+            const throwBtn = document.getElementById('btnThrowPaper');
+            if (throwBtn) {
+                throwBtn.addEventListener('pointerdown', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    startChargeThrow();
+                });
+                throwBtn.addEventListener('pointerup', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    releaseChargeThrow();
+                });
+            }
+
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+        }
+
+        window.onload = function () {
+            buildOpenWorldEnvironment();
+            buildColonyAndMarketBuildings();
+            buildPlayerCyclist();
+            buildAimingAndWaypointVisuals();
+            spawnDynamicWorldEntities();
+            assignNewSubscriberEdition();
+            setupControls();
+
+            lastFrameTime = performance.now();
+            requestAnimationFrame(animateLoop);
+        };
+    </script>
+</body>
+</html>
