@@ -1,0 +1,2928 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>AirCarrom — Authentic Tabletop Carrom</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --wood-dark: #24130c;
+      --wood-mid: #3d2014;
+      --brass-light: #f6d365;
+      --brass-dark: #c28e2c;
+    }
+
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', sans-serif;
+      background: radial-gradient(circle at 50% 20%, #2c1810 0%, #140b07 70%, #090503 100%);
+      color: #f8fafc;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    .font-royal {
+      font-family: 'Cinzel', serif;
+    }
+
+    /* Wood & Brass UI Panels */
+    .wood-panel {
+      background: linear-gradient(145deg, rgba(54, 29, 18, 0.95), rgba(28, 14, 9, 0.98));
+      border: 1px solid rgba(212, 163, 89, 0.32);
+      box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 230, 180, 0.15);
+    }
+
+    .wood-panel-active {
+      border-color: #f59e0b;
+      box-shadow: 0 0 22px rgba(245, 158, 11, 0.28), inset 0 1px 0 rgba(255, 230, 180, 0.25);
+    }
+
+    .brass-btn {
+      background: linear-gradient(180deg, #4b291a 0%, #2a150d 100%);
+      border: 1px solid rgba(234, 179, 8, 0.45);
+      color: #fde68a;
+      transition: all 0.18s ease;
+      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+    }
+
+    .brass-btn:hover:not(:disabled) {
+      background: linear-gradient(180deg, #5e3422 0%, #381c11 100%);
+      border-color: #fbbf24;
+      transform: translateY(-1px);
+      box-shadow: 0 5px 14px rgba(245, 158, 11, 0.25);
+    }
+
+    .brass-btn:active:not(:disabled) {
+      transform: translateY(0px);
+    }
+
+    .brass-btn-primary {
+      background: linear-gradient(180deg, #f59e0b 0%, #b45309 100%);
+      border: 1px solid #fde68a;
+      color: #1c0d06;
+      font-weight: 700;
+      box-shadow: 0 4px 12px rgba(245, 158, 11, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.45);
+    }
+
+    .brass-btn-primary:hover:not(:disabled) {
+      background: linear-gradient(180deg, #fbbf24 0%, #d97706 100%);
+      color: #140804;
+    }
+
+    /* Custom Striker Range Slider */
+    .striker-slider {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 16px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #1e0f09 0%, #3d2115 50%, #1e0f09 100%);
+      border: 2px solid rgba(217, 160, 91, 0.55);
+      box-shadow: inset 0 2px 6px rgba(0,0,0,0.85);
+      outline: none;
+      cursor: pointer;
+    }
+
+    .striker-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, #fffbeb 0%, #fde68a 45%, #d97706 82%, #78350f 100%);
+      border: 3px solid #fef3c7;
+      box-shadow: 0 0 12px rgba(251, 191, 36, 0.75), 0 3px 6px rgba(0,0,0,0.7);
+      cursor: grab;
+      transition: transform 0.1s ease, box-shadow 0.15s ease;
+    }
+
+    .striker-slider::-webkit-slider-thumb:hover {
+      transform: scale(1.08);
+      box-shadow: 0 0 18px rgba(251, 191, 36, 0.95), 0 4px 8px rgba(0,0,0,0.8);
+    }
+
+    .striker-slider::-webkit-slider-thumb:active {
+      cursor: grabbing;
+      transform: scale(0.97);
+    }
+
+    .striker-slider::-moz-range-thumb {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, #fffbeb 0%, #fde68a 45%, #d97706 82%, #78350f 100%);
+      border: 3px solid #fef3c7;
+      box-shadow: 0 0 12px rgba(251, 191, 36, 0.75), 0 3px 6px rgba(0,0,0,0.7);
+      cursor: grab;
+    }
+
+    /* Canvas Container Shadow */
+    .board-stage {
+      box-shadow:
+        0 25px 60px -10px rgba(0, 0, 0, 0.9),
+        0 0 0 1px rgba(251, 191, 36, 0.22);
+      border-radius: 26px;
+      touch-action: none;
+    }
+
+    /* Tray Coin Miniatures */
+    .mini-coin-white {
+      background: radial-gradient(circle at 35% 30%, #ffffff 0%, #f3ead8 65%, #c7b293 100%);
+      border: 1px solid #d6c5a9;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.6), inset 0 0 3px rgba(255,255,255,0.8);
+    }
+    .mini-coin-black {
+      background: radial-gradient(circle at 35% 30%, #4b5563 0%, #1f2937 55%, #090d16 100%);
+      border: 1px solid #374151;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.75), inset 0 0 3px rgba(255,255,255,0.2);
+    }
+    .mini-coin-queen {
+      background: radial-gradient(circle at 35% 30%, #fca5a5 0%, #dc2626 55%, #7f1d1d 100%);
+      border: 1px solid #f87171;
+      box-shadow: 0 0 8px rgba(239,68,68,0.65), 0 2px 4px rgba(0,0,0,0.7);
+    }
+  </style>
+</head>
+<body class="flex flex-col min-h-screen justify-between">
+
+  <!-- TOP NAVIGATION & GAME CONTROLS -->
+  <nav style="padding:8px 16px;background:#130b08;border-bottom:1px solid #8a632d"><a href="/" style="color:#fbd77a;font:600 13px Inter,sans-serif;text-decoration:none">← AirGames · Explore Games</a></nav><header class="w-full border-b border-amber-500/20 bg-black/40 backdrop-blur-md px-3 py-2.5">
+    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2">
+      <!-- Brand Title -->
+      <div class="flex items-center gap-2.5">
+        <div class="w-9 h-9 rounded-full flex items-center justify-center bg-gradient-to-br from-amber-300 via-amber-500 to-amber-800 shadow-md border border-amber-200">
+          <div class="w-4 h-4 rounded-full bg-red-600 border border-amber-100 shadow-inner"></div>
+        </div>
+        <div>
+          <h1 class="font-royal text-base sm:text-xl font-bold tracking-wider text-amber-200 leading-none">
+            Air<span class="text-amber-400">Carrom</span>
+          </h1>
+          <p class="text-[11px] text-amber-100/60 hidden sm:block">Sub-Stepped Physics &bull; ICF Queen Cover Rules</p>
+        </div>
+      </div>
+
+      <!-- Mode Switcher Pills -->
+      <div class="flex items-center bg-black/50 p-1 rounded-xl border border-amber-500/25">
+        <button id="modeVsAI" onclick="setGameMode('ai')" class="px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all brass-btn-primary">
+          Vs 🤖 AirBot
+        </button>
+        <button id="mode2P" onclick="setGameMode('2p')" class="px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all text-amber-200/80 hover:text-amber-100">
+          2P Pass &amp; Play
+        </button>
+        <button id="modePractice" onclick="setGameMode('practice')" class="px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all text-amber-200/80 hover:text-amber-100">
+          Free Practice
+        </button>
+      </div>
+
+      <!-- Utility Action Buttons -->
+      <div class="flex items-center gap-1.5 sm:gap-2">
+        <button id="btnPowder" onclick="sprinkleBoricPowder()" title="Sprinkle Boric Powder to reduce surface friction" class="brass-btn px-2.5 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5">
+          <span>✨</span>
+          <span class="hidden md:inline">Boric Powder</span>
+        </button>
+        <button id="btnUndo" onclick="undoLastShot()" title="Undo Last Shot (Practice Mode)" class="brass-btn px-2.5 py-1.5 rounded-lg text-xs font-medium hidden items-center gap-1">
+          <span>↩</span>
+          <span>Undo Shot</span>
+        </button>
+        <button id="btnPreset" onclick="cyclePracticePreset()" title="Switch Trickshot / Drill Layout" class="brass-btn px-2.5 py-1.5 rounded-lg text-xs font-medium hidden items-center gap-1">
+          <span>🎯</span>
+          <span id="presetLabel">Break Setup</span>
+        </button>
+        <button id="btnSound" onclick="toggleAudio()" title="Toggle Sound Effects" class="brass-btn px-2.5 py-1.5 rounded-lg text-xs font-medium">
+          🔊
+        </button>
+        <button onclick="openRulesModal()" class="brass-btn px-2.5 py-1.5 rounded-lg text-xs font-medium">
+          📜 <span class="hidden sm:inline">Rules</span>
+        </button>
+        <button onclick="resetMatch()" class="brass-btn px-3 py-1.5 rounded-lg text-xs font-semibold text-amber-300">
+          ↻ New Board
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTENT AREA -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-2 sm:px-4 py-2 flex flex-col lg:flex-row items-center justify-center gap-3 lg:gap-6">
+
+    <!-- LEFT SIDEBAR: PLAYER 1 (WHITE) & QUEEN STATUS (Desktop left, Mobile top row) -->
+    <div class="w-full lg:w-72 flex flex-col gap-2.5 order-1 lg:order-1">
+      <div class="grid grid-cols-2 lg:grid-cols-1 gap-2.5">
+        <!-- Player 1 (White) Card -->
+        <div id="cardWhite" class="wood-panel wood-panel-active rounded-2xl p-3 sm:p-4 transition-all">
+          <div class="flex items-center justify-between mb-2">
+            <div class="flex items-center gap-2.5">
+              <div class="w-8 h-8 rounded-full mini-coin-white flex items-center justify-center text-stone-900 font-bold text-xs shadow">
+                W
+              </div>
+              <div>
+                <div class="flex items-center gap-1.5">
+                  <span class="font-bold text-sm sm:text-base text-amber-100">Player 1</span>
+                  <span id="turnBadgeWhite" class="text-[10px] px-2 py-0.5 rounded-full bg-amber-400 text-stone-950 font-bold uppercase tracking-wider">
+                    Turn
+                  </span>
+                </div>
+                <p class="text-[11px] text-amber-200/70">White Carrommen (Bottom)</p>
+              </div>
+            </div>
+            <div class="text-right">
+              <div id="scoreWhite" class="text-xl sm:text-2xl font-royal font-bold text-amber-300 leading-none">0</div>
+              <div class="text-[10px] text-amber-200/60">POINTS</div>
+            </div>
+          </div>
+
+          <!-- Collected White Coins Tray -->
+          <div class="bg-black/45 rounded-xl p-2 border border-amber-500/20">
+            <div class="flex items-center justify-between text-[11px] text-amber-200/70 mb-1.5">
+              <span>Pocketed Tray</span>
+              <span id="countWhiteText">0 / 9 Coins</span>
+            </div>
+            <div id="trayWhite" class="flex items-center gap-1 flex-wrap min-h-[22px]">
+              <!-- Populated dynamically -->
+            </div>
+          </div>
+
+          <div id="dueBadgeWhite" class="hidden mt-2 text-[11px] px-2.5 py-1 rounded-lg bg-red-950/80 border border-red-500/40 text-red-200 font-medium">
+            ⚠️ Penalty Due: 1 coin owed on next score
+          </div>
+        </div>
+
+        <!-- Player 2 / AI (Black) Card (Visible here on mobile side-by-side, or in right sidebar on desktop) -->
+        <div id="cardBlackMobile" class="wood-panel rounded-2xl p-3 sm:p-4 transition-all lg:hidden">
+          <div class="flex items-center justify-between mb-2">
+            <div class="flex items-center gap-2">
+              <div class="w-8 h-8 rounded-full mini-coin-black flex items-center justify-center text-amber-200 font-bold text-xs shadow">
+                B
+              </div>
+              <div>
+                <div class="flex items-center gap-1.5">
+                  <span id="nameBlackMobile" class="font-bold text-sm text-amber-100">AirBot</span>
+                  <span id="turnBadgeBlackMobile" class="hidden text-[10px] px-2 py-0.5 rounded-full bg-amber-400 text-stone-950 font-bold uppercase">
+                    Turn
+                  </span>
+                </div>
+                <p class="text-[11px] text-amber-200/70">Black Coins (Top)</p>
+              </div>
+            </div>
+            <div class="text-right">
+              <div id="scoreBlackMobile" class="text-xl font-royal font-bold text-amber-300 leading-none">0</div>
+              <div class="text-[10px] text-amber-200/60">POINTS</div>
+            </div>
+          </div>
+          <div class="bg-black/45 rounded-xl p-2 border border-amber-500/20">
+            <div class="flex items-center justify-between text-[11px] text-amber-200/70 mb-1.5">
+              <span>Tray</span>
+              <span id="countBlackTextMobile">0 / 9</span>
+            </div>
+            <div id="trayBlackMobile" class="flex items-center gap-1 flex-wrap min-h-[22px]"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Red Queen Status Card -->
+      <div class="wood-panel rounded-2xl p-3.5 hidden lg:block">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full mini-coin-queen flex items-center justify-center shrink-0">
+            <span class="text-white text-xs font-bold">★</span>
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold uppercase tracking-wider text-red-300">Red Queen (3 Pts)</span>
+              <span id="queenBadgeDesktop" class="text-[11px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-200 border border-amber-400/30 font-medium">
+                On Board
+              </span>
+            </div>
+            <p id="queenDescDesktop" class="text-xs text-amber-100/75 mt-1 leading-snug">
+              Pocket the Queen &amp; cover it with your own coin on the same or immediate next shot.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Board Surface & Physics Info (Desktop) -->
+      <div class="wood-panel rounded-2xl p-3.5 hidden lg:flex flex-col gap-2">
+        <div class="flex items-center justify-between text-xs">
+          <span class="text-amber-200/80 font-medium">Surface Smoothness</span>
+          <span id="powderLevelText" class="text-emerald-300 font-semibold">Freshly Powdered (94%)</span>
+        </div>
+        <div class="w-full h-2 bg-black/60 rounded-full overflow-hidden border border-amber-500/20">
+          <div id="powderBar" class="h-full bg-gradient-to-r from-amber-400 to-emerald-400 transition-all duration-300" style="width: 94%"></div>
+        </div>
+        <p class="text-[11px] text-amber-100/60 leading-relaxed">
+          Tip: Pull back on the striker to aim. Watch the <span class="text-amber-300">Ghost Target Preview</span> to line up precision cut shots!
+        </p>
+      </div>
+    </div>
+
+    <!-- CENTERPIECE: CARROM BOARD CANVAS + STRIKER SLIDER -->
+    <div class="flex flex-col items-center justify-center order-2 lg:order-2 w-full max-w-[560px]">
+      <!-- Live Turn / Status Banner -->
+      <div class="w-full mb-2 px-3.5 py-2 rounded-xl wood-panel flex items-center justify-between gap-2">
+        <div class="flex items-center gap-2 min-w-0">
+          <span id="statusDot" class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shrink-0"></span>
+          <span id="statusBannerText" class="text-xs sm:text-sm font-semibold text-amber-100 truncate">
+            White's Turn — Slide striker &amp; pull back to aim
+          </span>
+        </div>
+        <span id="queenBadgeMobile" class="lg:hidden text-[11px] px-2 py-0.5 rounded-full bg-red-900/60 border border-red-400/40 text-red-200 shrink-0 font-medium">
+          Queen: On Board
+        </span>
+      </div>
+
+      <!-- Responsive Square Board Container -->
+      <div id="canvasWrapper" class="relative w-full aspect-square max-w-[540px] board-stage overflow-hidden">
+        <canvas id="carromCanvas" class="w-full h-full block cursor-crosshair"></canvas>
+
+        <!-- Floating Toast Notification Overlay -->
+        <div id="boardToast" class="pointer-events-none absolute top-5 left-1/2 -translate-x-1/2 px-4 py-2 rounded-xl bg-black/85 border border-amber-400/60 text-amber-200 text-xs sm:text-sm font-bold shadow-2xl opacity-0 transition-all duration-300 transform -translate-y-2 text-center whitespace-nowrap z-10">
+          Queen Pocketed! Must Cover!
+        </div>
+      </div>
+
+      <!-- STEP 1 CONTROL DECK: STRIKER POSITION SLIDER & SHOT POWER -->
+      <div class="w-full mt-2.5 wood-panel rounded-2xl p-3 sm:px-4 sm:py-3">
+        <div class="flex items-center justify-between mb-1.5">
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-bold uppercase tracking-wider text-amber-300">
+              1. Position Striker
+            </span>
+            <span id="placementStatusBadge" class="text-[11px] px-2 py-0.5 rounded-full bg-emerald-950/90 text-emerald-300 border border-emerald-500/40 font-medium">
+              ● Clear Spot
+            </span>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="text-xs text-amber-200/70">Shot Power:</span>
+            <div class="w-20 sm:w-24 h-2.5 bg-black/70 rounded-full overflow-hidden border border-amber-500/30">
+              <div id="shotPowerFill" class="h-full w-0 bg-gradient-to-r from-emerald-400 via-amber-400 to-red-500 transition-all duration-75"></div>
+            </div>
+            <span id="shotPowerPct" class="text-xs font-mono font-bold text-amber-300 w-9 text-right">0%</span>
+          </div>
+        </div>
+
+        <!-- Slider Track with Fine-Tune Step Buttons -->
+        <div class="flex items-center gap-2.5">
+          <button onclick="nudgeStriker(-0.04)" title="Nudge Striker Left" class="brass-btn w-9 h-9 rounded-xl flex items-center justify-center font-bold text-sm shrink-0">
+            ◀
+          </button>
+          <div class="relative flex-1 flex items-center">
+            <input
+              id="strikerSlider"
+              type="range"
+              min="0"
+              max="1000"
+              value="500"
+              class="striker-slider"
+            />
+          </div>
+          <button onclick="nudgeStriker(0.04)" title="Nudge Striker Right" class="brass-btn w-9 h-9 rounded-xl flex items-center justify-center font-bold text-sm shrink-0">
+            ▶
+          </button>
+        </div>
+
+        <div class="flex items-center justify-between mt-1.5 text-[11px] text-amber-200/65">
+          <span>2. Drag back from Striker on board to aim &amp; release to shoot</span>
+          <button onclick="findClearBaselineSpot()" class="text-amber-300 hover:underline font-medium">
+            Auto-Clear Spot
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT SIDEBAR: PLAYER 2 / AIRBOT & SHOT LOG (Desktop) -->
+    <div class="w-full lg:w-72 hidden lg:flex flex-col gap-2.5 order-3">
+      <!-- Player 2 / AirBot Card -->
+      <div id="cardBlackDesktop" class="wood-panel rounded-2xl p-4 transition-all">
+        <div class="flex items-center justify-between mb-2">
+          <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-full mini-coin-black flex items-center justify-center text-amber-200 font-bold text-xs shadow">
+              B
+            </div>
+            <div>
+              <div class="flex items-center gap-1.5">
+                <span id="nameBlackDesktop" class="font-bold text-base text-amber-100">AirBot</span>
+                <span id="turnBadgeBlackDesktop" class="hidden text-[10px] px-2 py-0.5 rounded-full bg-amber-400 text-stone-950 font-bold uppercase tracking-wider">
+                  Turn
+                </span>
+              </div>
+              <p id="subBlackDesktop" class="text-[11px] text-amber-200/70">Black Carrommen (Top)</p>
+            </div>
+          </div>
+          <div class="text-right">
+            <div id="scoreBlackDesktop" class="text-2xl font-royal font-bold text-amber-300 leading-none">0</div>
+            <div class="text-[10px] text-amber-200/60">POINTS</div>
+          </div>
+        </div>
+
+        <!-- Collected Black Coins Tray -->
+        <div class="bg-black/45 rounded-xl p-2 border border-amber-500/20">
+          <div class="flex items-center justify-between text-[11px] text-amber-200/70 mb-1.5">
+            <span>Pocketed Tray</span>
+            <span id="countBlackTextDesktop">0 / 9 Coins</span>
+          </div>
+          <div id="trayBlackDesktop" class="flex items-center gap-1 flex-wrap min-h-[22px]">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+
+        <div id="dueBadgeBlack" class="hidden mt-2 text-[11px] px-2.5 py-1 rounded-lg bg-red-950/80 border border-red-500/40 text-red-200 font-medium">
+          ⚠️ Penalty Due: 1 coin owed on next score
+        </div>
+      </div>
+
+      <!-- AI Difficulty / Tactical Feed -->
+      <div class="wood-panel rounded-2xl p-3.5 flex flex-col gap-2">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold uppercase tracking-wider text-amber-300">Match Log &amp; Telemetry</span>
+          <span class="text-[11px] text-amber-200/60">8x Sub-Stepped</span>
+        </div>
+        <div id="matchLog" class="bg-black/50 rounded-xl p-2.5 border border-amber-500/20 h-44 overflow-y-auto text-xs space-y-1.5 font-normal text-amber-100/85">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- RULES MODAL -->
+  <div id="rulesModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="wood-panel max-w-lg w-full rounded-3xl p-6 border border-amber-400/40 shadow-2xl">
+      <div class="flex items-center justify-between pb-3 border-b border-amber-500/25">
+        <h2 class="font-royal text-xl font-bold text-amber-300">Official Carrom Rules &amp; Controls</h2>
+        <button onclick="closeRulesModal()" class="brass-btn w-8 h-8 rounded-full flex items-center justify-center font-bold">✕</button>
+      </div>
+      <div class="mt-4 space-y-3 text-xs sm:text-sm text-amber-100/90 leading-relaxed max-h-[65vh] overflow-y-auto pr-1">
+        <div>
+          <h3 class="font-bold text-amber-300">🎯 2-Step Positioning &amp; Slingshot Aiming</h3>
+          <p class="text-amber-100/75 mt-0.5">
+            1. Use the <strong>Striker Slider</strong> below the board (or drag horizontally along the baseline) to position your striker.<br>
+            2. Pull back from the Striker on the board to set power and aim. Watch the <strong>Ghost Target Preview</strong> to see the exact point of contact and coin deflection angle! Drag back into the center of the striker to cancel a shot.
+          </p>
+        </div>
+        <div>
+          <h3 class="font-bold text-amber-300">👑 The Red Queen &amp; Cover Rule (3 Points)</h3>
+          <p class="text-amber-100/75 mt-0.5">
+            Pocketing the <strong>Red Queen</strong> requires you to <strong>Cover</strong> it by pocketing one of your own color coins on the <em>same shot</em> or the <em>immediate next shot</em>. If you fail to pocket your own coin on the cover shot (or commit a foul), the Queen is returned to the center!
+          </p>
+        </div>
+        <div>
+          <h3 class="font-bold text-amber-300">⚪⚫ Turns &amp; Scoring</h3>
+          <p class="text-amber-100/75 mt-0.5">
+            <strong>White</strong> shoots from the bottom baseline; <strong>Black</strong> shoots from the top baseline. Pocketing your own color coin keeps your turn going. Pocketing an opponent's coin awards that coin to the opponent.
+          </p>
+        </div>
+        <div>
+          <h3 class="font-bold text-amber-300">⚠️ Striker Foul ("Due" Penalty)</h3>
+          <p class="text-amber-100/75 mt-0.5">
+            If the Striker falls into a pocket, your turn ends immediately and <strong>one of your pocketed coins is returned to the center</strong> (or owed as a Due penalty if you have none yet).
+          </p>
+        </div>
+      </div>
+      <div class="mt-5 flex justify-end">
+        <button onclick="closeRulesModal()" class="brass-btn-primary px-5 py-2 rounded-xl text-sm">Got It, Let's Play!</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- GAME OVER VICTORY MODAL -->
+  <div id="victoryModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="wood-panel max-w-md w-full rounded-3xl p-6 text-center border border-amber-400/50 shadow-2xl">
+      <div class="w-16 h-16 mx-auto rounded-full bg-gradient-to-br from-amber-300 to-amber-700 flex items-center justify-center text-3xl shadow-lg border-2 border-amber-100 mb-3">
+        🏆
+      </div>
+      <h2 id="victoryTitle" class="font-royal text-2xl font-bold text-amber-300">Player 1 Wins!</h2>
+      <p id="victorySubtitle" class="text-sm text-amber-100/80 mt-1">Cleared all White Carrommen with precision!</p>
+
+      <div class="grid grid-cols-2 gap-3 my-5 bg-black/45 p-3.5 rounded-2xl border border-amber-500/25">
+        <div>
+          <div class="text-xs text-amber-200/70">White Score</div>
+          <div id="finalScoreWhite" class="text-2xl font-royal font-bold text-amber-300">12</div>
+        </div>
+        <div>
+          <div class="text-xs text-amber-200/70">Black Score</div>
+          <div id="finalScoreBlack" class="text-2xl font-royal font-bold text-amber-300">5</div>
+        </div>
+      </div>
+
+      <button onclick="closeVictoryAndReset()" class="brass-btn-primary w-full py-3 rounded-xl text-sm font-bold tracking-wide">
+        Play Another Match
+      </button>
+    </div>
+  </div>
+
+  <script>
+    /*************************************************************************
+     * 1. SYNTHESIZED WEB AUDIO API SOUND ENGINE
+     * Realistic wooden/acrylic coin clacks, frame thuds, pocket drops & chimes
+     *************************************************************************/
+    class CarromSoundEngine {
+      constructor() {
+        this.ctx = null;
+        this.muted = false;
+        this.lastClackTime = 0;
+      }
+
+      init() {
+        if (!this.ctx) {
+          const AudioCtx = window.AudioContext || window.webkitAudioContext;
+          if (AudioCtx) this.ctx = new AudioCtx();
+        }
+        if (this.ctx && this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      }
+
+      playCoinClack(relSpeed, isStriker = false) {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+
+        const now = this.ctx.currentTime;
+        if (now - this.lastClackTime < 0.014) return;
+        this.lastClackTime = now;
+
+        const intensity = Math.min(1, Math.max(0.06, relSpeed / 22));
+
+        // High wooden/acrylic click transient
+        const osc1 = this.ctx.createOscillator();
+        const osc2 = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        const baseFreq = isStriker ? 720 : 940;
+        const pitchVar = 0.92 + Math.random() * 0.16;
+
+        osc1.type = 'triangle';
+        osc1.frequency.setValueAtTime(baseFreq * pitchVar, now);
+        osc1.frequency.exponentialRampToValueAtTime(240, now + 0.045);
+
+        osc2.type = 'sine';
+        osc2.frequency.setValueAtTime((baseFreq * 1.65) * pitchVar, now);
+        osc2.frequency.exponentialRampToValueAtTime(420, now + 0.03);
+
+        gain.gain.setValueAtTime(intensity * 0.42, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+
+        osc1.connect(gain);
+        osc2.connect(gain);
+        gain.connect(this.ctx.destination);
+
+        osc1.start(now);
+        osc2.start(now);
+        osc1.stop(now + 0.055);
+        osc2.stop(now + 0.055);
+      }
+
+      playWallThud(speed) {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+
+        const now = this.ctx.currentTime;
+        const intensity = Math.min(1, Math.max(0.05, speed / 20));
+
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(165 + Math.random() * 25, now);
+        osc.frequency.exponentialRampToValueAtTime(52, now + 0.085);
+
+        gain.gain.setValueAtTime(intensity * 0.48, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.095);
+      }
+
+      playPocketDrop(isQueen = false, isFoul = false) {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+
+        const now = this.ctx.currentTime;
+        if (isFoul) {
+          // Low buzzer warning for striker foul
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(150, now);
+          osc.frequency.linearRampToValueAtTime(95, now + 0.35);
+          gain.gain.setValueAtTime(0.25, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.38);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.4);
+          return;
+        }
+
+        // Satisfying net pocket drop + harmonic tone
+        const notes = isQueen ? [523.25, 659.25, 783.99, 1046.5] : [392.0, 523.25];
+        notes.forEach((freq, idx) => {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(freq, now + idx * 0.055);
+          gain.gain.setValueAtTime(0.22, now + idx * 0.055);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.055 + 0.24);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(now + idx * 0.055);
+          osc.stop(now + idx * 0.055 + 0.25);
+        });
+      }
+
+      playPowderSwoosh() {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+
+        const now = this.ctx.currentTime;
+        const bufferSize = this.ctx.sampleRate * 0.35;
+        const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+          data[i] = (Math.random() * 2 - 1) * Math.sin((i / bufferSize) * Math.PI);
+        }
+
+        const noise = this.ctx.createBufferSource();
+        noise.buffer = buffer;
+
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'bandpass';
+        filter.frequency.setValueAtTime(1800, now);
+        filter.Q.setValueAtTime(1.5, now);
+
+        const gain = this.ctx.createGain();
+        gain.gain.setValueAtTime(0.18, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+
+        noise.connect(filter);
+        filter.connect(gain);
+        gain.connect(this.ctx.destination);
+        noise.start(now);
+      }
+    }
+
+    const sound = new CarromSoundEngine();
+
+    /*************************************************************************
+     * 2. BOARD CONSTANTS & GEOMETRY (800x800 Logical High-DPI Space)
+     *************************************************************************/
+    const BOARD_SIZE = 800;
+    const FRAME_WIDTH = 56;
+    const INNER_MIN = FRAME_WIDTH;                  // 56
+    const INNER_MAX = BOARD_SIZE - FRAME_WIDTH;     // 744
+    const CENTER = BOARD_SIZE / 2;                  // 400
+
+    const POCKET_OFFSET = 24;
+    const POCKET_RADIUS = 27.5;
+    const POCKETS = [
+      { x: INNER_MIN + POCKET_OFFSET, y: INNER_MIN + POCKET_OFFSET }, // Top-Left (80, 80)
+      { x: INNER_MAX - POCKET_OFFSET, y: INNER_MIN + POCKET_OFFSET }, // Top-Right (720, 80)
+      { x: INNER_MIN + POCKET_OFFSET, y: INNER_MAX - POCKET_OFFSET }, // Bottom-Left (80, 720)
+      { x: INNER_MAX - POCKET_OFFSET, y: INNER_MAX - POCKET_OFFSET }  // Bottom-Right (720, 720)
+    ];
+
+    const COIN_RADIUS = 16.2;
+    const STRIKER_RADIUS = 20.8;
+    const COIN_MASS = 1.0;
+    const STRIKER_MASS = 1.9; // ~1.9x heavier than carrommen for authentic break momentum
+
+    // Baselines
+    const BASELINE_DIST = 84;
+    const BASELINE_BOTTOM_Y = INNER_MAX - BASELINE_DIST; // 660
+    const BASELINE_TOP_Y = INNER_MIN + BASELINE_DIST;    // 140
+    const BASELINE_MIN_X = 186;
+    const BASELINE_MAX_X = 614;
+
+    // Physics constants
+    const SUB_STEPS = 8;
+    const RESTITUTION_COIN = 0.88;
+    const RESTITUTION_WALL = 0.81;
+    const MAX_PULL_DIST = 145;
+    const MAX_SHOT_SPEED = 35.5;
+
+    /*************************************************************************
+     * 3. GAME STATE & ENTITIES
+     *************************************************************************/
+    const canvas = document.getElementById('carromCanvas');
+    const ctx = canvas.getContext('2d');
+    const strikerSlider = document.getElementById('strikerSlider');
+
+    // Offscreen pre-rendered static board canvas for 60fps performance
+    const boardCacheCanvas = document.createElement('canvas');
+    boardCacheCanvas.width = 1600;
+    boardCacheCanvas.height = 1600;
+    const boardCacheCtx = boardCacheCanvas.getContext('2d');
+
+    let gameMode = 'ai'; // 'ai' | '2p' | 'practice'
+    let currentTurn = 'white'; // 'white' (Bottom) | 'black' (Top)
+    let gamePhase = 'placement'; // 'placement' | 'aiming' | 'moving' | 'ai_thinking' | 'gameover'
+
+    // Boric powder friction state
+    let powderSmoothness = 0.94; // 0.0 to 1.0 (reduces friction slightly)
+    let powderSpecks = [];
+
+    // Queen & Scoring state
+    let queenState = 'on_board'; // 'on_board' | 'pending_cover' | 'covered_white' | 'covered_black'
+    let queenPendingHolder = null; // 'white' | 'black' | null
+    let queenPocketedThisTurn = false;
+
+    let owedPenalties = { white: 0, black: 0 };
+    let collectedCoins = { white: 0, black: 0 };
+
+    // Pieces on board
+    let coins = [];
+    let fallingPieces = []; // Animated pieces dropping into pockets
+    let particles = [];     // Collision sparks & powder clouds
+
+    // Striker object
+    let striker = {
+      id: 'striker',
+      type: 'striker',
+      x: CENTER,
+      y: BASELINE_BOTTOM_Y,
+      vx: 0,
+      vy: 0,
+      r: STRIKER_RADIUS,
+      mass: STRIKER_MASS,
+      active: true,
+      pocketed: false,
+      overlapping: false
+    };
+
+    // Shot evaluation tracking per turn
+    let turnEvents = {
+      pocketedWhite: 0,
+      pocketedBlack: 0,
+      pocketedQueen: false,
+      strikerPocketed: false
+    };
+
+    // Aiming & Drag state
+    let isDraggingStrikerSlide = false;
+    let isAiming = false;
+    let aimPullPos = { x: CENTER, y: BASELINE_BOTTOM_Y };
+    let aiAnimState = null; // Used to animate AI sliding and aiming smoothly
+
+    // Practice Mode Undo Snapshot & Preset Index
+    let previousStateSnapshot = null;
+    let practicePresetIndex = 0;
+    const PRACTICE_PRESETS = ['Break Setup', 'Queen Cover Drill', 'Cut Shot Drill', 'Bank Rebound'];
+
+    /*************************************************************************
+     * 4. PRE-RENDER REALISTIC WOOD CARROM BOARD & TRADITIONAL MARKINGS
+     *************************************************************************/
+    function buildStaticBoardCache() {
+      const c = boardCacheCtx;
+      c.save();
+      c.scale(2, 2); // Render at 2x resolution (1600x1600) for razor-sharp visuals
+
+      // 1. Playing Surface (Warm Birch / Maple Plywood with wood grain)
+      const surfGrad = c.createRadialGradient(CENTER, CENTER, 40, CENTER, CENTER, 520);
+      surfGrad.addColorStop(0, '#f6dfb9');
+      surfGrad.addColorStop(0.65, '#edd0a3');
+      surfGrad.addColorStop(1, '#dfc08e');
+      c.fillStyle = surfGrad;
+      c.fillRect(INNER_MIN, INNER_MIN, INNER_MAX - INNER_MIN, INNER_MAX - INNER_MIN);
+
+      // Subtle procedural birch wood grain lines
+      c.save();
+      c.strokeStyle = 'rgba(168, 120, 68, 0.065)';
+      c.lineWidth = 1.2;
+      for (let i = INNER_MIN; i < INNER_MAX; i += 4) {
+        c.beginPath();
+        c.moveTo(INNER_MIN, i);
+        for (let x = INNER_MIN; x <= INNER_MAX; x += 40) {
+          const wave = Math.sin(x * 0.015 + i * 0.05) * 2.5;
+          c.lineTo(x, i + wave);
+        }
+        c.stroke();
+      }
+      c.restore();
+
+      // Inner frame shadow vignette on playing surface
+      const innerShadow = c.createLinearGradient(INNER_MIN, INNER_MIN, INNER_MIN + 18, INNER_MIN + 18);
+      c.strokeStyle = 'rgba(40, 20, 8, 0.25)';
+      c.lineWidth = 8;
+      c.strokeRect(INNER_MIN + 4, INNER_MIN + 4, INNER_MAX - INNER_MIN - 8, INNER_MAX - INNER_MIN - 8);
+
+      // 2. Traditional Center Star / Lotus Circle Pattern
+      drawCenterLotusMarkings(c);
+
+      // 3. Four Traditional Baselines with Double Lines & Red/Black End Circles
+      drawAllBaselines(c);
+
+      // 4. Four Diagonal Foul / Arrow Lines with Curved Arrow Tails
+      drawDiagonalArrows(c);
+
+      // 5. Thick Polished Rosewood Outer Frame
+      drawRosewoodFrame(c);
+
+      // 6. Four Corner Pockets with Woven Net Pattern & Brass Corner Bumpers
+      drawPocketsAndBrassCorners(c);
+
+      c.restore();
+    }
+
+    function drawCenterLotusMarkings(c) {
+      c.save();
+      c.translate(CENTER, CENTER);
+
+      const outerCircleR = 71;
+      const midCircleR = 64;
+      const innerQueenR = COIN_RADIUS + 2.5;
+
+      // Outer crimson & black rings
+      c.beginPath();
+      c.arc(0, 0, outerCircleR, 0, Math.PI * 2);
+      c.strokeStyle = '#1e1b18';
+      c.lineWidth = 2.2;
+      c.stroke();
+
+      c.beginPath();
+      c.arc(0, 0, midCircleR, 0, Math.PI * 2);
+      c.strokeStyle = '#b91c1c';
+      c.lineWidth = 1.6;
+      c.stroke();
+
+      // Decorative miniature dots between outer & mid circle
+      for (let i = 0; i < 16; i++) {
+        const ang = (i * Math.PI) / 8;
+        const rx = Math.cos(ang) * 67.5;
+        const ry = Math.sin(ang) * 67.5;
+        c.beginPath();
+        c.arc(rx, ry, 1.5, 0, Math.PI * 2);
+        c.fillStyle = i % 2 === 0 ? '#b91c1c' : '#1e1b18';
+        c.fill();
+      }
+
+      // 8-Pointed Traditional Lotus Star Petals
+      for (let i = 0; i < 8; i++) {
+        c.save();
+        c.rotate((i * Math.PI) / 4);
+
+        c.beginPath();
+        c.moveTo(0, -innerQueenR);
+        c.quadraticCurveTo(11, -38, 0, -midCircleR + 2);
+        c.quadraticCurveTo(-11, -38, 0, -innerQueenR);
+        c.closePath();
+
+        c.fillStyle = i % 2 === 0 ? 'rgba(185, 28, 28, 0.82)' : 'rgba(30, 27, 24, 0.82)';
+        c.fill();
+        c.strokeStyle = '#1e1b18';
+        c.lineWidth = 1;
+        c.stroke();
+        c.restore();
+      }
+
+      // Center Queen Circle
+      c.beginPath();
+      c.arc(0, 0, innerQueenR, 0, Math.PI * 2);
+      c.fillStyle = '#b91c1c';
+      c.fill();
+      c.lineWidth = 2;
+      c.strokeStyle = '#1e1b18';
+      c.stroke();
+
+      c.beginPath();
+      c.arc(0, 0, innerQueenR - 5, 0, Math.PI * 2);
+      c.strokeStyle = '#f6dfb9';
+      c.lineWidth = 1.2;
+      c.stroke();
+
+      c.restore();
+    }
+
+    function drawAllBaselines(c) {
+      const halfBand = COIN_RADIUS; // 16.2
+      const startOffset = BASELINE_MIN_X - CENTER;
+      const endOffset = BASELINE_MAX_X - CENTER;
+      const distFromCenter = CENTER - BASELINE_TOP_Y; // 260
+
+      for (let side = 0; side < 4; side++) {
+        c.save();
+        c.translate(CENTER, CENTER);
+        c.rotate((side * Math.PI) / 2);
+
+        const yOuter = distFromCenter + halfBand;
+        const yInner = distFromCenter - halfBand;
+
+        // Outer thick line & inner thin line
+        c.beginPath();
+        c.moveTo(startOffset, yOuter);
+        c.lineTo(endOffset, yOuter);
+        c.strokeStyle = '#1e1b18';
+        c.lineWidth = 2.4;
+        c.stroke();
+
+        c.beginPath();
+        c.moveTo(startOffset, yInner);
+        c.lineTo(endOffset, yInner);
+        c.strokeStyle = '#1e1b18';
+        c.lineWidth = 1.5;
+        c.stroke();
+
+        // Red End Circles encapsulated by Black Rings at both ends
+        [startOffset, endOffset].forEach(xPos => {
+          c.beginPath();
+          c.arc(xPos, distFromCenter, halfBand, 0, Math.PI * 2);
+          c.fillStyle = '#b91c1c';
+          c.fill();
+          c.lineWidth = 2.2;
+          c.strokeStyle = '#1e1b18';
+          c.stroke();
+
+          c.beginPath();
+          c.arc(xPos, distFromCenter, halfBand - 4.5, 0, Math.PI * 2);
+          c.strokeStyle = '#f6dfb9';
+          c.lineWidth = 1.2;
+          c.stroke();
+        });
+
+        // Subtle decorative center baseline diamond
+        c.beginPath();
+        c.arc(0, distFromCenter, 4, 0, Math.PI * 2);
+        c.fillStyle = 'rgba(185, 28, 28, 0.65)';
+        c.fill();
+
+        c.restore();
+      }
+    }
+
+    function drawDiagonalArrows(c) {
+      for (let i = 0; i < 4; i++) {
+        c.save();
+        c.translate(CENTER, CENTER);
+        c.rotate((i * Math.PI) / 2 + Math.PI / 4);
+
+        const arrowStart = 96;
+        const arrowEnd = 365;
+
+        // Main diagonal line pointing toward corner pocket
+        c.beginPath();
+        c.moveTo(0, -arrowStart);
+        c.lineTo(0, -arrowEnd);
+        c.strokeStyle = '#1e1b18';
+        c.lineWidth = 1.8;
+        c.stroke();
+
+        // Arrowhead near pocket
+        c.beginPath();
+        c.moveTo(0, -arrowEnd - 6);
+        c.lineTo(-5.5, -arrowEnd + 7);
+        c.lineTo(0, -arrowEnd + 3);
+        c.lineTo(5.5, -arrowEnd + 7);
+        c.closePath();
+        c.fillStyle = '#1e1b18';
+        c.fill();
+
+        // Traditional curved arrow tail arc (foul line ornament)
+        c.beginPath();
+        c.arc(0, -arrowStart - 16, 22, 0.2 * Math.PI, 0.8 * Math.PI);
+        c.strokeStyle = '#1e1b18';
+        c.lineWidth = 1.7;
+        c.stroke();
+
+        // Decorative red dot at tail
+        c.beginPath();
+        c.arc(0, -arrowStart, 3.2, 0, Math.PI * 2);
+        c.fillStyle = '#b91c1c';
+        c.fill();
+
+        c.restore();
+      }
+    }
+
+    function drawRosewoodFrame(c) {
+      c.save();
+
+      // Build thick rosewood borders around the playing field
+      const frameGrad = c.createLinearGradient(0, 0, BOARD_SIZE, BOARD_SIZE);
+      frameGrad.addColorStop(0, '#361910');
+      frameGrad.addColorStop(0.5, '#24100a');
+      frameGrad.addColorStop(1, '#160905');
+
+      c.fillStyle = frameGrad;
+      // Top, Bottom, Left, Right frame rects
+      c.fillRect(0, 0, BOARD_SIZE, INNER_MIN);
+      c.fillRect(0, INNER_MAX, BOARD_SIZE, FRAME_WIDTH);
+      c.fillRect(0, INNER_MIN, FRAME_WIDTH, INNER_MAX - INNER_MIN);
+      c.fillRect(INNER_MAX, INNER_MIN, FRAME_WIDTH, INNER_MAX - INNER_MIN);
+
+      // Subtle polished rosewood grain rings on the frame
+      c.strokeStyle = 'rgba(255, 195, 130, 0.05)';
+      c.lineWidth = 2;
+      for (let offset = 6; offset < FRAME_WIDTH - 6; offset += 7) {
+        c.strokeRect(offset, offset, BOARD_SIZE - offset * 2, BOARD_SIZE - offset * 2);
+      }
+
+      // Inner wooden cushion bevel
+      c.strokeStyle = '#5c2d1c';
+      c.lineWidth = 3;
+      c.strokeRect(INNER_MIN - 1.5, INNER_MIN - 1.5, INNER_MAX - INNER_MIN + 3, INNER_MAX - INNER_MIN + 3);
+
+      // Outer gold pinstripe inlay on frame
+      c.strokeStyle = 'rgba(217, 160, 91, 0.35)';
+      c.lineWidth = 1.5;
+      c.strokeRect(14, 14, BOARD_SIZE - 28, BOARD_SIZE - 28);
+
+      c.restore();
+    }
+
+    function drawPocketsAndBrassCorners(c) {
+      // 1. Metallic Brass Corner Plates
+      const cornerSize = 68;
+      const corners = [
+        { x: 0, y: 0, rx: 1, ry: 1 },
+        { x: BOARD_SIZE, y: 0, rx: -1, ry: 1 },
+        { x: 0, y: BOARD_SIZE, rx: 1, ry: -1 },
+        { x: BOARD_SIZE, y: BOARD_SIZE, rx: -1, ry: -1 }
+      ];
+
+      corners.forEach(cr => {
+        c.save();
+        c.translate(cr.x, cr.y);
+        c.scale(cr.rx, cr.ry);
+
+        const brassGrad = c.createLinearGradient(0, 0, cornerSize, cornerSize);
+        brassGrad.addColorStop(0, '#fef08a');
+        brassGrad.addColorStop(0.4, '#d97706');
+        brassGrad.addColorStop(0.8, '#92400e');
+        brassGrad.addColorStop(1, '#451a03');
+
+        c.beginPath();
+        c.moveTo(0, 0);
+        c.lineTo(cornerSize, 0);
+        c.lineTo(cornerSize, 16);
+        c.quadraticCurveTo(22, 22, 16, cornerSize);
+        c.lineTo(0, cornerSize);
+        c.closePath();
+        c.fillStyle = brassGrad;
+        c.fill();
+        c.strokeStyle = 'rgba(254, 240, 138, 0.5)';
+        c.lineWidth = 1;
+        c.stroke();
+
+        // Brass rivets/screws
+        [[14, 14], [46, 8], [8, 46]].forEach(([sx, sy]) => {
+          c.beginPath();
+          c.arc(sx, sy, 2.6, 0, Math.PI * 2);
+          c.fillStyle = '#78350f';
+          c.fill();
+          c.strokeStyle = '#fde68a';
+          c.lineWidth = 0.8;
+          c.stroke();
+        });
+
+        c.restore();
+      });
+
+      // 2. Corner Pockets with Depth Shading & Woven Net Mesh
+      POCKETS.forEach(p => {
+        c.save();
+
+        // Outer recessed wood lip
+        c.beginPath();
+        c.arc(p.x, p.y, POCKET_RADIUS + 4, 0, Math.PI * 2);
+        c.fillStyle = '#29150c';
+        c.fill();
+
+        // Deep pocket cavity gradient
+        const pocketGrad = c.createRadialGradient(p.x - 4, p.y - 4, 4, p.x, p.y, POCKET_RADIUS);
+        pocketGrad.addColorStop(0, '#050302');
+        pocketGrad.addColorStop(0.75, '#0c0705');
+        pocketGrad.addColorStop(1, '#1c100b');
+
+        c.beginPath();
+        c.arc(p.x, p.y, POCKET_RADIUS, 0, Math.PI * 2);
+        c.fillStyle = pocketGrad;
+        c.fill();
+
+        // Subtle woven net pattern clipped inside pocket
+        c.clip();
+        c.strokeStyle = 'rgba(180, 140, 95, 0.14)';
+        c.lineWidth = 1;
+        const step = 7;
+        for (let d = -POCKET_RADIUS * 2; d <= POCKET_RADIUS * 2; d += step) {
+          c.beginPath();
+          c.moveTo(p.x - POCKET_RADIUS, p.y + d - POCKET_RADIUS);
+          c.lineTo(p.x + POCKET_RADIUS, p.y + d + POCKET_RADIUS);
+          c.stroke();
+
+          c.beginPath();
+          c.moveTo(p.x + POCKET_RADIUS, p.y + d - POCKET_RADIUS);
+          c.lineTo(p.x - POCKET_RADIUS, p.y + d + POCKET_RADIUS);
+          c.stroke();
+        }
+
+        // Inner shadow ring
+        c.beginPath();
+        c.arc(p.x, p.y, POCKET_RADIUS, 0, Math.PI * 2);
+        c.strokeStyle = 'rgba(0,0,0,0.9)';
+        c.lineWidth = 5;
+        c.stroke();
+
+        c.restore();
+
+        // Brass pocket rim highlight arc
+        c.beginPath();
+        c.arc(p.x, p.y, POCKET_RADIUS + 1.5, 0, Math.PI * 2);
+        c.strokeStyle = 'rgba(217, 160, 91, 0.35)';
+        c.lineWidth = 1.5;
+        c.stroke();
+      });
+    }
+
+    /*************************************************************************
+     * 5. BOARD SETUP & CLASSIC HEXAGONAL FORMATION
+     *************************************************************************/
+    function setupClassicCoins() {
+      coins = [];
+      fallingPieces = [];
+      let idCounter = 1;
+
+      // Gap between packed coins for clean break physics
+      const spacing = COIN_RADIUS * 2 + 0.45;
+
+      // 1. Center Red Queen
+      coins.push({
+        id: 'queen',
+        type: 'queen',
+        x: CENTER,
+        y: CENTER,
+        vx: 0,
+        vy: 0,
+        r: COIN_RADIUS,
+        mass: COIN_MASS
+      });
+
+      // 2. Inner Ring: 6 coins (Alternating White and Black)
+      for (let i = 0; i < 6; i++) {
+        const angle = (i * Math.PI) / 3 - Math.PI / 2;
+        const type = i % 2 === 0 ? 'white' : 'black';
+        coins.push({
+          id: `coin_${idCounter++}`,
+          type,
+          x: CENTER + Math.cos(angle) * spacing,
+          y: CENTER + Math.sin(angle) * spacing,
+          vx: 0,
+          vy: 0,
+          r: COIN_RADIUS,
+          mass: COIN_MASS
+        });
+      }
+
+      // 3. Outer Ring: 12 coins in Tight Hexagonal Packing
+      // 6 corner points at 2*spacing, 6 midpoints at sqrt(3)*spacing
+      for (let i = 0; i < 12; i++) {
+        const angle = (i * Math.PI) / 6 - Math.PI / 2;
+        const isCorner = i % 2 === 0;
+        const dist = isCorner ? spacing * 2 : spacing * Math.sqrt(3);
+        // Classic Carrom alternating pattern: 9 White and 9 Black total
+        const type = (i % 2 === 0) ? 'white' : 'black';
+        coins.push({
+          id: `coin_${idCounter++}`,
+          type,
+          x: CENTER + Math.cos(angle) * dist,
+          y: CENTER + Math.sin(angle) * dist,
+          vx: 0,
+          vy: 0,
+          r: COIN_RADIUS,
+          mass: COIN_MASS
+        });
+      }
+    }
+
+    function setupPracticePreset(presetIdx) {
+      coins = [];
+      fallingPieces = [];
+      if (presetIdx === 0) {
+        setupClassicCoins();
+      } else if (presetIdx === 1) {
+        // Queen Cover Drill: Queen near top-right pocket, White coin nearby for cover
+        coins.push({ id: 'queen', type: 'queen', x: 590, y: 210, vx: 0, vy: 0, r: COIN_RADIUS, mass: COIN_MASS });
+        coins.push({ id: 'w1', type: 'white', x: 230, y: 240, vx: 0, vy: 0, r: COIN_RADIUS, mass: COIN_MASS });
+        coins.push({ id: 'w2', type: 'white', x: 520, y: 360, vx: 0, vy: 0, r: COIN_RADIUS, mass: COIN_MASS });
+        coins.push({ id: 'b1', type: 'black', x: 400, y: 310, vx: 0, vy: 0, r: COIN_RADIUS, mass: COIN_MASS });
+      } else if (presetIdx === 2) {
+        // Cut Shot Challenge
+        coins.push({ id: 'w1', type: 'white', x: 240, y: 340, vx: 0, vy: 0, r: COIN_RADIUS, mass: COIN_MASS });
+        coins.push({ id: 'w2', type: 'white', x: 560, y: 340, vx: 0, vy: 0, r: COIN_RADIUS, mass: COIN_MASS });
+        coins.push({ id: 'w3', type: 'white', x: 320, y: 220, vx: 0, vy: 0, r: COIN_RADIUS, mass: COIN_MASS });
+        coins.push({ id: 'w4', type: 'white', x: 480, y: 220, vx: 0, vy: 0, r: COIN_RADIUS, mass: COIN_MASS });
+        coins.push({ id: 'queen', type: 'queen', x: 400, y: 280, vx: 0, vy: 0, r: COIN_RADIUS, mass: COIN_MASS });
+      } else {
+        // Bank / Rebound Shot Drill
+        coins.push({ id: 'w1', type: 'white', x: 135, y: 635, vx: 0, vy: 0, r: COIN_RADIUS, mass: COIN_MASS });
+        coins.push({ id: 'w2', type: 'white', x: 665, y: 635, vx: 0, vy: 0, r: COIN_RADIUS, mass: COIN_MASS });
+        coins.push({ id: 'b1', type: 'black', x: 400, y: 575, vx: 0, vy: 0, r: COIN_RADIUS, mass: COIN_MASS });
+        coins.push({ id: 'w3', type: 'white', x: 400, y: 470, vx: 0, vy: 0, r: COIN_RADIUS, mass: COIN_MASS });
+      }
+      placeStrikerForCurrentTurn();
+      updateHUD();
+    }
+
+    function generateInitialPowderSpecks() {
+      powderSpecks = [];
+      for (let i = 0; i < 95; i++) {
+        powderSpecks.push({
+          x: INNER_MIN + 40 + Math.random() * (INNER_MAX - INNER_MIN - 80),
+          y: INNER_MIN + 40 + Math.random() * (INNER_MAX - INNER_MIN - 80),
+          r: 0.8 + Math.random() * 1.8,
+          alpha: 0.08 + Math.random() * 0.14
+        });
+      }
+    }
+
+    /*************************************************************************
+     * 6. STRIKER PLACEMENT & OVERLAP CHECK
+     *************************************************************************/
+    function getActiveBaselineY() {
+      if (gameMode === 'practice') return BASELINE_BOTTOM_Y;
+      return currentTurn === 'white' ? BASELINE_BOTTOM_Y : BASELINE_TOP_Y;
+    }
+
+    function checkStrikerOverlapAt(x, y) {
+      const minSafeDist = STRIKER_RADIUS + COIN_RADIUS + 1.2;
+      for (const c of coins) {
+        const dx = c.x - x;
+        const dy = c.y - y;
+        if (dx * dx + dy * dy < minSafeDist * minSafeDist) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    function updateStrikerOverlapState() {
+      striker.overlapping = checkStrikerOverlapAt(striker.x, striker.y);
+      const badge = document.getElementById('placementStatusBadge');
+      if (striker.overlapping) {
+        badge.textContent = '⚠️ Blocked by Coin';
+        badge.className = 'text-[11px] px-2 py-0.5 rounded-full bg-red-950/90 text-red-300 border border-red-500/50 font-semibold';
+      } else {
+        badge.textContent = '● Clear Spot';
+        badge.className = 'text-[11px] px-2 py-0.5 rounded-full bg-emerald-950/90 text-emerald-300 border border-emerald-500/40 font-medium';
+      }
+    }
+
+    function placeStrikerForCurrentTurn() {
+      striker.vx = 0;
+      striker.vy = 0;
+      striker.active = true;
+      striker.pocketed = false;
+      striker.y = getActiveBaselineY();
+
+      // Default to center or nearest clear spot
+      striker.x = CENTER;
+      if (checkStrikerOverlapAt(striker.x, striker.y)) {
+        findClearBaselineSpot();
+      } else {
+        syncSliderToStriker();
+        updateStrikerOverlapState();
+      }
+    }
+
+    function findClearBaselineSpot() {
+      if (gamePhase !== 'placement' && gamePhase !== 'ai_thinking') return;
+      const y = getActiveBaselineY();
+      // Search outward from center for a non-overlapping spot
+      for (let offset = 0; offset <= (BASELINE_MAX_X - BASELINE_MIN_X) / 2; offset += 5) {
+        for (const dir of [1, -1]) {
+          const candidateX = Math.max(BASELINE_MIN_X, Math.min(BASELINE_MAX_X, CENTER + offset * dir));
+          if (!checkStrikerOverlapAt(candidateX, y)) {
+            striker.x = candidateX;
+            striker.y = y;
+            syncSliderToStriker();
+            updateStrikerOverlapState();
+            return;
+          }
+        }
+      }
+    }
+
+    function syncSliderToStriker() {
+      const ratio = (striker.x - BASELINE_MIN_X) / (BASELINE_MAX_X - BASELINE_MIN_X);
+      strikerSlider.value = Math.round(Math.max(0, Math.min(1, ratio)) * 1000);
+    }
+
+    function nudgeStriker(deltaRatio) {
+      if (gamePhase !== 'placement') return;
+      const span = BASELINE_MAX_X - BASELINE_MIN_X;
+      striker.x = Math.max(BASELINE_MIN_X, Math.min(BASELINE_MAX_X, striker.x + span * deltaRatio));
+      syncSliderToStriker();
+      updateStrikerOverlapState();
+    }
+
+    strikerSlider.addEventListener('input', (e) => {
+      if (gamePhase !== 'placement') return;
+      const ratio = parseFloat(e.target.value) / 1000;
+      striker.x = BASELINE_MIN_X + ratio * (BASELINE_MAX_X - BASELINE_MIN_X);
+      striker.y = getActiveBaselineY();
+      isAiming = false;
+      updateStrikerOverlapState();
+    });
+
+    /*************************************************************************
+     * 7. SUB-STEPPED 2D RIGID-BODY PHYSICS ENGINE
+     *************************************************************************/
+    function stepPhysics() {
+      // Friction slightly affected by boric powder level
+      const baseDamping = 0.9855 + (powderSmoothness * 0.0038);
+      const subDamping = Math.pow(baseDamping, 1 / SUB_STEPS);
+
+      const allBodies = [...coins];
+      if (striker.active && !striker.pocketed) {
+        allBodies.push(striker);
+      }
+
+      for (let step = 0; step < SUB_STEPS; step++) {
+        // 1. Integrate positions & apply surface friction
+        for (const b of allBodies) {
+          if (b.pocketed) continue;
+          b.x += b.vx / SUB_STEPS;
+          b.y += b.vy / SUB_STEPS;
+          b.vx *= subDamping;
+          b.vy *= subDamping;
+
+          // Low-speed static friction threshold so pieces stop crisply
+          const spdSq = b.vx * b.vx + b.vy * b.vy;
+          if (spdSq < 0.045) {
+            b.vx *= 0.94;
+            b.vy *= 0.94;
+          }
+          if (spdSq < 0.0022) {
+            b.vx = 0;
+            b.vy = 0;
+          }
+        }
+
+        // 2. Check Pocket Captures
+        for (let i = coins.length - 1; i >= 0; i--) {
+          const c = coins[i];
+          for (const p of POCKETS) {
+            const dx = c.x - p.x;
+            const dy = c.y - p.y;
+            const dist = Math.hypot(dx, dy);
+            if (dist < POCKET_RADIUS - 3.5) {
+              handleCoinPocketed(c, i, p);
+              break;
+            }
+          }
+        }
+
+        if (striker.active && !striker.pocketed) {
+          for (const p of POCKETS) {
+            const dx = striker.x - p.x;
+            const dy = striker.y - p.y;
+            if (Math.hypot(dx, dy) < POCKET_RADIUS - 2.5) {
+              handleStrikerPocketed(p);
+              break;
+            }
+          }
+        }
+
+        // 3. Wall Cushion Collisions
+        const activeBodies = [...coins];
+        if (striker.active && !striker.pocketed) activeBodies.push(striker);
+
+        for (const b of activeBodies) {
+          let hitWall = false;
+          let impactSpd = 0;
+
+          if (b.x - b.r < INNER_MIN) {
+            b.x = INNER_MIN + b.r;
+            impactSpd = Math.abs(b.vx);
+            b.vx = Math.abs(b.vx) * RESTITUTION_WALL;
+            hitWall = true;
+          } else if (b.x + b.r > INNER_MAX) {
+            b.x = INNER_MAX - b.r;
+            impactSpd = Math.abs(b.vx);
+            b.vx = -Math.abs(b.vx) * RESTITUTION_WALL;
+            hitWall = true;
+          }
+
+          if (b.y - b.r < INNER_MIN) {
+            b.y = INNER_MIN + b.r;
+            impactSpd = Math.max(impactSpd, Math.abs(b.vy));
+            b.vy = Math.abs(b.vy) * RESTITUTION_WALL;
+            hitWall = true;
+          } else if (b.y + b.r > INNER_MAX) {
+            b.y = INNER_MAX - b.r;
+            impactSpd = Math.max(impactSpd, Math.abs(b.vy));
+            b.vy = -Math.abs(b.vy) * RESTITUTION_WALL;
+            hitWall = true;
+          }
+
+          if (hitWall && impactSpd > 1.2) {
+            sound.playWallThud(impactSpd);
+          }
+        }
+
+        // 4. Circle-to-Circle Elastic Collisions
+        const count = activeBodies.length;
+        for (let i = 0; i < count; i++) {
+          for (let j = i + 1; j < count; j++) {
+            const a = activeBodies[i];
+            const b = activeBodies[j];
+
+            const dx = b.x - a.x;
+            const dy = b.y - a.y;
+            const minDist = a.r + b.r;
+            const distSq = dx * dx + dy * dy;
+
+            if (distSq < minDist * minDist && distSq > 0.00001) {
+              const dist = Math.sqrt(distSq);
+              const nx = dx / dist;
+              const ny = dy / dist;
+
+              // Positional correction to prevent overlap/tunneling
+              const overlap = minDist - dist;
+              const invMassA = 1 / a.mass;
+              const invMassB = 1 / b.mass;
+              const totalInvMass = invMassA + invMassB;
+
+              a.x -= nx * overlap * (invMassA / totalInvMass);
+              a.y -= ny * overlap * (invMassA / totalInvMass);
+              b.x += nx * overlap * (invMassB / totalInvMass);
+              b.y += ny * overlap * (invMassB / totalInvMass);
+
+              // Relative velocity along normal
+              const rvx = b.vx - a.vx;
+              const rvy = b.vy - a.vy;
+              const velAlongNormal = rvx * nx + rvy * ny;
+
+              if (velAlongNormal < 0) {
+                const jImpulse = -(1 + RESTITUTION_COIN) * velAlongNormal / totalInvMass;
+                const impulseX = jImpulse * nx;
+                const impulseY = jImpulse * ny;
+
+                a.vx -= impulseX * invMassA;
+                a.vy -= impulseY * invMassA;
+                b.vx += impulseX * invMassB;
+                b.vy += impulseY * invMassB;
+
+                const impactSpeed = Math.abs(velAlongNormal);
+                if (impactSpeed > 0.65) {
+                  const isStrikerHit = (a.type === 'striker' || b.type === 'striker');
+                  sound.playCoinClack(impactSpeed, isStrikerHit);
+                  if (impactSpeed > 9.5) {
+                    spawnCollisionParticles((a.x + b.x) / 2, (a.y + b.y) / 2, impactSpeed);
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+
+      // Check if all pieces have come to rest
+      let anyMoving = false;
+      for (const c of coins) {
+        if (c.vx !== 0 || c.vy !== 0) {
+          anyMoving = true;
+          break;
+        }
+      }
+      if (striker.active && !striker.pocketed && (striker.vx !== 0 || striker.vy !== 0)) {
+        anyMoving = true;
+      }
+
+      if (!anyMoving && fallingPieces.length === 0) {
+        evaluateEndOfShot();
+      }
+    }
+
+    function handleCoinPocketed(coin, index, pocket) {
+      coins.splice(index, 1);
+
+      // Add shrinking/falling pocket animation
+      fallingPieces.push({
+        type: coin.type,
+        x: coin.x,
+        y: coin.y,
+        tx: pocket.x,
+        ty: pocket.y,
+        r: coin.r,
+        scale: 1.0
+      });
+
+      spawnPocketBurst(pocket.x, pocket.y, coin.type);
+
+      if (coin.type === 'queen') {
+        turnEvents.pocketedQueen = true;
+        sound.playPocketDrop(true, false);
+      } else if (coin.type === 'white') {
+        turnEvents.pocketedWhite++;
+        sound.playPocketDrop(false, false);
+      } else if (coin.type === 'black') {
+        turnEvents.pocketedBlack++;
+        sound.playPocketDrop(false, false);
+      }
+    }
+
+    function handleStrikerPocketed(pocket) {
+      striker.pocketed = true;
+      striker.active = false;
+      striker.vx = 0;
+      striker.vy = 0;
+      turnEvents.strikerPocketed = true;
+
+      fallingPieces.push({
+        type: 'striker',
+        x: striker.x,
+        y: striker.y,
+        tx: pocket.x,
+        ty: pocket.y,
+        r: striker.r,
+        scale: 1.0
+      });
+
+      spawnPocketBurst(pocket.x, pocket.y, 'striker');
+      sound.playPocketDrop(false, true);
+    }
+
+    /*************************************************************************
+     * 8. AUTHENTIC CARROM RULES, QUEEN COVER & FOUL EVALUATION
+     *************************************************************************/
+    function findSafeCenterReturnSpot() {
+      // Find spot closest to dead center (400, 400) that does not overlap any existing coin
+      if (!checkCoinOverlapAt(CENTER, CENTER)) {
+        return { x: CENTER, y: CENTER };
+      }
+      const minSpacing = COIN_RADIUS * 2 + 1.5;
+      for (let rad = 6; rad < 180; rad += 6) {
+        for (let ang = 0; ang < Math.PI * 2; ang += Math.PI / 8) {
+          const cx = CENTER + Math.cos(ang) * rad;
+          const cy = CENTER + Math.sin(ang) * rad;
+          if (!checkCoinOverlapAt(cx, cy)) {
+            return { x: cx, y: cy };
+          }
+        }
+      }
+      return { x: CENTER, y: CENTER };
+    }
+
+    function checkCoinOverlapAt(x, y) {
+      const minDist = COIN_RADIUS * 2 + 1.0;
+      for (const c of coins) {
+        const dx = c.x - x;
+        const dy = c.y - y;
+        if (dx * dx + dy * dy < minDist * minDist) return true;
+      }
+      return false;
+    }
+
+    function returnCoinToCenter(type) {
+      const spot = findSafeCenterReturnSpot();
+      coins.push({
+        id: `${type}_returned_${Date.now()}_${Math.random()}`,
+        type,
+        x: spot.x,
+        y: spot.y,
+        vx: 0,
+        vy: 0,
+        r: COIN_RADIUS,
+        mass: COIN_MASS
+      });
+      spawnCollisionParticles(spot.x, spot.y, 12);
+    }
+
+    function evaluateEndOfShot() {
+      // Wear down boric powder slightly each shot
+      powderSmoothness = Math.max(0.55, powderSmoothness - 0.025);
+      updatePowderUI();
+
+      // Free Practice Mode: never lose turn, just restore striker if pocketed
+      if (gameMode === 'practice') {
+        collectedCoins.white += turnEvents.pocketedWhite;
+        collectedCoins.black += turnEvents.pocketedBlack;
+        if (turnEvents.pocketedQueen) {
+          queenState = 'covered_white';
+          showBoardToast('👑 Queen Pocketed in Practice!');
+        }
+        if (turnEvents.strikerPocketed) {
+          showBoardToast('⚠️ Striker Pocketed (Practice Mode)');
+        }
+        if (coins.length === 0) {
+          showBoardToast('🎉 Board Cleared! Resetting Practice...');
+          setTimeout(() => setupPracticePreset(practicePresetIndex), 1000);
+        }
+        resetTurnEvents();
+        gamePhase = 'placement';
+        placeStrikerForCurrentTurn();
+        updateHUD();
+        return;
+      }
+
+      const player = currentTurn; // 'white' | 'black'
+      const opponent = player === 'white' ? 'black' : 'white';
+      const playerLabel = player === 'white' ? 'White' : (gameMode === 'ai' ? 'AirBot (Black)' : 'Black');
+
+      const ownPocketed = player === 'white' ? turnEvents.pocketedWhite : turnEvents.pocketedBlack;
+      const oppPocketed = player === 'white' ? turnEvents.pocketedBlack : turnEvents.pocketedWhite;
+
+      // Credit pocketed coins first
+      collectedCoins.white += turnEvents.pocketedWhite;
+      collectedCoins.black += turnEvents.pocketedBlack;
+
+      // Prevent sinking final own coin while Queen is still unpocketed on the board
+      const ownRemainingOnBoard = coins.filter(c => c.type === player).length;
+      if (ownRemainingOnBoard === 0 && queenState === 'on_board' && !turnEvents.pocketedQueen) {
+        collectedCoins[player] = Math.max(0, collectedCoins[player] - 1);
+        returnCoinToCenter(player);
+        logEvent(`⚠️ ${playerLabel} sank last coin before Queen! Final coin returned to center.`);
+        showBoardToast('Must pocket Queen before final coin!');
+      }
+
+      let keepTurn = false;
+
+      // CASE 1: STRIKER FOUL ("DUE" PENALTY)
+      if (turnEvents.strikerPocketed) {
+        keepTurn = false;
+
+        // If Queen was pocketed on this shot or pending cover, return Queen to center
+        if (turnEvents.pocketedQueen || (queenState === 'pending_cover' && queenPendingHolder === player)) {
+          queenState = 'on_board';
+          queenPendingHolder = null;
+          returnCoinToCenter('queen');
+          logEvent(`👑 Queen returned to center due to ${playerLabel} Striker Foul.`);
+        }
+
+        // Return any own coin pocketed on this foul shot + 1 penalty coin
+        if (ownPocketed > 0) {
+          for (let i = 0; i < ownPocketed; i++) {
+            if (collectedCoins[player] > 0) {
+              collectedCoins[player]--;
+              returnCoinToCenter(player);
+            }
+          }
+        }
+
+        // Apply 1 Penalty ("Due") coin
+        if (collectedCoins[player] > 0) {
+          collectedCoins[player]--;
+          returnCoinToCenter(player);
+          logEvent(`⚠️ Striker Foul by ${playerLabel}! 1 penalty coin returned to center.`);
+          showBoardToast(`⚠️ Striker Foul! Penalty Coin Returned`);
+        } else {
+          owedPenalties[player]++;
+          logEvent(`⚠️ Striker Foul by ${playerLabel}! Penalty Due recorded.`);
+          showBoardToast(`⚠️ Striker Foul! 1 Penalty Due Owed`);
+        }
+      }
+      // CASE 2: CLEAN SHOT (NO STRIKER FOUL)
+      else {
+        // Check if player entered this shot needing to Cover the Queen
+        if (queenState === 'pending_cover' && queenPendingHolder === player) {
+          if (ownPocketed > 0) {
+            queenState = player === 'white' ? 'covered_white' : 'covered_black';
+            queenPendingHolder = null;
+            keepTurn = true;
+            logEvent(`👑 ${playerLabel} Covered the Queen! (+3 Points)`);
+            showBoardToast(`👑 Queen Covered by ${playerLabel}! (+3 Pts)`);
+            sound.playPocketDrop(true, false);
+          } else {
+            // Failed to cover Queen -> return Queen to center!
+            queenState = 'on_board';
+            queenPendingHolder = null;
+            keepTurn = false;
+            returnCoinToCenter('queen');
+            logEvent(`👑 ${playerLabel} failed to cover the Queen. Queen returned to center!`);
+            showBoardToast(`Cover Failed! Queen Returned to Center`);
+          }
+        }
+        // Check if player pocketed the Queen on this shot
+        else if (turnEvents.pocketedQueen) {
+          if (ownPocketed > 0) {
+            // Pocketed Queen AND own coin in the same shot -> Immediate Cover!
+            queenState = player === 'white' ? 'covered_white' : 'covered_black';
+            queenPendingHolder = null;
+            keepTurn = true;
+            logEvent(`👑 ${playerLabel} pocketed & covered the Queen in one shot! (+3 Pts)`);
+            showBoardToast(`👑 Queen Pocketed & Covered! (+3 Pts)`);
+          } else {
+            // Pocketed Queen alone -> Must cover on immediate next shot!
+            queenState = 'pending_cover';
+            queenPendingHolder = player;
+            keepTurn = true;
+            logEvent(`👑 ${playerLabel} pocketed the Queen! Must Cover on next shot!`);
+            showBoardToast(`👑 Queen Pocketed! Must Cover on Next Shot!`);
+          }
+        }
+        // Standard coin evaluation
+        else if (ownPocketed > 0) {
+          keepTurn = true;
+          logEvent(`✅ ${playerLabel} pocketed ${ownPocketed} ${player} coin(s). Continues turn!`);
+          showBoardToast(`Nice Shot! +${ownPocketed} ${player === 'white' ? 'White' : 'Black'} — Shoot Again!`);
+        } else if (oppPocketed > 0) {
+          keepTurn = false;
+          logEvent(`↪ ${playerLabel} pocketed opponent's coin.`);
+          showBoardToast(`Pocketed Opponent's Coin — Turn Passes`);
+        } else {
+          keepTurn = false;
+        }
+
+        // Settle any owed "Due" penalties if player has collected coins now
+        while (owedPenalties[player] > 0 && collectedCoins[player] > 0) {
+          owedPenalties[player]--;
+          collectedCoins[player]--;
+          returnCoinToCenter(player);
+          logEvent(`⚖️ ${playerLabel} settled 1 owed Penalty Due coin to center.`);
+        }
+      }
+
+      resetTurnEvents();
+
+      // Check for Victory Condition
+      if (checkVictoryCondition()) {
+        updateHUD();
+        return;
+      }
+
+      // Advance or retain turn
+      if (!keepTurn) {
+        currentTurn = opponent;
+      }
+
+      updateHUD();
+      placeStrikerForCurrentTurn();
+
+      if (gameMode === 'ai' && currentTurn === 'black') {
+        gamePhase = 'ai_thinking';
+        updateStatusBanner();
+        setTimeout(() => executeSmartAITurn(), 550);
+      } else {
+        gamePhase = 'placement';
+        updateStatusBanner();
+      }
+    }
+
+    function resetTurnEvents() {
+      turnEvents.pocketedWhite = 0;
+      turnEvents.pocketedBlack = 0;
+      turnEvents.pocketedQueen = false;
+      turnEvents.strikerPocketed = false;
+    }
+
+    function checkVictoryCondition() {
+      const whiteLeft = coins.filter(c => c.type === 'white').length;
+      const blackLeft = coins.filter(c => c.type === 'black').length;
+
+      // Only end match if Queen is no longer on board or pending cover when all 9 of a color are gone
+      if (whiteLeft === 0 && (queenState === 'covered_white' || queenState === 'covered_black')) {
+        triggerGameOver('white');
+        return true;
+      }
+      if (blackLeft === 0 && (queenState === 'covered_white' || queenState === 'covered_black')) {
+        triggerGameOver('black');
+        return true;
+      }
+      return false;
+    }
+
+    function getPlayerScore(color) {
+      let pts = collectedCoins[color];
+      if (color === 'white' && queenState === 'covered_white') pts += 3;
+      if (color === 'black' && queenState === 'covered_black') pts += 3;
+      return pts;
+    }
+
+    function triggerGameOver(winnerColor) {
+      gamePhase = 'gameover';
+      const wScore = getPlayerScore('white');
+      const bScore = getPlayerScore('black');
+
+      document.getElementById('finalScoreWhite').textContent = wScore;
+      document.getElementById('finalScoreBlack').textContent = bScore;
+
+      const titleEl = document.getElementById('victoryTitle');
+      const subEl = document.getElementById('victorySubtitle');
+
+      if (winnerColor === 'white') {
+        titleEl.textContent = '🏆 Player 1 (White) Wins!';
+        subEl.textContent = queenState === 'covered_white'
+          ? 'Cleared all White Carrommen & covered the Red Queen!'
+          : 'Cleared all White Carrommen to take the board!';
+      } else {
+        titleEl.textContent = gameMode === 'ai' ? '🤖 AirBot (Black) Wins!' : '🏆 Player 2 (Black) Wins!';
+        subEl.textContent = queenState === 'covered_black'
+          ? 'Cleared all Black Carrommen & covered the Red Queen!'
+          : 'Cleared all Black Carrommen to win the match!';
+      }
+
+      document.getElementById('victoryModal').classList.remove('hidden');
+      document.getElementById('victoryModal').classList.add('flex');
+      sound.playPocketDrop(true, false);
+    }
+
+    /*************************************************************************
+     * 9. AIRBOT OPPONENT (EVALUATES CUT ANGLES, CLEARANCE & QUEEN RULES)
+     *************************************************************************/
+    function isPathClear(x1, y1, x2, y2, clearanceRadius, ignoreIds = []) {
+      const dx = x2 - x1;
+      const dy = y2 - y1;
+      const len = Math.hypot(dx, dy);
+      if (len < 1) return true;
+      const ux = dx / len;
+      const uy = dy / len;
+
+      for (const c of coins) {
+        if (ignoreIds.includes(c.id)) continue;
+        const px = c.x - x1;
+        const py = c.y - y1;
+        const proj = px * ux + py * uy;
+        if (proj > -5 && proj < len + 5) {
+          const perpDist = Math.abs(px * (-uy) + py * ux);
+          if (perpDist < clearanceRadius) {
+            return false;
+          }
+        }
+      }
+      return true;
+    }
+
+    function executeSmartAITurn() {
+      if (gamePhase !== 'ai_thinking') return;
+
+      const yBase = BASELINE_TOP_Y;
+      const candidatePositions = [];
+      for (let i = 0; i <= 24; i++) {
+        const sx = BASELINE_MIN_X + (i / 24) * (BASELINE_MAX_X - BASELINE_MIN_X);
+        if (!checkStrikerOverlapAt(sx, yBase)) {
+          candidatePositions.push(sx);
+        }
+      }
+
+      if (candidatePositions.length === 0) {
+        candidatePositions.push(CENTER);
+      }
+
+      let bestShot = null;
+
+      // Determine priority targets for AI (Black)
+      const blackCoins = coins.filter(c => c.type === 'black');
+      const queenCoin = coins.find(c => c.type === 'queen');
+      let targets = [...blackCoins];
+
+      // Target Queen if on board and AI has at least 1 Black coin to cover it
+      if (queenCoin && queenState === 'on_board' && blackCoins.length >= 1) {
+        targets.push(queenCoin);
+      }
+      // If AI is currently required to cover the Queen, strictly target Black coins
+      if (queenState === 'pending_cover' && queenPendingHolder === 'black') {
+        targets = [...blackCoins];
+      }
+
+      // Evaluate all (StrikerX, TargetCoin, Pocket) combinations
+      for (const sx of candidatePositions) {
+        for (const target of targets) {
+          for (const pocket of POCKETS) {
+            const toPocketX = pocket.x - target.x;
+            const toPocketY = pocket.y - target.y;
+            const distToPocket = Math.hypot(toPocketX, toPocketY);
+            const dirPX = toPocketX / distToPocket;
+            const dirPY = toPocketY / distToPocket;
+
+            // Ghost striker contact point behind the target coin
+            const contactDist = STRIKER_RADIUS + COIN_RADIUS - 0.2;
+            const ghostX = target.x - dirPX * contactDist;
+            const ghostY = target.y - dirPY * contactDist;
+
+            // Must be within board bounds
+            if (ghostX < INNER_MIN + STRIKER_RADIUS || ghostX > INNER_MAX - STRIKER_RADIUS ||
+                ghostY < INNER_MIN + STRIKER_RADIUS || ghostY > INNER_MAX - STRIKER_RADIUS) {
+              continue;
+            }
+
+            const toGhostX = ghostX - sx;
+            const toGhostY = ghostY - yBase;
+            const distToGhost = Math.hypot(toGhostX, toGhostY);
+            const dirGX = toGhostX / distToGhost;
+            const dirGY = toGhostY / distToGhost;
+
+            // Cut angle cosine (dot product of striker->ghost and target->pocket)
+            const cutCos = dirGX * dirPX + dirGY * dirPY;
+            if (cutCos < 0.28) continue; // Cut angle too extreme
+
+            // Check path clearance
+            const strikerPathClear = isPathClear(
+              sx, yBase, ghostX, ghostY,
+              STRIKER_RADIUS + COIN_RADIUS - 1.5,
+              [target.id]
+            );
+            const coinPathClear = isPathClear(
+              target.x, target.y, pocket.x, pocket.y,
+              COIN_RADIUS * 1.9,
+              [target.id]
+            );
+
+            if (strikerPathClear && coinPathClear) {
+              // Score this shot candidate
+              let score = cutCos * 120;
+              score -= distToPocket * 0.08;
+              score -= distToGhost * 0.05;
+
+              // Prefer forward shots (downward from top baseline)
+              if (dirGY > 0.15) score += 25;
+
+              // High priority for Queen or covering the Queen
+              if (target.type === 'queen') score += 42;
+              if (queenState === 'pending_cover' && queenPendingHolder === 'black') score += 50;
+
+              if (!bestShot || score > bestShot.score) {
+                const requiredSpeed = Math.min(
+                  MAX_SHOT_SPEED * 0.88,
+                  Math.max(13, (distToGhost * 0.026 + distToPocket * 0.032) / Math.max(0.45, cutCos))
+                );
+                bestShot = {
+                  sx,
+                  dirX: dirGX,
+                  dirY: dirGY,
+                  speed: requiredSpeed,
+                  score,
+                  desc: target.type === 'queen' ? 'lining up the Red Queen' : 'lining up a cut shot'
+                };
+              }
+            }
+          }
+        }
+      }
+
+      // Fallback if no clean direct pot exists: Break cluster or hit nearest Black coin safely
+      if (!bestShot) {
+        const chosenTarget = targets[0] || coins[0];
+        const sx = candidatePositions[Math.floor(candidatePositions.length / 2)];
+        if (chosenTarget) {
+          const dx = chosenTarget.x - sx + (Math.random() - 0.5) * 6;
+          const dy = chosenTarget.y - yBase;
+          const len = Math.hypot(dx, dy) || 1;
+          bestShot = {
+            sx,
+            dirX: dx / len,
+            dirY: dy / len,
+            speed: coins.length >= 15 ? 29 : 19,
+            desc: coins.length >= 15 ? 'playing a power break' : 'playing a tactical tap'
+          };
+        }
+      }
+
+      // Animate AI sliding its striker to bestShot.sx, then pulling back & firing
+      const startX = striker.x;
+      const targetX = bestShot.sx;
+      const startTime = performance.now();
+      const slideDuration = 520;
+      const aimDuration = 480;
+
+      aiAnimState = {
+        startTime,
+        slideDuration,
+        aimDuration,
+        startX,
+        targetX,
+        shot: bestShot
+      };
+
+      document.getElementById('statusBannerText').textContent = `🤖 AirBot is ${bestShot.desc}...`;
+    }
+
+    function updateAIAnimation(now) {
+      if (!aiAnimState) return;
+      const elapsed = now - aiAnimState.startTime;
+      const { slideDuration, aimDuration, startX, targetX, shot } = aiAnimState;
+
+      if (elapsed < slideDuration) {
+        // Smooth ease-in-out striker slide along top baseline
+        const t = elapsed / slideDuration;
+        const ease = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+        striker.x = startX + (targetX - startX) * ease;
+        striker.y = BASELINE_TOP_Y;
+        syncSliderToStriker();
+      } else if (elapsed < slideDuration + aimDuration) {
+        striker.x = targetX;
+        striker.y = BASELINE_TOP_Y;
+        const t = (elapsed - slideDuration) / aimDuration;
+        const pullDist = (shot.speed / MAX_SHOT_SPEED) * MAX_PULL_DIST * t;
+        isAiming = true;
+        aimPullPos = {
+          x: striker.x - shot.dirX * pullDist,
+          y: striker.y - shot.dirY * pullDist
+        };
+        updatePowerMeterUI(Math.round((shot.speed / MAX_SHOT_SPEED) * t * 100));
+      } else {
+        // Fire AI shot with tiny realistic human variance
+        isAiming = false;
+        updatePowerMeterUI(0);
+        const angleJitter = (Math.random() - 0.5) * 0.011;
+        const baseAngle = Math.atan2(shot.dirY, shot.dirX) + angleJitter;
+        striker.vx = Math.cos(baseAngle) * shot.speed;
+        striker.vy = Math.sin(baseAngle) * shot.speed;
+        aiAnimState = null;
+        gamePhase = 'moving';
+        sound.playCoinClack(shot.speed * 0.5, true);
+      }
+    }
+
+    /*************************************************************************
+     * 10. GHOST TARGET RAYCASTING & TRAJECTORY PREVIEW
+     *************************************************************************/
+    function computeTrajectoryPreview(sx, sy, dirX, dirY) {
+      let minT = Infinity;
+      let hitCoin = null;
+
+      const combinedR = STRIKER_RADIUS + COIN_RADIUS;
+
+      // 1. Ray-Circle intersection against all coins on board
+      for (const c of coins) {
+        const fx = sx - c.x;
+        const fy = sy - c.y;
+        const b = 2 * (fx * dirX + fy * dirY);
+        const cVal = (fx * fx + fy * fy) - combinedR * combinedR;
+        const disc = b * b - 4 * cVal;
+
+        if (disc >= 0) {
+          const t = (-b - Math.sqrt(disc)) / 2;
+          if (t > 0 && t < minT) {
+            minT = t;
+            hitCoin = c;
+          }
+        }
+      }
+
+      // 2. Ray-Wall intersection against the 4 wooden frame edges
+      let wallT = Infinity;
+      let wallNormal = { x: 0, y: 0 };
+
+      if (dirX < -0.0001) {
+        const t = (INNER_MIN + STRIKER_RADIUS - sx) / dirX;
+        if (t > 0 && t < wallT) { wallT = t; wallNormal = { x: 1, y: 0 }; }
+      } else if (dirX > 0.0001) {
+        const t = (INNER_MAX - STRIKER_RADIUS - sx) / dirX;
+        if (t > 0 && t < wallT) { wallT = t; wallNormal = { x: -1, y: 0 }; }
+      }
+
+      if (dirY < -0.0001) {
+        const t = (INNER_MIN + STRIKER_RADIUS - sy) / dirY;
+        if (t > 0 && t < wallT) { wallT = t; wallNormal = { x: 0, y: 1 }; }
+      } else if (dirY > 0.0001) {
+        const t = (INNER_MAX - STRIKER_RADIUS - sy) / dirY;
+        if (t > 0 && t < wallT) { wallT = t; wallNormal = { x: 0, y: -1 }; }
+      }
+
+      if (hitCoin && minT <= wallT) {
+        const ghostX = sx + dirX * minT;
+        const ghostY = sy + dirY * minT;
+        const nx = (hitCoin.x - ghostX) / combinedR;
+        const ny = (hitCoin.y - ghostY) / combinedR;
+        return {
+          type: 'coin',
+          ghostX,
+          ghostY,
+          targetCoin: hitCoin,
+          normalX: nx,
+          normalY: ny
+        };
+      } else if (wallT < Infinity) {
+        const ghostX = sx + dirX * wallT;
+        const ghostY = sy + dirY * wallT;
+        // Reflected direction
+        const dot = dirX * wallNormal.x + dirY * wallNormal.y;
+        const refX = dirX - 2 * dot * wallNormal.x;
+        const refY = dirY - 2 * dot * wallNormal.y;
+        return {
+          type: 'wall',
+          ghostX,
+          ghostY,
+          refX,
+          refY
+        };
+      }
+      return null;
+    }
+
+    /*************************************************************************
+     * 11. POINTER / TOUCH CONTROLS (2-STEP SLIDE + SLINGSHOT AIM)
+     *************************************************************************/
+    function getBoardCoordinates(e) {
+      const rect = canvas.getBoundingClientRect();
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      return {
+        x: ((clientX - rect.left) / rect.width) * BOARD_SIZE,
+        y: ((clientY - rect.top) / rect.height) * BOARD_SIZE
+      };
+    }
+
+    canvas.addEventListener('pointerdown', (e) => {
+      sound.init();
+      if (gamePhase !== 'placement' && gamePhase !== 'aiming') return;
+
+      const pt = getBoardCoordinates(e);
+      const distToStriker = Math.hypot(pt.x - striker.x, pt.y - striker.y);
+      const activeBaseY = getActiveBaselineY();
+
+      // If user clicks near the striker, start aiming/sliding interaction
+      if (distToStriker <= STRIKER_RADIUS * 2.6) {
+        canvas.setPointerCapture(e.pointerId);
+        isAiming = true;
+        aimPullPos = { x: pt.x, y: pt.y };
+        isDraggingStrikerSlide = true;
+      } else if (Math.abs(pt.y - activeBaseY) <= 28 && pt.x >= BASELINE_MIN_X && pt.x <= BASELINE_MAX_X) {
+        // Clicking directly along the active baseline repositions the striker
+        striker.x = Math.max(BASELINE_MIN_X, Math.min(BASELINE_MAX_X, pt.x));
+        striker.y = activeBaseY;
+        syncSliderToStriker();
+        updateStrikerOverlapState();
+        canvas.setPointerCapture(e.pointerId);
+        isDraggingStrikerSlide = true;
+        isAiming = false;
+      }
+    });
+
+    canvas.addEventListener('pointermove', (e) => {
+      if (!isAiming && !isDraggingStrikerSlide) return;
+      const pt = getBoardCoordinates(e);
+      const activeBaseY = getActiveBaselineY();
+
+      // If dragging strictly along the baseline before pulling back vertically, slide striker smoothly
+      if (isDraggingStrikerSlide && Math.abs(pt.y - activeBaseY) < 16) {
+        striker.x = Math.max(BASELINE_MIN_X, Math.min(BASELINE_MAX_X, pt.x));
+        striker.y = activeBaseY;
+        syncSliderToStriker();
+        updateStrikerOverlapState();
+        aimPullPos = { x: striker.x, y: striker.y };
+        updatePowerMeterUI(0);
+        return;
+      }
+
+      // Otherwise lock striker position and engage Slingshot Aiming
+      if (Math.abs(pt.y - activeBaseY) >= 16) {
+        isDraggingStrikerSlide = false;
+        isAiming = true;
+      }
+
+      if (isAiming) {
+        aimPullPos = { x: pt.x, y: pt.y };
+        const pullDist = Math.min(MAX_PULL_DIST, Math.hypot(striker.x - pt.x, striker.y - pt.y));
+        const pct = pullDist < 18 ? 0 : Math.round((pullDist / MAX_PULL_DIST) * 100);
+        updatePowerMeterUI(pct);
+      }
+    });
+
+    function finishPointerUp(e) {
+      if (!isAiming && !isDraggingStrikerSlide) return;
+      isDraggingStrikerSlide = false;
+
+      if (isAiming) {
+        const dx = striker.x - aimPullPos.x;
+        const dy = striker.y - aimPullPos.y;
+        const pullDist = Math.hypot(dx, dy);
+
+        isAiming = false;
+        updatePowerMeterUI(0);
+
+        // Dragging back near the center of the striker (< 18 units) safely cancels the shot
+        if (pullDist >= 18) {
+          if (striker.overlapping) {
+            showBoardToast('⚠️ Striker overlaps a coin! Slide to a clear spot first.');
+            sound.playPocketDrop(false, true);
+            return;
+          }
+
+          // Save snapshot for Undo in Free Practice mode
+          savePracticeUndoSnapshot();
+
+          const clampedPull = Math.min(MAX_PULL_DIST, pullDist);
+          const powerRatio = (clampedPull - 14) / (MAX_PULL_DIST - 14);
+          const shotSpeed = Math.max(2.5, powerRatio * MAX_SHOT_SPEED);
+
+          striker.vx = (dx / pullDist) * shotSpeed;
+          striker.vy = (dy / pullDist) * shotSpeed;
+          gamePhase = 'moving';
+          sound.playCoinClack(shotSpeed * 0.45, true);
+        }
+      }
+    }
+
+    canvas.addEventListener('pointerup', finishPointerUp);
+    canvas.addEventListener('pointercancel', finishPointerUp);
+
+    /*************************************************************************
+     * 12. RENDERING ENGINE (3D-SHADED COINS, STRIKER, TRAJECTORY & PARTICLES)
+     *************************************************************************/
+    function renderFrame(now) {
+      // Clear & draw cached high-res board
+      ctx.clearRect(0, 0, BOARD_SIZE, BOARD_SIZE);
+      ctx.drawImage(boardCacheCanvas, 0, 0, BOARD_SIZE, BOARD_SIZE);
+
+      // 1. Render subtle boric powder specks on surface
+      for (const sp of powderSpecks) {
+        ctx.beginPath();
+        ctx.arc(sp.x, sp.y, sp.r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255, 255, 255, ${sp.alpha * powderSmoothness})`;
+        ctx.fill();
+      }
+
+      // 2. Active Baseline Highlight Indicator
+      if (gamePhase === 'placement' || gamePhase === 'aiming') {
+        const activeY = getActiveBaselineY();
+        ctx.save();
+        ctx.strokeStyle = 'rgba(251, 191, 36, 0.35)';
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(BASELINE_MIN_X, activeY);
+        ctx.lineTo(BASELINE_MAX_X, activeY);
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      // 3. Render Shrinking Coins Falling into Pockets
+      for (let i = fallingPieces.length - 1; i >= 0; i--) {
+        const fp = fallingPieces[i];
+        fp.x += (fp.tx - fp.x) * 0.25;
+        fp.y += (fp.ty - fp.y) * 0.25;
+        fp.scale *= 0.84;
+
+        ctx.save();
+        ctx.translate(fp.x, fp.y);
+        ctx.scale(fp.scale, fp.scale);
+        if (fp.type === 'striker') {
+          draw3DStrikerAtOrigin(0, 0, fp.r);
+        } else {
+          draw3DCoinAtOrigin(fp.type, fp.r);
+        }
+        ctx.restore();
+
+        if (fp.scale < 0.12) {
+          fallingPieces.splice(i, 1);
+        }
+      }
+
+      // 4. Render All Carrommen Coins (9 White, 9 Black, 1 Red Queen)
+      for (const coin of coins) {
+        ctx.save();
+        ctx.translate(coin.x, coin.y);
+        draw3DCoinAtOrigin(coin.type, coin.r);
+        ctx.restore();
+      }
+
+      // 5. Render Aiming Trajectory, Power Ring & Ghost Target Preview
+      if (isAiming && striker.active && !striker.pocketed) {
+        drawAimingGuides();
+      }
+
+      // 6. Render Striker with Readiness / Overlap Warning Aura
+      if (striker.active && !striker.pocketed) {
+        ctx.save();
+        ctx.translate(striker.x, striker.y);
+
+        // Readiness or Blocked warning aura during placement/aiming
+        if (gamePhase === 'placement' || gamePhase === 'aiming' || gamePhase === 'ai_thinking') {
+          const pulse = 1 + Math.sin(now * 0.007) * 0.1;
+          ctx.beginPath();
+          ctx.arc(0, 0, striker.r + 6 * pulse, 0, Math.PI * 2);
+          if (striker.overlapping) {
+            ctx.strokeStyle = 'rgba(239, 68, 68, 0.9)';
+            ctx.fillStyle = 'rgba(239, 68, 68, 0.22)';
+          } else {
+            ctx.strokeStyle = 'rgba(251, 191, 36, 0.75)';
+            ctx.fillStyle = 'rgba(251, 191, 36, 0.12)';
+          }
+          ctx.lineWidth = 2.5;
+          ctx.fill();
+          ctx.stroke();
+        }
+
+        draw3DStrikerAtOrigin(0, 0, striker.r);
+        ctx.restore();
+      }
+
+      // 7. Render Collision Sparks & Boric Powder Clouds
+      updateAndDrawParticles();
+    }
+
+    function draw3DCoinAtOrigin(type, r) {
+      // Soft drop shadow
+      ctx.beginPath();
+      ctx.arc(2.2, 3.2, r, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.38)';
+      ctx.fill();
+
+      // Base radial gradient based on coin type
+      const grad = ctx.createRadialGradient(-r * 0.32, -r * 0.32, r * 0.1, 0, 0, r);
+      if (type === 'white') {
+        grad.addColorStop(0, '#fffdf9');
+        grad.addColorStop(0.55, '#f3e5ab');
+        grad.addColorStop(0.88, '#d2b48c');
+        grad.addColorStop(1, '#9c7a54');
+      } else if (type === 'black') {
+        grad.addColorStop(0, '#52525b');
+        grad.addColorStop(0.45, '#27272a');
+        grad.addColorStop(0.88, '#141417');
+        grad.addColorStop(1, '#050507');
+      } else {
+        // Red Queen
+        grad.addColorStop(0, '#fca5a5');
+        grad.addColorStop(0.35, '#ef4444');
+        grad.addColorStop(0.82, '#991b1b');
+        grad.addColorStop(1, '#450a0a');
+      }
+
+      ctx.beginPath();
+      ctx.arc(0, 0, r, 0, Math.PI * 2);
+      ctx.fillStyle = grad;
+      ctx.fill();
+
+      // Outer bevel edge
+      ctx.lineWidth = 1.2;
+      ctx.strokeStyle = type === 'white' ? '#a68966' : (type === 'black' ? '#3f3f46' : '#f87171');
+      ctx.stroke();
+
+      // Concentric lathe-turned wooden ridges
+      ctx.beginPath();
+      ctx.arc(0, 0, r * 0.72, 0, Math.PI * 2);
+      ctx.strokeStyle = type === 'white' ? 'rgba(139, 105, 68, 0.38)' : 'rgba(255, 255, 255, 0.15)';
+      ctx.lineWidth = 1.1;
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.arc(0, 0, r * 0.42, 0, Math.PI * 2);
+      ctx.strokeStyle = type === 'white' ? 'rgba(139, 105, 68, 0.32)' : 'rgba(255, 255, 255, 0.12)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      // Queen Crown Star Emblem
+      if (type === 'queen') {
+        ctx.fillStyle = '#fef08a';
+        ctx.beginPath();
+        for (let i = 0; i < 5; i++) {
+          const a1 = (i * 2 * Math.PI) / 5 - Math.PI / 2;
+          const a2 = a1 + Math.PI / 5;
+          ctx.lineTo(Math.cos(a1) * (r * 0.36), Math.sin(a1) * (r * 0.36));
+          ctx.lineTo(Math.cos(a2) * (r * 0.16), Math.sin(a2) * (r * 0.16));
+        }
+        ctx.closePath();
+        ctx.fill();
+      }
+
+      // Top-left specular highlight
+      ctx.beginPath();
+      ctx.arc(-r * 0.3, -r * 0.3, r * 0.22, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.22)';
+      ctx.fill();
+    }
+
+    function draw3DStrikerAtOrigin(x, y, r) {
+      // Heavy drop shadow
+      ctx.beginPath();
+      ctx.arc(x + 2.8, y + 3.8, r, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
+      ctx.fill();
+
+      // Ivory & Gold Striker Body
+      const grad = ctx.createRadialGradient(x - r * 0.3, y - r * 0.3, r * 0.1, x, y, r);
+      grad.addColorStop(0, '#ffffff');
+      grad.addColorStop(0.5, '#fef3c7');
+      grad.addColorStop(0.82, '#f59e0b');
+      grad.addColorStop(1, '#92400e');
+
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, Math.PI * 2);
+      ctx.fillStyle = grad;
+      ctx.fill();
+
+      // Ornate concentric rings
+      ctx.beginPath();
+      ctx.arc(x, y, r * 0.78, 0, Math.PI * 2);
+      ctx.strokeStyle = '#0f766e';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // 8-point rosette inside striker
+      ctx.save();
+      ctx.translate(x, y);
+      for (let i = 0; i < 8; i++) {
+        ctx.rotate(Math.PI / 4);
+        ctx.beginPath();
+        ctx.moveTo(0, -r * 0.22);
+        ctx.lineTo(r * 0.12, -r * 0.52);
+        ctx.lineTo(0, -r * 0.7);
+        ctx.lineTo(-r * 0.12, -r * 0.52);
+        ctx.closePath();
+        ctx.fillStyle = i % 2 === 0 ? '#b45309' : '#0f766e';
+        ctx.fill();
+      }
+      ctx.restore();
+
+      // Center jewel
+      ctx.beginPath();
+      ctx.arc(x, y, r * 0.22, 0, Math.PI * 2);
+      ctx.fillStyle = '#dc2626';
+      ctx.fill();
+      ctx.strokeStyle = '#fef08a';
+      ctx.lineWidth = 1.2;
+      ctx.stroke();
+    }
+
+    function drawAimingGuides() {
+      const dx = striker.x - aimPullPos.x;
+      const dy = striker.y - aimPullPos.y;
+      const pullDist = Math.hypot(dx, dy);
+
+      if (pullDist < 18) {
+        // Safe cancel zone indicator
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(striker.x, striker.y, STRIKER_RADIUS + 14, 0, Math.PI * 2);
+        ctx.strokeStyle = 'rgba(148, 163, 184, 0.6)';
+        ctx.setLineDash([4, 4]);
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.restore();
+        return;
+      }
+
+      const clampedPull = Math.min(MAX_PULL_DIST, pullDist);
+      const powerRatio = clampedPull / MAX_PULL_DIST;
+      const dirX = dx / pullDist;
+      const dirY = dy / pullDist;
+
+      ctx.save();
+
+      // 1. Dynamic Power Circle around Striker
+      const powerColor = powerRatio < 0.5
+        ? '#34d399'
+        : (powerRatio < 0.8 ? '#fbbf24' : '#ef4444');
+
+      ctx.beginPath();
+      ctx.arc(striker.x, striker.y, STRIKER_RADIUS + 8 + powerRatio * 34, 0, Math.PI * 2);
+      ctx.strokeStyle = powerColor;
+      ctx.lineWidth = 2.5;
+      ctx.globalAlpha = 0.75;
+      ctx.stroke();
+
+      // 2. Pull-back Slingshot Cord & Handle
+      const handleX = striker.x - dirX * clampedPull;
+      const handleY = striker.y - dirY * clampedPull;
+
+      ctx.beginPath();
+      ctx.moveTo(striker.x, striker.y);
+      ctx.lineTo(handleX, handleY);
+      ctx.strokeStyle = powerColor;
+      ctx.lineWidth = 3;
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.arc(handleX, handleY, 8, 0, Math.PI * 2);
+      ctx.fillStyle = powerColor;
+      ctx.fill();
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // 3. Forward Trajectory & Ghost Target Deflection Preview
+      const preview = computeTrajectoryPreview(striker.x, striker.y, dirX, dirY);
+      if (preview) {
+        // Dotted trajectory ray from Striker to Ghost impact center
+        ctx.beginPath();
+        ctx.setLineDash([6, 6]);
+        ctx.moveTo(striker.x, striker.y);
+        ctx.lineTo(preview.ghostX, preview.ghostY);
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.88)';
+        ctx.lineWidth = 2.2;
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Ghost Striker outline at point of impact
+        ctx.beginPath();
+        ctx.arc(preview.ghostX, preview.ghostY, STRIKER_RADIUS, 0, Math.PI * 2);
+        ctx.strokeStyle = 'rgba(251, 191, 36, 0.9)';
+        ctx.fillStyle = 'rgba(251, 191, 36, 0.16)';
+        ctx.lineWidth = 2;
+        ctx.fill();
+        ctx.stroke();
+
+        if (preview.type === 'coin') {
+          const tc = preview.targetCoin;
+          // Target Coin Deflection Arrow
+          const arrowLen = 65 + powerRatio * 65;
+          const endX = tc.x + preview.normalX * arrowLen;
+          const endY = tc.y + preview.normalY * arrowLen;
+
+          ctx.beginPath();
+          ctx.moveTo(tc.x, tc.y);
+          ctx.lineTo(endX, endY);
+          ctx.strokeStyle = '#38bdf8';
+          ctx.lineWidth = 3;
+          ctx.stroke();
+
+          // Arrowhead
+          const headAng = Math.atan2(preview.normalY, preview.normalX);
+          ctx.beginPath();
+          ctx.moveTo(endX, endY);
+          ctx.lineTo(endX - Math.cos(headAng - 0.45) * 11, endY - Math.sin(headAng - 0.45) * 11);
+          ctx.lineTo(endX - Math.cos(headAng + 0.45) * 11, endY - Math.sin(headAng + 0.45) * 11);
+          ctx.closePath();
+          ctx.fillStyle = '#38bdf8';
+          ctx.fill();
+
+          // Exact contact point dot
+          const contactX = preview.ghostX + preview.normalX * STRIKER_RADIUS;
+          const contactY = preview.ghostY + preview.normalY * STRIKER_RADIUS;
+          ctx.beginPath();
+          ctx.arc(contactX, contactY, 3.5, 0, Math.PI * 2);
+          ctx.fillStyle = '#fef08a';
+          ctx.fill();
+        } else if (preview.type === 'wall') {
+          // Wall rebound preview line
+          ctx.beginPath();
+          ctx.setLineDash([4, 5]);
+          ctx.moveTo(preview.ghostX, preview.ghostY);
+          ctx.lineTo(preview.ghostX + preview.refX * 95, preview.ghostY + preview.refY * 95);
+          ctx.strokeStyle = 'rgba(251, 191, 36, 0.65)';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+        }
+      }
+
+      ctx.restore();
+    }
+
+    /*************************************************************************
+     * 13. PARTICLE SYSTEM (COLLISIONS, POCKET DROPS & BORIC POWDER)
+     *************************************************************************/
+    function spawnCollisionParticles(x, y, speed) {
+      const count = Math.min(12, Math.floor(speed * 0.7));
+      for (let i = 0; i < count; i++) {
+        const ang = Math.random() * Math.PI * 2;
+        const spd = 1 + Math.random() * 3.5;
+        particles.push({
+          x,
+          y,
+          vx: Math.cos(ang) * spd,
+          vy: Math.sin(ang) * spd,
+          r: 1.5 + Math.random() * 2,
+          alpha: 0.9,
+          decay: 0.045,
+          color: '#fde68a'
+        });
+      }
+    }
+
+    function spawnPocketBurst(x, y, type) {
+      const color = type === 'queen'
+        ? '#f87171'
+        : (type === 'striker' ? '#ef4444' : '#fbbf24');
+      for (let i = 0; i < 18; i++) {
+        const ang = Math.random() * Math.PI * 2;
+        const spd = 1.2 + Math.random() * 4.2;
+        particles.push({
+          x,
+          y,
+          vx: Math.cos(ang) * spd,
+          vy: Math.sin(ang) * spd,
+          r: 2 + Math.random() * 2.5,
+          alpha: 1,
+          decay: 0.032,
+          color
+        });
+      }
+    }
+
+    function sprinkleBoricPowder() {
+      sound.playPowderSwoosh();
+      powderSmoothness = 1.0;
+      updatePowderUI();
+      generateInitialPowderSpecks();
+
+      // Spawn soft white powder cloud across the center and baselines
+      for (let i = 0; i < 75; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const dist = Math.random() * 230;
+        particles.push({
+          x: CENTER + Math.cos(angle) * dist,
+          y: CENTER + Math.sin(angle) * dist,
+          vx: (Math.random() - 0.5) * 1.8,
+          vy: (Math.random() - 0.5) * 1.8,
+          r: 3 + Math.random() * 6,
+          alpha: 0.65,
+          decay: 0.015,
+          color: '#ffffff'
+        });
+      }
+      showBoardToast('✨ Boric Powder Sprinkled — Ultra-Smooth Glide!');
+    }
+
+    function updateAndDrawParticles() {
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.alpha -= p.decay;
+
+        if (p.alpha <= 0) {
+          particles.splice(i, 1);
+          continue;
+        }
+
+        ctx.save();
+        ctx.globalAlpha = p.alpha;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fillStyle = p.color;
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+
+    /*************************************************************************
+     * 14. HUD, TRAYS, MODALS & GAME CONTROLS
+     *************************************************************************/
+    function updateHUD() {
+      const wScore = getPlayerScore('white');
+      const bScore = getPlayerScore('black');
+
+      document.getElementById('scoreWhite').textContent = wScore;
+      document.getElementById('scoreBlackDesktop').textContent = bScore;
+      document.getElementById('scoreBlackMobile').textContent = bScore;
+
+      document.getElementById('countWhiteText').textContent = `${collectedCoins.white} / 9 Coins`;
+      document.getElementById('countBlackTextDesktop').textContent = `${collectedCoins.black} / 9 Coins`;
+      document.getElementById('countBlackTextMobile').textContent = `${collectedCoins.black} / 9`;
+
+      // Render miniature coins inside White & Black Trays
+      renderCoinTray('trayWhite', collectedCoins.white, 'white', queenState === 'covered_white');
+      renderCoinTray('trayBlackDesktop', collectedCoins.black, 'black', queenState === 'covered_black');
+      renderCoinTray('trayBlackMobile', collectedCoins.black, 'black', queenState === 'covered_black');
+
+      // Due badges
+      document.getElementById('dueBadgeWhite').classList.toggle('hidden', owedPenalties.white === 0);
+      document.getElementById('dueBadgeBlack').classList.toggle('hidden', owedPenalties.black === 0);
+
+      // Active turn highlights
+      const isWhiteTurn = currentTurn === 'white' || gameMode === 'practice';
+      document.getElementById('cardWhite').classList.toggle('wood-panel-active', isWhiteTurn);
+      document.getElementById('cardBlackDesktop').classList.toggle('wood-panel-active', !isWhiteTurn);
+      document.getElementById('cardBlackMobile').classList.toggle('wood-panel-active', !isWhiteTurn);
+
+      document.getElementById('turnBadgeWhite').classList.toggle('hidden', !isWhiteTurn);
+      document.getElementById('turnBadgeBlackDesktop').classList.toggle('hidden', isWhiteTurn);
+      document.getElementById('turnBadgeBlackMobile').classList.toggle('hidden', isWhiteTurn);
+
+      // Queen Status Badges
+      const qBadgeD = document.getElementById('queenBadgeDesktop');
+      const qDescD = document.getElementById('queenDescDesktop');
+      const qBadgeM = document.getElementById('queenBadgeMobile');
+
+      if (queenState === 'on_board') {
+        qBadgeD.textContent = 'On Board';
+        qBadgeD.className = 'text-[11px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-200 border border-amber-400/30 font-medium';
+        qDescD.textContent = 'Pocket the Queen & cover it with your own coin on the same or immediate next shot.';
+        qBadgeM.textContent = 'Queen: On Board';
+      } else if (queenState === 'pending_cover') {
+        const holder = queenPendingHolder === 'white' ? 'White' : 'Black';
+        qBadgeD.textContent = `Must Cover (${holder})!`;
+        qBadgeD.className = 'text-[11px] px-2 py-0.5 rounded-full bg-red-600 text-white font-bold animate-pulse';
+        qDescD.textContent = `${holder} pocketed the Queen! Must sink a ${holder} coin on this shot to cover it!`;
+        qBadgeM.textContent = `Queen: Cover (${holder})!`;
+      } else if (queenState === 'covered_white') {
+        qBadgeD.textContent = 'Covered by White (+3)';
+        qBadgeD.className = 'text-[11px] px-2 py-0.5 rounded-full bg-emerald-900/80 text-emerald-200 border border-emerald-400/40 font-semibold';
+        qDescD.textContent = 'Player 1 (White) officially covered the Red Queen (+3 bonus points).';
+        qBadgeM.textContent = 'Queen: White (+3)';
+      } else if (queenState === 'covered_black') {
+        qBadgeD.textContent = 'Covered by Black (+3)';
+        qBadgeD.className = 'text-[11px] px-2 py-0.5 rounded-full bg-emerald-900/80 text-emerald-200 border border-emerald-400/40 font-semibold';
+        qDescD.textContent = 'Black officially covered the Red Queen (+3 bonus points).';
+        qBadgeM.textContent = 'Queen: Black (+3)';
+      }
+
+      updateStatusBanner();
+    }
+
+    function renderCoinTray(containerId, count, color, hasQueen) {
+      const el = document.getElementById(containerId);
+      el.innerHTML = '';
+      for (let i = 0; i < count; i++) {
+        const dot = document.createElement('div');
+        dot.className = `w-4 h-4 rounded-full ${color === 'white' ? 'mini-coin-white' : 'mini-coin-black'}`;
+        el.appendChild(dot);
+      }
+      if (hasQueen) {
+        const qDot = document.createElement('div');
+        qDot.className = 'w-4 h-4 rounded-full mini-coin-queen flex items-center justify-center text-[8px] text-white font-bold';
+        qDot.textContent = '★';
+        el.appendChild(qDot);
+      }
+    }
+
+    function updateStatusBanner() {
+      const banner = document.getElementById('statusBannerText');
+      if (gameMode === 'practice') {
+        banner.textContent = `Free Practice (${PRACTICE_PRESETS[practicePresetIndex]}) — Slide & shoot freely!`;
+        return;
+      }
+
+      if (queenState === 'pending_cover') {
+        const who = queenPendingHolder === 'white' ? 'White' : (gameMode === 'ai' ? 'AirBot' : 'Black');
+        banner.textContent = `👑 ${who} Pocketed Queen! Must Cover with own coin on this shot!`;
+        return;
+      }
+
+      if (currentTurn === 'white') {
+        banner.textContent = `White's Turn (Bottom) — Slide striker & pull back to shoot`;
+      } else {
+        banner.textContent = gameMode === 'ai'
+          ? `🤖 AirBot's Turn (Top) — Calculating shot angle...`
+          : `Black's Turn (Top) — Slide striker & pull back to shoot`;
+      }
+    }
+
+    function updatePowerMeterUI(pct) {
+      document.getElementById('shotPowerFill').style.width = `${pct}%`;
+      document.getElementById('shotPowerPct').textContent = `${pct}%`;
+    }
+
+    function updatePowderUI() {
+      const pct = Math.round(powderSmoothness * 100);
+      document.getElementById('powderBar').style.width = `${pct}%`;
+      document.getElementById('powderLevelText').textContent = pct > 80
+        ? `Freshly Powdered (${pct}%)`
+        : `Normal Friction (${pct}%)`;
+    }
+
+    let toastTimeout = null;
+    function showBoardToast(msg) {
+      const toast = document.getElementById('boardToast');
+      toast.textContent = msg;
+      toast.classList.remove('opacity-0', '-translate-y-2');
+      toast.classList.add('opacity-100', 'translate-y-0');
+      if (toastTimeout) clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(() => {
+        toast.classList.add('opacity-0', '-translate-y-2');
+        toast.classList.remove('opacity-100', 'translate-y-0');
+      }, 2400);
+    }
+
+    function logEvent(text) {
+      const log = document.getElementById('matchLog');
+      const entry = document.createElement('div');
+      entry.className = 'border-b border-amber-500/10 pb-1';
+      entry.textContent = text;
+      log.prepend(entry);
+    }
+
+    function setGameMode(mode) {
+      gameMode = mode;
+      ['modeVsAI', 'mode2P', 'modePractice'].forEach(id => {
+        const btn = document.getElementById(id);
+        btn.className = 'px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all text-amber-200/80 hover:text-amber-100';
+      });
+      const activeId = mode === 'ai' ? 'modeVsAI' : (mode === '2p' ? 'mode2P' : 'modePractice');
+      document.getElementById(activeId).className = 'px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all brass-btn-primary';
+
+      const oppName = mode === 'ai' ? 'AirBot' : (mode === '2p' ? 'Player 2' : 'Practice Target');
+      document.getElementById('nameBlackDesktop').textContent = oppName;
+      document.getElementById('nameBlackMobile').textContent = oppName;
+
+      // Show Undo & Preset buttons in Free Practice mode
+      const isPrac = mode === 'practice';
+      document.getElementById('btnUndo').classList.toggle('hidden', !isPrac);
+      document.getElementById('btnUndo').classList.toggle('flex', isPrac);
+      document.getElementById('btnPreset').classList.toggle('hidden', !isPrac);
+      document.getElementById('btnPreset').classList.toggle('flex', isPrac);
+
+      resetMatch();
+    }
+
+    function savePracticeUndoSnapshot() {
+      previousStateSnapshot = {
+        coins: coins.map(c => ({ ...c })),
+        collectedWhite: collectedCoins.white,
+        collectedBlack: collectedCoins.black,
+        queenState,
+        strikerX: striker.x
+      };
+    }
+
+    function undoLastShot() {
+      if (gameMode !== 'practice' || !previousStateSnapshot) {
+        showBoardToast('No previous shot to undo');
+        return;
+      }
+      coins = previousStateSnapshot.coins.map(c => ({ ...c, vx: 0, vy: 0 }));
+      collectedCoins.white = previousStateSnapshot.collectedWhite;
+      collectedCoins.black = previousStateSnapshot.collectedBlack;
+      queenState = previousStateSnapshot.queenState;
+      fallingPieces = [];
+      gamePhase = 'placement';
+      striker.vx = 0;
+      striker.vy = 0;
+      striker.active = true;
+      striker.pocketed = false;
+      striker.x = previousStateSnapshot.strikerX;
+      striker.y = BASELINE_BOTTOM_Y;
+      syncSliderToStriker();
+      updateStrikerOverlapState();
+      updateHUD();
+      showBoardToast('↩ Restored Previous Shot Position');
+    }
+
+    function cyclePracticePreset() {
+      practicePresetIndex = (practicePresetIndex + 1) % PRACTICE_PRESETS.length;
+      document.getElementById('presetLabel').textContent = PRACTICE_PRESETS[practicePresetIndex];
+      setupPracticePreset(practicePresetIndex);
+      showBoardToast(`🎯 Loaded: ${PRACTICE_PRESETS[practicePresetIndex]}`);
+    }
+
+    function toggleAudio() {
+      sound.muted = !sound.muted;
+      document.getElementById('btnSound').textContent = sound.muted ? '🔇' : '🔊';
+    }
+
+    function openRulesModal() {
+      document.getElementById('rulesModal').classList.remove('hidden');
+      document.getElementById('rulesModal').classList.add('flex');
+    }
+
+    function closeRulesModal() {
+      document.getElementById('rulesModal').classList.add('hidden');
+      document.getElementById('rulesModal').classList.remove('flex');
+    }
+
+    function closeVictoryAndReset() {
+      document.getElementById('victoryModal').classList.add('hidden');
+      document.getElementById('victoryModal').classList.remove('flex');
+      resetMatch();
+    }
+
+    function resetMatch() {
+      aiAnimState = null;
+      isAiming = false;
+      isDraggingStrikerSlide = false;
+      currentTurn = 'white';
+      gamePhase = 'placement';
+      queenState = 'on_board';
+      queenPendingHolder = null;
+      owedPenalties = { white: 0, black: 0 };
+      collectedCoins = { white: 0, black: 0 };
+      previousStateSnapshot = null;
+      resetTurnEvents();
+
+      if (gameMode === 'practice') {
+        setupPracticePreset(practicePresetIndex);
+      } else {
+        setupClassicCoins();
+      }
+
+      generateInitialPowderSpecks();
+      placeStrikerForCurrentTurn();
+      document.getElementById('matchLog').innerHTML = '';
+      logEvent('✨ New Carrom Board Packed & Ready. White breaks first.');
+      updateHUD();
+    }
+
+    /*************************************************************************
+     * 15. HIGH-DPI CANVAS INITIALIZATION & MAIN 60FPS GAME LOOP
+     *************************************************************************/
+    function configureHighDPICanvas() {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = BOARD_SIZE * dpr;
+      canvas.height = BOARD_SIZE * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+
+    function mainLoop(now) {
+      if (gamePhase === 'moving') {
+        stepPhysics();
+      } else if (gamePhase === 'ai_thinking') {
+        updateAIAnimation(now);
+      }
+      renderFrame(now);
+      requestAnimationFrame(mainLoop);
+    }
+
+    window.onload = function () {
+      configureHighDPICanvas();
+      buildStaticBoardCache();
+      resetMatch();
+      requestAnimationFrame(mainLoop);
+    };
+
+    window.addEventListener('resize', configureHighDPICanvas);
+  </script>
+</body>
+</html>
