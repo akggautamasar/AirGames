@@ -1,0 +1,2011 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>AirPaint — Pigment Alchemy | AirGames by WorksBeyond</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Instrument Serif, Inter, JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-lab: #F4F2EC;
+            --bg-card: #FFFFFF;
+            --text-main: #1C1B19;
+            --text-muted: #78756E;
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+        }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100dvh;
+            overflow: hidden;
+            background-color: #181816;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            color: var(--text-main);
+        }
+
+        .font-serif-display {
+            font-family: 'Instrument Serif', Georgia, serif;
+        }
+
+        .font-mono-lab {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Subtle paper grain inside the mobile viewport */
+        .lab-surface {
+            background-color: var(--bg-lab);
+            background-image: radial-gradient(rgba(28, 27, 25, 0.04) 1px, transparent 0);
+            background-size: 18px 18px;
+        }
+
+        /* Desktop Phone Frame Mode vs Fullscreen Mode */
+        @media (min-width: 640px) {
+            body.phone-frame-mode {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background: radial-gradient(circle at 50% 30%, #2C2A26 0%, #141311 100%);
+                padding: 16px;
+            }
+            body.phone-frame-mode #appShell {
+                width: 420px;
+                height: min(880px, 95dvh);
+                border-radius: 46px;
+                box-shadow:
+                    0 0 0 10px #272623,
+                    0 0 0 12px #3E3C38,
+                    0 28px 65px -12px rgba(0, 0, 0, 0.75);
+                overflow: hidden;
+                position: relative;
+            }
+            body.fullscreen-mode #appShell {
+                width: 100%;
+                max-width: 540px;
+                height: 100dvh;
+                margin: 0 auto;
+                position: relative;
+                box-shadow: 0 0 50px rgba(0,0,0,0.4);
+            }
+        }
+
+        @media (max-width: 639px) {
+            #appShell {
+                width: 100%;
+                height: 100dvh;
+                position: relative;
+                overflow: hidden;
+            }
+        }
+
+        /* Hide scrollbars on horizontal filter pill strip */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        /* Metallic gradients for dispensers and paint can */
+        .metallic-syringe {
+            background: linear-gradient(90deg, #94969B 0%, #E5E6EB 30%, #FFFFFF 48%, #B2B4B9 78%, #797B80 100%);
+            box-shadow: inset 0 -1px 2px rgba(0,0,0,0.25), 0 1px 3px rgba(0,0,0,0.08);
+        }
+
+        .metallic-collar {
+            background: linear-gradient(90deg, #5F6166 0%, #CFD1D7 38%, #F5F6F8 52%, #7D7F85 85%, #4D4E52 100%);
+        }
+
+        .dispenser-col {
+            background: rgba(255, 255, 255, 0.82);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(218, 215, 205, 0.95);
+            box-shadow: 0 4px 10px -2px rgba(28, 27, 25, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.95);
+            transition: transform 0.12s cubic-bezier(0.2, 0.8, 0.2, 1), border-color 0.12s ease, background-color 0.12s ease;
+        }
+
+        .dispenser-col.dispensing-active {
+            transform: translateY(1.5px) scale(0.985);
+            border-color: #78756E;
+            background: rgba(255, 255, 255, 0.96);
+        }
+
+        /* Primary Thumb Tap + Button */
+        .thumb-plus-btn {
+            background: radial-gradient(circle at 35% 30%, #FFFFFF 0%, #EDEBE4 65%, #D7D4C9 100%);
+            box-shadow: 0 3px 6px rgba(0,0,0,0.11), inset 0 1px 1px rgba(255,255,255,1);
+            transition: transform 0.08s ease, box-shadow 0.08s ease;
+        }
+
+        .thumb-plus-btn:active, .thumb-plus-btn.pressing {
+            transform: scale(0.90);
+            background: radial-gradient(circle at 50% 50%, #292826 0%, #161514 100%);
+            color: #FFFFFF;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.35);
+        }
+
+        /* Floating +drop pop badge */
+        @keyframes floatUpPop {
+            0% { opacity: 0; transform: translateY(4px) scale(0.85); }
+            25% { opacity: 1; transform: translateY(-2px) scale(1.05); }
+            100% { opacity: 0; transform: translateY(-14px) scale(0.95); }
+        }
+        .drop-pop-badge {
+            animation: floatUpPop 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        /* Star pop animation */
+        @keyframes starPop {
+            0% { transform: scale(0) rotate(-25deg); opacity: 0; }
+            65% { transform: scale(1.22) rotate(6deg); opacity: 1; }
+            100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+        .star-animate {
+            animation: starPop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+
+        /* Slide-up Bottom Sheet transition */
+        #evalBottomSheet {
+            transition: transform 0.38s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        #evalBackdrop {
+            transition: opacity 0.3s ease;
+        }
+    </style>
+</head>
+<body class="phone-frame-mode">
+
+    <!-- Desktop Frame / Fullscreen Switcher Floating Pill (Only visible on Desktop >= 640px) -->
+    <div class="hidden sm:flex fixed top-4 right-4 z-50 items-center gap-2 bg-stone-900/90 backdrop-blur-md border border-stone-700/80 text-stone-200 px-3 py-1.5 rounded-full text-[11px] font-mono-lab shadow-xl">
+        <span class="text-stone-400">View:</span>
+        <button id="toggleFrameBtn" class="px-2 py-0.5 rounded-full bg-stone-100 text-stone-900 font-medium transition-colors">
+            Phone Frame
+        </button>
+    </div>
+
+    <!-- ==========================================
+         MOBILE APP SHELL (100dvh Portrait Container)
+         ========================================== -->
+    <div id="appShell" class="lab-surface flex flex-col justify-between select-none">
+
+        <!-- ==========================================
+             VIEW 1: SPLASH & LEVEL SELECT SCREEN (30 SWATCH CUPS)
+             ========================================== -->
+        <div id="splashScreen" class="absolute inset-0 z-40 lab-surface flex flex-col justify-between transition-transform duration-350 ease-out">
+            <!-- Top Studio App Bar -->
+            <div class="px-4 pt-3.5 pb-2 border-b border-stone-200/90 bg-[#F4F2EC]/95 backdrop-blur-md flex items-center justify-between shrink-0">
+                <div>
+                    <div class="flex items-center gap-2">
+                        <a href="/" aria-label="Back to AirGames homepage" title="All AirGames" class="shrink-0 w-8 h-8 rounded-lg border border-stone-300 bg-white text-stone-700 flex items-center justify-center text-sm shadow-sm hover:bg-stone-100">←</a>
+                        <h1 class="font-serif-display text-2xl tracking-tight text-stone-900 leading-none">AirPaint</h1>
+                        <span class="px-1.5 py-0.5 rounded bg-stone-200/80 font-mono-lab text-[9px] uppercase tracking-widest text-stone-600">Paint Studio</span>
+                    </div>
+                    <p class="font-mono-lab text-[9px] uppercase tracking-[0.16em] text-stone-400 mt-0.5">
+                        Pigment Alchemy · by WorksBeyond
+                    </p>
+                </div>
+
+                <!-- Total Stars Counter & Sound Toggle -->
+                <div class="flex items-center gap-1.5">
+                    <div class="px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center gap-1 font-mono-lab text-xs font-semibold text-amber-800">
+                        <span class="text-amber-500 text-sm leading-none">★</span>
+                        <span id="totalStarsSplash">0 / 90</span>
+                    </div>
+                    <button id="splashSoundBtn" aria-label="Toggle Sound" class="w-8 h-8 rounded-full bg-white border border-stone-300/80 flex items-center justify-center text-stone-700 shadow-2xs active:scale-90 transition-transform">
+                        <span id="splashSoundIcon" class="text-xs">🔊</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Horizontal Category Filter Strip -->
+            <div class="px-3 py-2 border-b border-stone-200/60 bg-white/40 shrink-0">
+                <div id="categoryFilterStrip" class="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+                    <button data-tier="all" class="filter-pill shrink-0 px-3 py-1 rounded-full text-[10px] font-mono-lab uppercase tracking-wider bg-stone-900 text-stone-100 shadow-2xs transition-all">
+                        All 30
+                    </button>
+                    <button data-tier="0" class="filter-pill shrink-0 px-3 py-1 rounded-full text-[10px] font-mono-lab uppercase tracking-wider bg-white/90 text-stone-600 border border-stone-200/90 transition-all">
+                        01 Two Pigments
+                    </button>
+                    <button data-tier="1" class="filter-pill shrink-0 px-3 py-1 rounded-full text-[10px] font-mono-lab uppercase tracking-wider bg-white/90 text-stone-600 border border-stone-200/90 transition-all">
+                        02 Three Pigments
+                    </button>
+                    <button data-tier="2" class="filter-pill shrink-0 px-3 py-1 rounded-full text-[10px] font-mono-lab uppercase tracking-wider bg-white/90 text-stone-600 border border-stone-200/90 transition-all">
+                        03 Tints & Mutes
+                    </button>
+                    <button data-tier="3" class="filter-pill shrink-0 px-3 py-1 rounded-full text-[10px] font-mono-lab uppercase tracking-wider bg-white/90 text-stone-600 border border-stone-200/90 transition-all">
+                        04 Earth & Ochres
+                    </button>
+                    <button data-tier="4" class="filter-pill shrink-0 px-3 py-1 rounded-full text-[10px] font-mono-lab uppercase tracking-wider bg-white/90 text-stone-600 border border-stone-200/90 transition-all">
+                        05 Nocturnes
+                    </button>
+                    <button data-tier="5" class="filter-pill shrink-0 px-3 py-1 rounded-full text-[10px] font-mono-lab uppercase tracking-wider bg-white/90 text-stone-600 border border-stone-200/90 transition-all">
+                        06 Master
+                    </button>
+                </div>
+            </div>
+
+            <!-- Center Scrollable 30 Metallic Swatch Cups Grid -->
+            <div class="flex-1 overflow-y-auto px-3 py-3 flex flex-col justify-between">
+                <div id="splashSwatchGrid" class="grid grid-cols-5 gap-x-2 gap-y-3 my-auto">
+                    <!-- Populated by JS: 30 metallic cups with organic brush dabs + star dots -->
+                </div>
+
+                <div class="text-center mt-3 mb-1">
+                    <h2 class="font-serif-display text-2xl text-stone-800 tracking-tight leading-tight">
+                        Every colour starts somewhere.
+                    </h2>
+                    <p class="font-mono-lab text-[10px] text-stone-500 mt-0.5">
+                        Tap any metallic swatch cup to mix its formula
+                    </p>
+                </div>
+            </div>
+
+            <!-- Sticky Bottom CTA Bar -->
+            <div class="p-3 bg-white/85 backdrop-blur-md border-t border-stone-200/90 flex items-center gap-2 shrink-0">
+                <button id="resetProgressBtn" title="Reset saved star progress" class="px-3 py-3 rounded-xl border border-stone-300/90 bg-stone-100/80 text-stone-500 hover:text-rose-700 font-mono-lab text-[10px] uppercase tracking-wider active:scale-95 transition-all">
+                    Reset
+                </button>
+                <button id="enterLabBtn" class="flex-1 py-3 px-5 rounded-xl bg-stone-900 text-stone-100 font-mono-lab text-xs uppercase tracking-[0.14em] font-medium shadow-md active:scale-98 transition-all flex items-center justify-center gap-2">
+                    <span id="enterLabBtnText">Enter the lab — Study 01</span>
+                    <span class="text-sm leading-none">→</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- ==========================================
+             VIEW 2: ACTIVE MOBILE LAB WORKBENCH
+             ========================================== -->
+        <!-- 1. COMPACT TOP HUD BAR -->
+        <header class="px-3 pt-2.5 pb-2 border-b border-stone-200/80 bg-[#F4F2EC]/90 backdrop-blur-sm flex items-center justify-between gap-2 shrink-0 z-20">
+            <!-- Left: Back to Swatch Grid + Study Name -->
+            <div class="flex items-center gap-2 min-w-0">
+                <a href="/" aria-label="Back to AirGames homepage" title="All AirGames" class="w-7 h-8 rounded-xl bg-white border border-stone-300/90 flex items-center justify-center text-stone-700 shadow-2xs shrink-0 no-underline">⌂</a>
+                <button id="openPaletteBtn" aria-label="Level Select Grid" class="w-8 h-8 rounded-xl bg-white border border-stone-300/90 flex items-center justify-center text-stone-700 shadow-2xs active:scale-90 transition-transform shrink-0">
+                    <span class="font-mono-lab text-xs leading-none">⊞</span>
+                </button>
+                <div class="min-w-0">
+                    <div class="flex items-center gap-1.5">
+                        <span id="hudStudyBadge" class="font-mono-lab text-[9px] uppercase tracking-wider px-1.5 py-0.2 rounded bg-stone-200/80 text-stone-600 shrink-0">
+                            #01
+                        </span>
+                        <span id="hudTierLabel" class="font-mono-lab text-[9px] uppercase tracking-wider text-stone-400 truncate">
+                            01 / Two pigments
+                        </span>
+                    </div>
+                    <div class="flex items-center gap-1">
+                        <h2 id="studyNameHeading" class="font-serif-display text-xl text-stone-900 leading-none truncate">
+                            Teal study 33
+                        </h2>
+                        <div id="hudStudyStars" class="flex items-center text-[10px] text-amber-500 ml-1 shrink-0"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right: Prev/Next Arrows + Zen/Timed Mode + Countdown Pill -->
+            <div class="flex items-center gap-1 shrink-0">
+                <button id="prevStudyBtn" aria-label="Previous Study" class="w-7 h-7 rounded-lg bg-white/80 border border-stone-300/70 flex items-center justify-center font-mono-lab text-xs text-stone-600 active:scale-90">
+                    ‹
+                </button>
+                <button id="nextStudyQuickBtn" aria-label="Next Study" class="w-7 h-7 rounded-lg bg-white/80 border border-stone-300/70 flex items-center justify-center font-mono-lab text-xs text-stone-600 active:scale-90">
+                    ›
+                </button>
+
+                <!-- Mode / Timer Pill -->
+                <button id="timerToggleBtn" title="Tap to toggle Timed (60s) vs Zen Mode" class="ml-0.5 px-2.5 py-1 rounded-xl bg-white border border-stone-300/90 shadow-2xs flex items-center gap-1.5 active:scale-95 transition-transform">
+                    <span id="timerStatusDot" class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                    <span id="timerDisplay" class="font-mono-lab text-xs font-semibold text-stone-900 tracking-tight">01:00</span>
+                </button>
+
+                <!-- Sound Quick Button -->
+                <button id="hudSoundBtn" aria-label="Mute or Unmute" class="w-7 h-7 rounded-lg bg-white/80 border border-stone-300/70 flex items-center justify-center text-xs active:scale-90">
+                    <span id="hudSoundIcon">🔊</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- 2. SIDE-BY-SIDE TARGET VS. LIVE MIX SWATCH CARD -->
+        <section class="px-3 pt-2 pb-1 shrink-0 z-20">
+            <div class="bg-white rounded-2xl p-1.5 border border-stone-300/80 shadow-xs">
+                <div class="relative h-16 sm:h-18 rounded-xl overflow-hidden grid grid-cols-2 border border-stone-200/80">
+                    <!-- Target Swatch Left -->
+                    <div id="targetSwatchBox" class="h-full w-full transition-colors duration-300 relative flex flex-col justify-between p-2" style="background-color: #367569;">
+                        <div class="flex items-center justify-between">
+                            <span class="px-1.5 py-0.5 rounded bg-black/30 backdrop-blur-xs font-mono-lab text-[8px] uppercase tracking-wider text-white">
+                                Target
+                            </span>
+                            <span id="targetHexLabel" class="font-mono-lab text-[8px] text-white/80 drop-shadow">
+                                #367569
+                            </span>
+                        </div>
+                        <div id="hintOverlayText" class="hidden text-[9px] font-mono-lab text-white bg-black/45 backdrop-blur-xs rounded px-1.5 py-0.5 leading-tight">
+                            Uses Phthalo Blue + Yellow + White
+                        </div>
+                    </div>
+
+                    <!-- Player Mix Swatch Right -->
+                    <div id="playerSwatchBox" class="h-full w-full transition-colors duration-150 relative flex flex-col justify-between p-2" style="background-color: #F2F0EA;">
+                        <div class="flex items-center justify-between">
+                            <span class="px-1.5 py-0.5 rounded bg-black/25 backdrop-blur-xs font-mono-lab text-[8px] uppercase tracking-wider text-white">
+                                Your Mix
+                            </span>
+                            <span id="liveDeltaPill" class="px-1.5 py-0.5 rounded bg-white/85 backdrop-blur-xs font-mono-lab text-[8px] font-semibold text-stone-800 shadow-2xs">
+                                Empty can
+                            </span>
+                        </div>
+
+                        <!-- Unmixed Swirl Warning Badge -->
+                        <div id="unmixedBadge" class="hidden self-end px-2 py-0.5 rounded-full bg-stone-900/80 backdrop-blur-xs text-[8px] font-mono-lab text-amber-300 flex items-center gap-1 shadow">
+                            <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping"></span>
+                            <span>Swirl can to blend!</span>
+                        </div>
+                    </div>
+
+                    <!-- Center Divider Line -->
+                    <div class="pointer-events-none absolute inset-y-0 left-1/2 -translate-x-1/2 w-[1.5px] bg-white/60"></div>
+                </div>
+
+                <!-- Micro Bar Below Swatches: Formula Breakdown + Hint & Undo Buttons -->
+                <div class="pt-1.5 px-1 flex items-center justify-between gap-2">
+                    <div id="formulaBreakdownLine" class="font-mono-lab text-[9px] text-stone-500 truncate flex-1">
+                        Tap + on dispensers to add pigment drops
+                    </div>
+                    <div class="flex items-center gap-1 shrink-0">
+                        <button id="toggleHintBtn" class="px-2 py-0.5 rounded-md bg-stone-100 hover:bg-stone-200/80 active:scale-95 font-mono-lab text-[9px] text-stone-600 border border-stone-200/80 transition-all">
+                            💡 Hint
+                        </button>
+                        <button id="undoLastDropBtn" disabled class="disabled:opacity-35 px-2 py-0.5 rounded-md bg-stone-100 hover:bg-stone-200/80 active:scale-95 font-mono-lab text-[9px] text-stone-700 border border-stone-200/80 transition-all">
+                            ↶ Undo
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 3. THUMB-FRIENDLY 5-PIGMENT DISPENSER DOCK -->
+        <section class="px-2.5 pt-1 shrink-0 z-20">
+            <div id="dispensersRow" class="grid grid-cols-5 gap-1.5">
+                <!-- Populated dynamically by JS for the 5 studio pigments -->
+            </div>
+        </section>
+
+        <!-- 4. STAINLESS-STEEL DELIVERY TUBES + INTERACTIVE SWIRL PAINT CAN STAGE -->
+        <section class="relative flex-1 min-h-[195px] flex flex-col items-center justify-end px-3 pb-1 overflow-visible select-none">
+
+            <!-- SVG Curved Stainless-Steel Delivery Tubes & Animated Pulses -->
+            <svg id="tubesSvg" viewBox="0 0 500 165" preserveAspectRatio="none" class="w-full h-[96px] sm:h-[108px] absolute top-0 left-0 pointer-events-none z-10 overflow-visible">
+                <defs>
+                    <linearGradient id="pipeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" stop-color="#96989E" />
+                        <stop offset="30%" stop-color="#E5E6EA" />
+                        <stop offset="50%" stop-color="#FFFFFF" />
+                        <stop offset="75%" stop-color="#AEB0B6" />
+                        <stop offset="100%" stop-color="#75777C" />
+                    </linearGradient>
+                    <linearGradient id="nozzleGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" stop-color="#585A60" />
+                        <stop offset="45%" stop-color="#D8D9DE" />
+                        <stop offset="55%" stop-color="#FFFFFF" />
+                        <stop offset="100%" stop-color="#484A4F" />
+                    </linearGradient>
+                    <filter id="tubeShadow" x="-15%" y="-10%" width="130%" height="130%">
+                        <feDropShadow dx="0" dy="4" stdDeviation="3" flood-color="#1C1B19" flood-opacity="0.11" />
+                    </filter>
+                </defs>
+
+                <!-- 5 Curved Delivery Pipes converging from the 5 Dispenser columns to the Can Rim -->
+                <g filter="url(#tubeShadow)">
+                    <!-- Tube 0: Magenta -->
+                    <path id="tubePath0" d="M 50 0 C 50 65, 222 52, 222 112" fill="none" stroke="url(#pipeGrad)" stroke-width="9" stroke-linecap="round" />
+                    <path d="M 50 0 C 50 65, 222 52, 222 112" fill="none" stroke="#FFFFFF" stroke-width="1.6" stroke-opacity="0.65" />
+
+                    <!-- Tube 1: Phthalo Blue -->
+                    <path id="tubePath1" d="M 150 0 C 150 56, 236 52, 236 115" fill="none" stroke="url(#pipeGrad)" stroke-width="9" stroke-linecap="round" />
+                    <path d="M 150 0 C 150 56, 236 52, 236 115" fill="none" stroke="#FFFFFF" stroke-width="1.6" stroke-opacity="0.65" />
+
+                    <!-- Tube 2: Yellow -->
+                    <path id="tubePath2" d="M 250 0 C 250 50, 250 65, 250 117" fill="none" stroke="url(#pipeGrad)" stroke-width="9" stroke-linecap="round" />
+                    <path d="M 250 0 C 250 50, 250 65, 250 117" fill="none" stroke="#FFFFFF" stroke-width="1.6" stroke-opacity="0.65" />
+
+                    <!-- Tube 3: Titanium White -->
+                    <path id="tubePath3" d="M 350 0 C 350 56, 264 52, 264 115" fill="none" stroke="url(#pipeGrad)" stroke-width="9" stroke-linecap="round" />
+                    <path d="M 350 0 C 350 56, 264 52, 264 115" fill="none" stroke="#FFFFFF" stroke-width="1.6" stroke-opacity="0.65" />
+
+                    <!-- Tube 4: Ivory Black -->
+                    <path id="tubePath4" d="M 450 0 C 450 65, 278 52, 278 112" fill="none" stroke="url(#pipeGrad)" stroke-width="9" stroke-linecap="round" />
+                    <path d="M 450 0 C 450 65, 278 52, 278 112" fill="none" stroke="#FFFFFF" stroke-width="1.6" stroke-opacity="0.65" />
+
+                    <!-- Animated Pigment Pulses Traveling Inside Tubes -->
+                    <g id="tubePulsesGroup"></g>
+
+                    <!-- Stainless-Steel Nozzle Tips -->
+                    <g>
+                        <rect x="216.5" y="102" width="11" height="11" rx="2" fill="url(#nozzleGrad)" />
+                        <circle cx="222" cy="114" r="2.6" fill="#D4195B" />
+
+                        <rect x="230.5" y="105" width="11" height="11" rx="2" fill="url(#nozzleGrad)" />
+                        <circle cx="236" cy="117" r="2.6" fill="#0047AB" />
+
+                        <rect x="244.5" y="107" width="11" height="11" rx="2" fill="url(#nozzleGrad)" />
+                        <circle cx="250" cy="119" r="2.6" fill="#FFD200" />
+
+                        <rect x="258.5" y="105" width="11" height="11" rx="2" fill="url(#nozzleGrad)" />
+                        <circle cx="264" cy="117" r="2.6" fill="#F7F7F9" stroke="#AAA" stroke-width="0.5" />
+
+                        <rect x="272.5" y="102" width="11" height="11" rx="2" fill="url(#nozzleGrad)" />
+                        <circle cx="278" cy="114" r="2.6" fill="#1E2024" />
+                    </g>
+                </g>
+
+                <!-- Falling Droplets Layer -->
+                <g id="fallingDropsGroup"></g>
+            </svg>
+
+            <!-- Paint Can + Ergonomic Side Thumb Controls -->
+            <div class="relative w-full flex items-center justify-between mt-12 sm:mt-14 z-20">
+
+                <!-- Left Ergonomic Control: Clean / Wipe Can -->
+                <div class="flex flex-col items-center gap-1 w-20">
+                    <button id="emptyCanBtn" class="w-14 h-14 rounded-2xl bg-white/90 hover:bg-rose-50 active:scale-90 border border-stone-300/90 shadow-xs flex flex-col items-center justify-center gap-0.5 text-stone-600 transition-all">
+                        <span class="text-base leading-none">🪣</span>
+                        <span class="font-mono-lab text-[8px] uppercase tracking-wider font-medium">Clean</span>
+                    </button>
+                    <span id="dropTotalCounter" class="font-mono-lab text-[9px] text-stone-400">0 drops</span>
+                </div>
+
+                <!-- Centerpiece: Cylindrical Metallic Paint Can with Touch-Swirl Canvas -->
+                <div class="relative flex flex-col items-center">
+                    <!-- Floor Shadow -->
+                    <div class="absolute -bottom-2 w-36 h-7 rounded-full bg-stone-900/18 blur-md pointer-events-none"></div>
+
+                    <!-- Decorative Resting Metal Can Lid Behind Right -->
+                    <div class="absolute -right-10 bottom-0 w-14 h-8 rounded-full pointer-events-none opacity-90"
+                         style="background: radial-gradient(ellipse at 40% 35%, #F2F3F5 0%, #C8C9CE 55%, #8E9096 90%, #64666B 100%);
+                                box-shadow: 0 4px 8px rgba(0,0,0,0.12), inset 0 1px 2px rgba(255,255,255,0.8);
+                                transform: rotate(-8deg);">
+                    </div>
+
+                    <!-- Cylindrical Can Body -->
+                    <div class="relative w-36 sm:w-40 h-32 sm:h-36 flex flex-col items-center">
+                        <div class="absolute bottom-0 w-32 sm:w-36 h-24 sm:h-26 rounded-b-[36px] overflow-hidden pointer-events-none"
+                             style="background: linear-gradient(90deg, #7C7E84 0%, #B8BAC0 16%, #ECEEF2 34%, #FFFFFF 46%, #D2D4DA 68%, #8C8E94 90%, #686A70 100%);
+                                    box-shadow: 0 10px 20px -4px rgba(28, 27, 25, 0.25), inset 0 -6px 12px rgba(0,0,0,0.18);">
+                            <div class="w-full h-[1.5px] bg-stone-500/25 mt-4 shadow-[0_1px_0_rgba(255,255,255,0.7)]"></div>
+                            <div class="w-full h-[1.5px] bg-stone-500/20 mt-6 shadow-[0_1px_0_rgba(255,255,255,0.6)]"></div>
+                        </div>
+
+                        <!-- Top Metallic Rim & Interactive Liquid Surface Canvas -->
+                        <div id="paintCanRim" class="relative z-20 w-36 sm:w-40 h-24 sm:h-26 rounded-full p-1.5 cursor-grab active:cursor-grabbing flex items-center justify-center touch-none"
+                             style="background: linear-gradient(135deg, #FFFFFF 0%, #D0D2D8 35%, #8A8C92 75%, #5E6066 100%);
+                                    box-shadow: 0 4px 9px rgba(0,0,0,0.18), inset 0 2px 3px rgba(255,255,255,0.9);">
+                            <div class="w-full h-full rounded-full p-1 flex items-center justify-center relative overflow-hidden"
+                                 style="background: linear-gradient(180deg, #5A5C61 0%, #9E9FA5 40%, #E2E3E8 100%);
+                                        box-shadow: inset 0 3px 7px rgba(0,0,0,0.45);">
+                                <canvas id="paintSurfaceCanvas" width="200" height="144" class="w-full h-full rounded-full block touch-none"></canvas>
+                                <!-- Gloss reflection -->
+                                <div class="pointer-events-none absolute inset-0 rounded-full"
+                                     style="background: radial-gradient(ellipse at 35% 24%, rgba(255,255,255,0.28) 0%, rgba(255,255,255,0) 55%);"></div>
+                            </div>
+                        </div>
+
+                        <!-- Wire Bail Handle -->
+                        <svg viewBox="0 0 160 75" class="w-36 sm:w-40 h-20 absolute top-9 pointer-events-none z-20 overflow-visible">
+                            <path d="M 8 8 C 8 62, 152 62, 152 8" fill="none" stroke="#5A5C62" stroke-width="3" stroke-linecap="round" opacity="0.45" />
+                            <path d="M 8 6.5 C 8 60, 152 60, 152 6.5" fill="none" stroke="#E4E5E9" stroke-width="1.8" stroke-linecap="round" />
+                        </svg>
+                    </div>
+                </div>
+
+                <!-- Right Ergonomic Control: Thumb Hold-to-Stir Button -->
+                <div class="flex flex-col items-center gap-1 w-20">
+                    <button id="holdStirBtn" class="w-14 h-14 rounded-2xl bg-stone-900 text-stone-100 active:scale-90 border border-stone-800 shadow-md flex flex-col items-center justify-center gap-0.5 transition-all select-none touch-none">
+                        <span id="stirIconSpin" class="text-lg leading-none inline-block transition-transform">↻</span>
+                        <span class="font-mono-lab text-[8px] uppercase tracking-wider font-medium">Stir</span>
+                    </button>
+                    <span id="blendPctLabel" class="font-mono-lab text-[9px] text-stone-500">100% mixed</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- 5. STICKY BOTTOM ACTION DOCK -->
+        <footer class="px-3 pb-3 pt-1.5 bg-[#F4F2EC]/95 backdrop-blur-sm border-t border-stone-200/80 flex items-center gap-2 shrink-0 z-20">
+            <div class="text-[9px] font-mono-lab text-stone-400 leading-tight hidden xs:block max-w-[115px]">
+                Swirl inside the paint can or hold <strong class="text-stone-600">Stir ↻</strong>
+            </div>
+            <button id="measureMixBtn" class="flex-1 py-3 px-5 rounded-2xl bg-stone-900 hover:bg-stone-800 active:scale-98 text-stone-100 font-mono-lab text-xs uppercase tracking-[0.14em] font-semibold shadow-md transition-all flex items-center justify-center gap-2">
+                <span>Measure this mix</span>
+                <span class="text-sm leading-none">→</span>
+            </button>
+        </footer>
+
+        <!-- ==========================================
+             SLIDE-UP SPECTROPHOTOMETER BOTTOM SHEET
+             ========================================== -->
+        <div id="evalBackdrop" class="pointer-events-none opacity-0 absolute inset-0 bg-black/45 backdrop-blur-xs z-30"></div>
+
+        <div id="evalBottomSheet" class="translate-y-full absolute inset-x-0 bottom-0 z-40 bg-[#FAF9F5] rounded-t-3xl border-t border-stone-300 shadow-2xl max-h-[88%] flex flex-col overflow-hidden">
+            <!-- Grabber Handle -->
+            <div class="pt-2.5 pb-1 flex justify-center shrink-0 cursor-pointer" id="closeSheetHandle">
+                <div class="w-10 h-1 rounded-full bg-stone-300"></div>
+            </div>
+
+            <!-- Scrollable Sheet Content -->
+            <div class="px-4 pb-4 overflow-y-auto flex-1">
+                <!-- Stars & Verdict Header -->
+                <div class="flex items-center justify-between border-b border-stone-200/90 pb-2.5">
+                    <div>
+                        <div class="flex items-center gap-1.5">
+                            <div id="sheetStarsRow" class="flex items-center gap-1 text-xl">
+                                <!-- 3 animated stars -->
+                            </div>
+                            <span id="resultAccuracyPct" class="ml-1 font-mono-lab text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                                98.4% match
+                            </span>
+                        </div>
+                        <h3 id="resultVerdictTitle" class="font-serif-display text-3xl text-stone-900 tracking-tight mt-0.5 leading-none">
+                            Mint Condition-ish
+                        </h3>
+                    </div>
+
+                    <!-- Perceptual Delta-E Score Box -->
+                    <div class="text-right bg-white px-3 py-1.5 rounded-xl border border-stone-200/90 shadow-2xs">
+                        <div class="font-mono-lab text-[9px] uppercase tracking-wider text-stone-400">Distance</div>
+                        <div class="font-mono-lab text-lg font-semibold text-stone-900 leading-tight">
+                            <span class="text-xs text-stone-400 mr-0.5">ΔE</span><span id="resultDeltaScore">1.40</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Side-by-Side Swatch Comparison Bar -->
+                <div class="mt-3 rounded-xl overflow-hidden h-8 grid grid-cols-2 border border-stone-300/80 shadow-2xs font-mono-lab text-[9px]">
+                    <div id="evalTargetMini" class="h-full flex items-center justify-start px-2.5 text-white/90 font-medium">
+                        TARGET
+                    </div>
+                    <div id="evalPlayerMini" class="h-full flex items-center justify-end px-2.5 text-white/90 font-medium">
+                        YOUR MIX
+                    </div>
+                </div>
+
+                <!-- 3 Diagnostic Meters: Lightness, Temperature, Chroma -->
+                <div class="mt-3 grid grid-cols-3 gap-2 bg-white p-2.5 rounded-xl border border-stone-200/80">
+                    <div>
+                        <div class="flex justify-between text-[9px] font-mono-lab text-stone-400">
+                            <span>Lightness</span>
+                            <span id="diagLightnessText" class="text-stone-700">Spot on</span>
+                        </div>
+                        <div class="h-1.5 bg-stone-100 rounded-full mt-1 relative overflow-hidden">
+                            <div class="absolute inset-y-0 left-1/2 w-0.5 bg-stone-400"></div>
+                            <div id="diagLightnessBar" class="h-full bg-stone-800 rounded-full transition-all" style="width: 50%;"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="flex justify-between text-[9px] font-mono-lab text-stone-400">
+                            <span>Temp</span>
+                            <span id="diagTempText" class="text-stone-700">Spot on</span>
+                        </div>
+                        <div class="h-1.5 bg-stone-100 rounded-full mt-1 relative overflow-hidden">
+                            <div class="absolute inset-y-0 left-1/2 w-0.5 bg-stone-400"></div>
+                            <div id="diagTempBar" class="h-full bg-amber-600 rounded-full transition-all" style="width: 50%;"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="flex justify-between text-[9px] font-mono-lab text-stone-400">
+                            <span>Chroma</span>
+                            <span id="diagChromaText" class="text-stone-700">Spot on</span>
+                        </div>
+                        <div class="h-1.5 bg-stone-100 rounded-full mt-1 relative overflow-hidden">
+                            <div class="absolute inset-y-0 left-1/2 w-0.5 bg-stone-400"></div>
+                            <div id="diagChromaBar" class="h-full bg-emerald-600 rounded-full transition-all" style="width: 50%;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pigment Recipe Breakdown Bars -->
+                <div class="mt-3">
+                    <div class="flex justify-between items-center text-[9px] font-mono-lab uppercase tracking-wider text-stone-400 mb-1.5">
+                        <span>Pigment Ratio Breakdown</span>
+                        <span>Vertical tick = Target Ratio</span>
+                    </div>
+                    <div id="pigmentComparisonList" class="flex flex-col gap-2 bg-white p-3 rounded-xl border border-stone-200/80">
+                        <!-- Dynamically populated -->
+                    </div>
+                </div>
+
+                <!-- Exact Studio Recipe Footer Note -->
+                <div id="exactRecipeText" class="mt-2.5 text-[10px] font-mono-lab text-stone-500 text-center bg-stone-200/50 py-1.5 px-2 rounded-lg">
+                    Ideal studio formula: —
+                </div>
+            </div>
+
+            <!-- Sticky Sheet Actions -->
+            <div class="p-3 bg-white border-t border-stone-200/90 flex items-center gap-2 shrink-0">
+                <button id="keepMixingBtn" class="px-3.5 py-2.5 rounded-xl border border-stone-300 bg-white hover:bg-stone-50 active:scale-95 font-mono-lab text-xs text-stone-700 transition-all">
+                    Keep Mixing
+                </button>
+                <button id="retryStudyBtn" class="px-3.5 py-2.5 rounded-xl border border-stone-300 bg-stone-100 hover:bg-stone-200 active:scale-95 font-mono-lab text-xs text-stone-700 transition-all">
+                    Retry
+                </button>
+                <button id="nextStudyBtn" class="flex-1 py-2.5 px-4 rounded-xl bg-stone-900 hover:bg-stone-800 active:scale-95 text-stone-100 font-mono-lab text-xs font-semibold uppercase tracking-wider shadow-sm transition-all flex items-center justify-center gap-1.5">
+                    <span>Next Study</span>
+                    <span>→</span>
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ==========================================
+         JAVASCRIPT ENGINE: KUBELKA-MUNK MIXING,
+         MOBILE TOUCH SWIRL, HAPTICS & PROGRESSION
+         ========================================== -->
+    <script>
+        /**************************************************************
+         * 1. 5 STUDIO PIGMENTS DEFINITION
+         **************************************************************/
+        const PIGMENTS = [
+            {
+                id: 'magenta',
+                shortName: 'Magenta',
+                name: 'Magenta',
+                hex: '#D4195B',
+                rgb: [212, 25, 91],
+                strength: 1.35,
+                startX: 50,
+                nozzleX: 222,
+                nozzleY: 114
+            },
+            {
+                id: 'blue',
+                shortName: 'Phthalo',
+                name: 'Phthalo blue',
+                hex: '#0047AB',
+                rgb: [0, 71, 171],
+                strength: 1.65,
+                startX: 150,
+                nozzleX: 236,
+                nozzleY: 117
+            },
+            {
+                id: 'yellow',
+                shortName: 'Yellow',
+                name: 'Yellow',
+                hex: '#FFD200',
+                rgb: [255, 210, 0],
+                strength: 0.95,
+                startX: 250,
+                nozzleX: 250,
+                nozzleY: 119
+            },
+            {
+                id: 'white',
+                shortName: 'White',
+                name: 'Titanium white',
+                hex: '#F7F7F9',
+                rgb: [247, 247, 249],
+                strength: 0.14, // Calibrated so 300 drops of Titanium White in Teal Study 33 matches the lush seafoam teal in the video
+                startX: 350,
+                nozzleX: 264,
+                nozzleY: 117
+            },
+            {
+                id: 'black',
+                shortName: 'Black',
+                name: 'Ivory black',
+                hex: '#1E2024',
+                rgb: [30, 32, 36],
+                strength: 1.85,
+                startX: 450,
+                nozzleX: 278,
+                nozzleY: 114
+            }
+        ];
+
+        /**************************************************************
+         * 2. KUBELKA-MUNK SUBTRACTIVE PIGMENT MIXING ENGINE
+         **************************************************************/
+        function srgbToLinear(c) {
+            let v = c / 255;
+            return v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+        }
+
+        function linearToSrgb(v) {
+            v = Math.max(0, Math.min(1, v));
+            let c = v <= 0.0031308 ? 12.92 * v : 1.055 * Math.pow(v, 1 / 2.4) - 0.055;
+            return Math.round(c * 255);
+        }
+
+        function reflectanceToKS(R) {
+            const clampedR = Math.max(0.008, Math.min(0.992, R));
+            return ((1 - clampedR) * (1 - clampedR)) / (2 * clampedR);
+        }
+
+        function ksToReflectance(ks) {
+            const safeKS = Math.max(0, ks);
+            return 1 + safeKS - Math.sqrt(safeKS * safeKS + 2 * safeKS);
+        }
+
+        function computeMixedColor(dropsArray) {
+            const totalDrops = dropsArray.reduce((a, b) => a + b, 0);
+            if (totalDrops <= 0) {
+                return { rgb: [242, 240, 234], hex: '#F2F0EA', empty: true };
+            }
+
+            let totalWeight = 0;
+            let ksSum = [0, 0, 0];
+
+            for (let i = 0; i < 5; i++) {
+                const count = dropsArray[i];
+                if (count <= 0) continue;
+
+                const pig = PIGMENTS[i];
+                const w = count * pig.strength;
+                totalWeight += w;
+
+                let rLin = srgbToLinear(pig.rgb[0]);
+                let gLin = srgbToLinear(pig.rgb[1]);
+                let bLin = srgbToLinear(pig.rgb[2]);
+
+                // Subtractive spectral coupling so Phthalo Blue + Hansa Yellow yields rich emerald/teal
+                if (pig.id === 'blue') {
+                    gLin = Math.min(0.95, gLin * 2.15);
+                } else if (pig.id === 'yellow') {
+                    gLin = Math.min(0.98, gLin * 1.12);
+                }
+
+                ksSum[0] += w * reflectanceToKS(rLin);
+                ksSum[1] += w * reflectanceToKS(gLin);
+                ksSum[2] += w * reflectanceToKS(bLin);
+            }
+
+            const rOut = linearToSrgb(ksToReflectance(ksSum[0] / totalWeight));
+            const gOut = linearToSrgb(ksToReflectance(ksSum[1] / totalWeight));
+            const bOut = linearToSrgb(ksToReflectance(ksSum[2] / totalWeight));
+
+            const hex = '#' + [rOut, gOut, bOut].map(x => x.toString(16).padStart(2, '0')).join('').toUpperCase();
+            return { rgb: [rOut, gOut, bOut], hex, empty: false };
+        }
+
+        function rgbToLab(rgb) {
+            let r = srgbToLinear(rgb[0]);
+            let g = srgbToLinear(rgb[1]);
+            let b = srgbToLinear(rgb[2]);
+
+            let x = (r * 0.4124 + g * 0.3576 + b * 0.1805) / 0.95047;
+            let y = (r * 0.2126 + g * 0.7152 + b * 0.0722) / 1.00000;
+            let z = (r * 0.0193 + g * 0.1192 + b * 0.9505) / 1.08883;
+
+            const f = t => (t > 0.008856) ? Math.cbrt(t) : (7.787 * t) + (16 / 116);
+            const fx = f(x), fy = f(y), fz = f(z);
+
+            return [
+                (116 * fy) - 16,
+                500 * (fx - fy),
+                200 * (fy - fz)
+            ];
+        }
+
+        function calculateDeltaE(rgb1, rgb2) {
+            const lab1 = rgbToLab(rgb1);
+            const lab2 = rgbToLab(rgb2);            const dL = lab1[0] - lab2[0];
+            const da = lab1[1] - lab2[1];
+            const db = lab1[2] - lab2[2];
+            return Math.sqrt(dL * dL + da * da + db * db) * 0.72;
+        }
+
+        /**************************************************************
+         * 3. 30 CURATED COLOR STUDIES (WITH VIDEO-ACCURATE RECIPES)
+         * - Study 1 ("Teal study 33"): [0, 2, 6, 300, 0] (2 Blue, 6 Yellow, 300 White in +30 steps)
+         * - Study 6 ("Bronze"): [1, 1, 5, 0, 4] (1 Magenta, 1 Blue, 5 Yellow, 4 Black)
+         **************************************************************/
+        const STUDIES = [
+            // TIER 0: 01 / Two pigments
+            { id: 1, tier: 0, tierName: '01 / Two pigments', name: 'Teal study 33', recipe: [0, 2, 6, 300, 0], whiteStep: 30, note: 'Video signature study: 2 Phthalo blue, 6 Yellow, and 300 Titanium white (tap +30 ten times).' },
+            { id: 2, tier: 0, tierName: '01 / Two pigments', name: 'Coral Blush', recipe: [3, 0, 5, 60, 0], whiteStep: 10, note: 'Warm vermilion-coral mixed from Magenta and Yellow in Titanium White.' },
+            { id: 3, tier: 0, tierName: '01 / Two pigments', name: 'Delft Porcelain', recipe: [0, 4, 0, 80, 0], whiteStep: 10, note: 'Classic ceramic tint using Phthalo Blue and Titanium White.' },
+            { id: 4, tier: 0, tierName: '01 / Two pigments', name: 'Chartreuse Mist', recipe: [0, 1, 10, 50, 0], whiteStep: 10, note: 'Botanical spring green leaning strongly toward Hansa Yellow.' },
+            { id: 5, tier: 0, tierName: '01 / Two pigments', name: 'Orchid Haze', recipe: [5, 1, 0, 70, 0], whiteStep: 10, note: 'Luminous studio lavender balanced between Magenta and Phthalo Blue.' },
+
+            // TIER 1: 02 / Three pigments
+            { id: 6, tier: 1, tierName: '02 / Three pigments', name: 'Bronze', recipe: [1, 1, 5, 0, 4], whiteStep: 10, note: 'Video study #2: 5 Yellow, 4 Ivory black, 1 Phthalo blue, and 1 Magenta.' },
+            { id: 7, tier: 1, tierName: '02 / Three pigments', name: 'Dusty Rose', recipe: [6, 0, 4, 80, 1], whiteStep: 10, note: 'Muted renaissance pink toned down with a single drop of Ivory Black.' },
+            { id: 8, tier: 1, tierName: '02 / Three pigments', name: 'Celadon Glaze', recipe: [0, 2, 8, 100, 1], whiteStep: 10, note: 'Jade stoneware hue with a whisper of Ivory Black for mineral depth.' },
+            { id: 9, tier: 1, tierName: '02 / Three pigments', name: 'Terracotta Kiln', recipe: [6, 0, 12, 20, 1], whiteStep: 10, note: 'Sun-baked earthenware clay rich in Yellow and Magenta.' },
+            { id: 10, tier: 1, tierName: '02 / Three pigments', name: 'Aegean Dusk', recipe: [2, 6, 0, 60, 2], whiteStep: 10, note: 'Twilight blue-violet muted with Ivory Black.' },
+
+            // TIER 2: 03 / Tints & Mutes
+            { id: 11, tier: 2, tierName: '03 / Tints & Mutes', name: 'Linden Leaf', recipe: [1, 1, 10, 70, 0], whiteStep: 10, note: 'A drop of Magenta softens bright green into natural leaf foliage.' },
+            { id: 12, tier: 2, tierName: '03 / Tints & Mutes', name: 'Mauveine 1856', recipe: [8, 3, 0, 90, 1], whiteStep: 10, note: 'Historic synthetic dye tint with subtle grey undertones.' },
+            { id: 13, tier: 2, tierName: '03 / Tints & Mutes', name: 'Parchment Cream', recipe: [1, 0, 6, 120, 1], whiteStep: 30, note: 'Warm archival paper tone suspended in generous Titanium White.' },
+            { id: 14, tier: 2, tierName: '03 / Tints & Mutes', name: 'Fjord Slate', recipe: [1, 4, 0, 80, 3], whiteStep: 10, note: 'Nordic coastal blue-grey chilled with Ivory Black.' },
+            { id: 15, tier: 2, tierName: '03 / Tints & Mutes', name: 'Apricot Fresco', recipe: [2, 0, 10, 80, 0], whiteStep: 10, note: 'Soft lime-washed plaster warmth.' },
+
+            // TIER 3: 04 / Earth & Ochres
+            { id: 16, tier: 3, tierName: '04 / Earth & Ochres', name: 'Yellow Ochre', recipe: [2, 0, 16, 30, 2], whiteStep: 10, note: 'Natural iron-oxide earth crafted from Yellow, Magenta, and Black.' },
+            { id: 17, tier: 3, tierName: '04 / Earth & Ochres', name: 'Raw Umber', recipe: [3, 2, 10, 10, 5], whiteStep: 10, note: 'Dark, cool earth shadow balanced with Blue and Yellow.' },
+            { id: 18, tier: 3, tierName: '04 / Earth & Ochres', name: 'Venetian Red', recipe: [10, 0, 12, 20, 2], whiteStep: 10, note: 'Warm hematitic red used in classical frescoes.' },
+            { id: 19, tier: 3, tierName: '04 / Earth & Ochres', name: 'Olive Grove', recipe: [2, 2, 14, 20, 2], whiteStep: 10, note: 'Mediterranean olive foliage using all five pigments.' },
+            { id: 20, tier: 3, tierName: '04 / Earth & Ochres', name: 'Burnt Sienna', recipe: [8, 1, 12, 10, 3], whiteStep: 10, note: 'Roasted Tuscan earth pigment with luminous amber depth.' },
+
+            // TIER 4: 05 / Nocturnes & Greys
+            { id: 21, tier: 4, tierName: '05 / Nocturnes', name: 'Payne’s Grey', recipe: [2, 8, 0, 30, 6], whiteStep: 10, note: 'The watercolourist’s dark blue-grey alternative to flat black.' },
+            { id: 22, tier: 4, tierName: '05 / Nocturnes', name: 'Whistler Nocturne', recipe: [0, 6, 3, 40, 5], whiteStep: 10, note: 'Thames evening fog in deep petrol blue-green.' },
+            { id: 23, tier: 4, tierName: '05 / Nocturnes', name: 'Warm Greige', recipe: [2, 1, 5, 100, 3], whiteStep: 10, note: 'Architectural stone neutral balancing warm and cool primaries.' },
+            { id: 24, tier: 4, tierName: '05 / Nocturnes', name: 'Prussian Shadow', recipe: [1, 10, 2, 10, 5], whiteStep: 10, note: 'Inky velvet blue-black.' },
+            { id: 25, tier: 4, tierName: '05 / Nocturnes', name: 'Pewter Patina', recipe: [1, 2, 3, 90, 4], whiteStep: 10, note: 'Oxidized silver-grey with subtle greenish warmth.' },
+
+            // TIER 5: 06 / Master studies
+            { id: 26, tier: 5, tierName: '06 / Master', name: 'Vermeer Ultramarine', recipe: [3, 9, 1, 60, 1], whiteStep: 10, note: 'Complex lapis lazuli glaze with a warm golden floor.' },
+            { id: 27, tier: 5, tierName: '06 / Master', name: 'Pompeii Cinnabar', recipe: [12, 0, 10, 25, 1], whiteStep: 5, note: 'Imperial Roman villa wall mural crimson-vermilion.' },
+            { id: 28, tier: 5, tierName: '06 / Master', name: 'Morandi Bottle', recipe: [3, 2, 6, 90, 2], whiteStep: 10, note: 'Quiet, contemplative still-life chalky sage-ochre.' },
+            { id: 29, tier: 5, tierName: '06 / Master', name: 'Hokusai Indigo', recipe: [2, 8, 2, 40, 3], whiteStep: 10, note: 'Deep woodblock print wave blue.' },
+            { id: 30, tier: 5, tierName: '06 / Master', name: 'Alchemist’s Gold', recipe: [3, 1, 18, 50, 1], whiteStep: 10, note: 'Final master study: radiant antique gold from all five pigments.' }
+        ];
+
+        STUDIES.forEach(study => {
+            const mixed = computeMixedColor(study.recipe);
+            study.targetRgb = mixed.rgb;
+            study.targetHex = mixed.hex;
+        });
+
+        /**************************************************************
+         * 4. WEB AUDIO SYNTH + MOBILE HAPTICS ENGINE
+         **************************************************************/
+        class MobileFeedbackEngine {
+            constructor() {
+                this.soundEnabled = true;
+                this.ctx = null;
+            }
+
+            initAudio() {
+                if (!this.ctx) {
+                    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                    if (AudioCtx) this.ctx = new AudioCtx();
+                }
+                if (this.ctx && this.ctx.state === 'suspended') {
+                    this.ctx.resume();
+                }
+            }
+
+            vibrate(pattern) {
+                if (navigator.vibrate) {
+                    try { navigator.vibrate(pattern); } catch (e) {}
+                }
+            }
+
+            playDrop(pigmentIndex, amount = 1) {
+                this.vibrate(amount > 1 ? 14 : 7);
+                if (!this.soundEnabled) return;
+                this.initAudio();
+                if (!this.ctx) return;
+
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+
+                const baseFreqs = [430, 390, 490, 340, 295];
+                const startFreq = (baseFreqs[pigmentIndex] || 400) + (Math.random() * 30 - 15);
+                const endFreq = startFreq * (amount >= 10 ? 1.4 : 1.75);
+
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(startFreq, now);
+                osc.frequency.exponentialRampToValueAtTime(endFreq, now + 0.08);
+
+                gain.gain.setValueAtTime(0.001, now);
+                gain.gain.linearRampToValueAtTime(amount >= 10 ? 0.14 : 0.09, now + 0.01);
+                gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.09);
+
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.095);
+            }
+
+            playSwirl() {
+                if (!this.soundEnabled) return;
+                this.initAudio();
+                if (!this.ctx) return;
+
+                const now = this.ctx.currentTime;
+                const bufferSize = Math.floor(this.ctx.sampleRate * 0.09);
+                const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+
+                const noise = this.ctx.createBufferSource();
+                noise.buffer = buffer;
+
+                const filter = this.ctx.createBiquadFilter();
+                filter.type = 'bandpass';
+                filter.frequency.setValueAtTime(300 + Math.random() * 140, now);
+                filter.Q.setValueAtTime(3.2, now);
+
+                const gain = this.ctx.createGain();
+                gain.gain.setValueAtTime(0.001, now);
+                gain.gain.linearRampToValueAtTime(0.03, now + 0.02);
+                gain.gain.exponentialRampToValueAtTime(0.0005, now + 0.085);
+
+                noise.connect(filter);
+                filter.connect(gain);
+                gain.connect(this.ctx.destination);
+                noise.start(now);
+            }
+
+            playMeasure(stars) {
+                this.vibrate(stars === 3 ? [20, 40, 35] : [18]);
+                if (!this.soundEnabled) return;
+                this.initAudio();
+                if (!this.ctx) return;
+
+                const now = this.ctx.currentTime;
+                const notes = stars === 3 ? [523.25, 659.25, 783.99, 1046.5]
+                            : stars === 2 ? [440, 554.37, 659.25]
+                            : [349.23, 440];
+
+                notes.forEach((freq, idx) => {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(freq, now + idx * 0.065);
+
+                    gain.gain.setValueAtTime(0.001, now + idx * 0.065);
+                    gain.gain.linearRampToValueAtTime(0.08, now + idx * 0.065 + 0.015);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, now + idx * 0.065 + 0.42);
+
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(now + idx * 0.065);
+                    osc.stop(now + idx * 0.065 + 0.44);
+                });
+            }
+        }
+
+        const fx = new MobileFeedbackEngine();
+
+        /**************************************************************
+         * 5. PERSISTENT PROGRESS & STATE MANAGEMENT
+         **************************************************************/
+        const STORAGE_KEY = 'paint_study_mobile_save_v1';
+
+        const state = {
+            currentStudyIndex: 0,
+            selectedTierFilter: 'all',
+            playerDrops: [0, 0, 0, 0, 0],
+            dropHistory: [], // Stack of { idx, amount } for 1-tap Undo
+            displayedRgb: [242, 240, 234],
+            targetMixedRgb: [242, 240, 234],
+            blendProgress: 1.0,
+            swirlBlobs: [],
+            stirAngle: 0,
+            stirVelocity: 0,
+            isHoldingStir: false,
+            isDraggingCan: false,
+            lastPointerAngle: null,
+            timedMode: true,
+            timerSeconds: 60,
+            timerInterval: null,
+            hintVisible: false,
+            records: {} // studyId -> { bestDeltaE, stars }
+        };
+
+        function loadSavedProgress() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                if (raw) {
+                    const parsed = JSON.parse(raw);
+                    if (parsed && typeof parsed === 'object') {
+                        state.records = parsed;
+                    }
+                }
+            } catch (e) {}
+        }
+
+        function saveProgress() {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(state.records));
+            } catch (e) {}
+        }
+
+        function getTotalStars() {
+            return Object.values(state.records).reduce((sum, r) => sum + (r.stars || 0), 0);
+        }
+
+        function getNextUnfinishedStudyIndex() {
+            for (let i = 0; i < STUDIES.length; i++) {
+                const rec = state.records[STUDIES[i].id];
+                if (!rec || rec.stars < 1) return i;
+            }
+            return 0;
+        }
+
+        /**************************************************************
+         * 6. RENDER MOBILE SPLASH LEVEL SELECT (30 METALLIC SWATCH CUPS)
+         **************************************************************/
+        function renderSplashGrid() {
+            const grid = document.getElementById('splashSwatchGrid');
+            grid.innerHTML = '';
+
+            // Update Total Stars Badge
+            document.getElementById('totalStarsSplash').textContent = `${getTotalStars()} / 90`;
+
+            // Update Continue CTA text
+            const nextIdx = getNextUnfinishedStudyIndex();
+            const nextStudy = STUDIES[nextIdx];
+            document.getElementById('enterLabBtnText').textContent =
+                getTotalStars() > 0
+                    ? `Continue — Study ${String(nextStudy.id).padStart(2, '0')} (${nextStudy.name})`
+                    : `Enter the lab — Study 01`;
+
+            const dabPaths = [
+                "M25,5 C36,4 45,12 46,24 C47,36 38,45 26,46 C14,47 5,38 5,25 C5,12 14,6 25,5 Z",
+                "M24,4 C35,3 46,11 45,24 C44,36 36,46 24,45 C12,44 4,35 6,22 C8,9 13,5 24,4 Z",
+                "M27,6 C38,7 46,15 44,27 C42,38 33,46 21,44 C9,42 4,32 7,20 C10,8 16,5 27,6 Z"
+            ];
+
+            STUDIES.forEach((study, idx) => {
+                if (state.selectedTierFilter !== 'all' && String(study.tier) !== String(state.selectedTierFilter)) {
+                    return;
+                }
+
+                const rec = state.records[study.id];
+                const stars = rec ? rec.stars : 0;
+                const rot = (idx * 43) % 360;
+                const pathD = dabPaths[idx % dabPaths.length];
+
+                const btn = document.createElement('button');
+                btn.className = 'flex flex-col items-center group active:scale-90 transition-transform focus:outline-none';
+
+                // Render metallic mixing cup rim + organic paint dab + level badge & star dots
+                btn.innerHTML = `
+                    <div class="relative w-13 h-13 sm:w-14 sm:h-14 rounded-full p-1 flex items-center justify-center shadow-sm"
+                         style="background: linear-gradient(135deg, #FFFFFF 0%, #D2D4DA 45%, #8C8E94 100%);">
+                        <div class="w-full h-full rounded-full bg-[#EAE8E1] flex items-center justify-center relative overflow-hidden shadow-inner">
+                            <svg viewBox="0 0 50 50" class="w-11 h-11" style="transform: rotate(${rot}deg)">
+                                <path d="${pathD}" fill="${study.targetHex}" />
+                                <path d="M15,16 C21,11 30,11 34,17" stroke="rgba(255,255,255,0.32)" stroke-width="2.5" stroke-linecap="round" fill="none" />
+                            </svg>
+                        </div>
+                        <span class="absolute -top-1 -left-1 px-1 py-0.2 rounded-full bg-stone-900/85 text-stone-100 font-mono-lab text-[8px] leading-tight shadow">
+                            ${String(study.id).padStart(2, '0')}
+                        </span>
+                    </div>
+                    <span class="font-mono-lab text-[8px] text-stone-600 truncate max-w-[60px] mt-1 leading-tight">${study.name}</span>
+                    <div class="flex items-center gap-0.5 text-[9px] leading-none mt-0.5">
+                        <span class="${stars >= 1 ? 'text-amber-500' : 'text-stone-300'}">★</span>
+                        <span class="${stars >= 2 ? 'text-amber-500' : 'text-stone-300'}">★</span>
+                        <span class="${stars >= 3 ? 'text-amber-500' : 'text-stone-300'}">★</span>
+                    </div>
+                `;
+
+                btn.addEventListener('click', () => {
+                    loadStudy(idx);
+                    closeSplashScreen();
+                });
+
+                grid.appendChild(btn);
+            });
+        }
+
+        function closeSplashScreen() {
+            const splash = document.getElementById('splashScreen');
+            splash.classList.add('-translate-y-full', 'pointer-events-none');
+            startTimer();
+        }
+
+        function openSplashScreen() {
+            renderSplashGrid();
+            const splash = document.getElementById('splashScreen');
+            splash.classList.remove('-translate-y-full', 'pointer-events-none');
+        }
+
+        /**************************************************************
+         * 7. RENDER THUMB-FRIENDLY 5-PIGMENT DISPENSER DOCK
+         **************************************************************/
+        function getScaleCue(study, idx) {
+            const target = study.recipe[idx];
+            if (idx === 3 && study.whiteStep === 30) return '+30';
+            if (target === 0) return '0';
+            if (target <= 2) return '1+';
+            if (target <= 5) return '4+';
+            if (target <= 15) return '5+';
+            if (target <= 45) return '10+';
+            return '20+';
+        }
+
+        function renderDispensers() {
+            const row = document.getElementById('dispensersRow');
+            row.innerHTML = '';
+            const study = STUDIES[state.currentStudyIndex];
+
+            PIGMENTS.forEach((pig, idx) => {
+                const count = state.playerDrops[idx];
+                const scaleCue = getScaleCue(study, idx);
+                // On "Teal study 33", the primary + button on Titanium White dispenses +30 drops per tap just like the reference video!
+                const primaryStep = (idx === 3 && study.whiteStep === 30) ? 30 : 1;
+                const secondaryStep = (idx === 3) ? (study.whiteStep === 30 ? 10 : 10) : 5;
+
+                const col = document.createElement('div');
+                col.id = `dispenserCol${idx}`;
+                col.className = 'dispenser-col rounded-2xl p-1.5 flex flex-col items-center relative select-none';
+
+                col.innerHTML = `
+                    <!-- Top Metallic Syringe Cylinder & Pigment Window -->
+                    <div class="w-7 h-7 rounded-t-md metallic-syringe flex flex-col justify-between items-center overflow-hidden border border-stone-400/40 -mt-2 shadow-2xs">
+                        <div class="w-full h-1 metallic-collar"></div>
+                        <div class="w-full h-3" style="background-color: ${pig.hex}; box-shadow: inset 0 1px 2px rgba(0,0,0,0.28);"></div>
+                        <div class="w-full h-1.5 metallic-collar"></div>
+                    </div>
+
+                    <!-- Pigment Label -->
+                    <div class="font-medium text-[10px] text-stone-800 mt-1 truncate max-w-full leading-tight">
+                        ${pig.shortName}
+                    </div>
+
+                    <!-- Drop Count & Scale Hint -->
+                    <div class="w-full flex items-center justify-between px-0.5 mt-0.5 font-mono-lab text-[8px]">
+                        <span id="dropCountLabel${idx}" class="text-stone-700 font-semibold">${count}d</span>
+                        <span class="text-stone-400">${scaleCue}</span>
+                    </div>
+
+                    <!-- Primary Thumb + Button -->
+                    <button id="plusBtn${idx}" aria-label="Add ${pig.name}" class="thumb-plus-btn w-10 h-10 rounded-full mt-1 flex items-center justify-center font-mono-lab text-sm font-semibold text-stone-800 focus:outline-none">
+                        +${primaryStep}
+                    </button>
+
+                    <!-- Secondary Micro Row: -1 Undo & +Burst Pill -->
+                    <div class="w-full flex items-center justify-between gap-0.5 mt-1">
+                        <button id="minusBtn${idx}" class="${count > 0 ? 'opacity-100' : 'opacity-25 pointer-events-none'} flex-1 py-0.5 rounded bg-stone-200/75 active:bg-stone-300 font-mono-lab text-[8px] text-stone-600 text-center">
+                            −
+                        </button>
+                        <button id="burstBtn${idx}" class="flex-1 py-0.5 rounded bg-stone-200/75 active:bg-stone-300 font-mono-lab text-[8px] text-stone-700 font-medium text-center">
+                            +${secondaryStep}
+                        </button>
+                    </div>
+
+                    <!-- Floating +Drop Pop Feedback -->
+                    <div id="popBadgeSlot${idx}" class="h-3 flex items-center justify-center pointer-events-none"></div>
+                `;
+
+                row.appendChild(col);
+
+                const plusBtn = document.getElementById(`plusBtn${idx}`);
+                const minusBtn = document.getElementById(`minusBtn${idx}`);
+                const burstBtn = document.getElementById(`burstBtn${idx}`);
+
+                let holdTimer = null;
+                let streamInterval = null;
+
+                const stopStream = () => {
+                    if (holdTimer) clearTimeout(holdTimer);
+                    if (streamInterval) clearInterval(streamInterval);
+                    holdTimer = null;
+                    streamInterval = null;
+                    plusBtn.classList.remove('pressing');
+                    col.classList.remove('dispensing-active');
+                };
+
+                const startStream = (e) => {
+                    e.preventDefault();
+                    plusBtn.classList.add('pressing');
+                    col.classList.add('dispensing-active');
+                    dispenseDrops(idx, primaryStep);
+
+                    holdTimer = setTimeout(() => {
+                        streamInterval = setInterval(() => {
+                            dispenseDrops(idx, primaryStep);
+                        }, 100);
+                    }, 250);
+                };
+
+                plusBtn.addEventListener('pointerdown', startStream);
+                plusBtn.addEventListener('pointerup', stopStream);
+                plusBtn.addEventListener('pointerleave', stopStream);
+                plusBtn.addEventListener('pointercancel', stopStream);
+
+                minusBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    removeDrops(idx, primaryStep);
+                });
+
+                burstBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    dispenseDrops(idx, secondaryStep);
+                });
+            });
+        }
+
+        /**************************************************************
+         * 8. DISPENSE DROPS, TUBE PULSES & FALLING DROPLETS
+         **************************************************************/
+        function dispenseDrops(pigmentIdx, amount = 1) {
+            state.playerDrops[pigmentIdx] += amount;
+            state.dropHistory.push({ idx: pigmentIdx, amount });
+            document.getElementById('undoLastDropBtn').disabled = false;
+
+            updateDispenserCounterUI(pigmentIdx, `+${amount}`);
+            fx.playDrop(pigmentIdx, amount);
+
+            const newMix = computeMixedColor(state.playerDrops);
+            state.targetMixedRgb = newMix.rgb;
+
+            const totalDrops = state.playerDrops.reduce((a, b) => a + b, 0);
+            if (totalDrops === amount) {
+                state.blendProgress = 0.35;
+            } else {
+                state.blendProgress = Math.max(0.15, state.blendProgress - 0.25);
+            }
+
+            spawnTubePulseAndDroplet(pigmentIdx, amount);
+            updateFormulaAndReadinessUI();
+        }
+
+        function removeDrops(pigmentIdx, amount = 1) {
+            if (state.playerDrops[pigmentIdx] <= 0) return;
+            const actual = Math.min(state.playerDrops[pigmentIdx], amount);
+            state.playerDrops[pigmentIdx] -= actual;
+
+            updateDispenserCounterUI(pigmentIdx, `−${actual}`);
+            fx.vibrate(6);
+
+            const newMix = computeMixedColor(state.playerDrops);
+            state.targetMixedRgb = newMix.rgb;
+            if (newMix.empty) {
+                state.displayedRgb = [242, 240, 234];
+                state.swirlBlobs = [];
+                state.blendProgress = 1.0;
+            } else {
+                state.displayedRgb = [...state.targetMixedRgb];
+            }
+
+            updateFormulaAndReadinessUI();
+        }
+
+        function undoLastAction() {
+            if (state.dropHistory.length === 0) return;
+            const last = state.dropHistory.pop();
+            removeDrops(last.idx, last.amount);
+            document.getElementById('undoLastDropBtn').disabled = state.dropHistory.length === 0;
+        }
+
+        function updateDispenserCounterUI(idx, popLabel) {
+            const countEl = document.getElementById(`dropCountLabel${idx}`);
+            const minusBtn = document.getElementById(`minusBtn${idx}`);
+            const popSlot = document.getElementById(`popBadgeSlot${idx}`);
+
+            if (countEl) countEl.textContent = `${state.playerDrops[idx]}d`;
+            if (minusBtn) {
+                if (state.playerDrops[idx] > 0) {
+                    minusBtn.classList.remove('opacity-25', 'pointer-events-none');
+                    minusBtn.classList.add('opacity-100');
+                } else {
+                    minusBtn.classList.add('opacity-25', 'pointer-events-none');
+                    minusBtn.classList.remove('opacity-100');
+                }
+            }
+            if (popSlot && popLabel) {
+                popSlot.innerHTML = `<span class="drop-pop-badge font-mono-lab text-[9px] font-semibold text-stone-600">${popLabel}</span>`;
+            }
+        }
+
+        function spawnTubePulseAndDroplet(pigmentIdx, amount) {
+            const pig = PIGMENTS[pigmentIdx];
+            const pathEl = document.getElementById(`tubePath${pigmentIdx}`);
+            const pulsesGroup = document.getElementById('tubePulsesGroup');
+            const dropsGroup = document.getElementById('fallingDropsGroup');
+
+            // 1. Animate colored pigment pulse traveling along the SVG stainless-steel tube
+            if (pathEl && pulsesGroup) {
+                const len = pathEl.getTotalLength();
+                const pulse = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                pulse.setAttribute('d', pathEl.getAttribute('d'));
+                pulse.setAttribute('fill', 'none');
+                pulse.setAttribute('stroke', pig.id === 'white' ? '#686A70' : pig.hex);
+                pulse.setAttribute('stroke-width', '5');
+                pulse.setAttribute('stroke-linecap', 'round');
+                pulse.setAttribute('stroke-dasharray', `24 ${len}`);
+                pulse.setAttribute('stroke-dashoffset', String(len));
+                pulsesGroup.appendChild(pulse);
+
+                const pulseStart = performance.now();
+                const pulseDur = 140;
+                const tickPulse = (now) => {
+                    const t = Math.min(1, (now - pulseStart) / pulseDur);
+                    pulse.setAttribute('stroke-dashoffset', String(len * (1 - t)));
+                    if (t < 1) requestAnimationFrame(tickPulse);
+                    else pulse.remove();
+                };
+                requestAnimationFrame(tickPulse);
+            }
+
+            // 2. Spawn falling teardrop from nozzle tip into the open paint can
+            if (dropsGroup) {
+                const dropEl = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                const r = amount >= 10 ? 5 : 3.8;
+                dropEl.setAttribute('fill', pig.hex);
+                dropEl.setAttribute('stroke', pig.id === 'white' ? '#AAA' : 'none');
+                dropEl.setAttribute('stroke-width', '0.6');
+                dropsGroup.appendChild(dropEl);
+
+                const startX = pig.nozzleX;
+                const startY = pig.nozzleY;
+                const endX = 250 + (pigmentIdx - 2) * 9 + (Math.random() * 6 - 3);
+                const endY = 156 + (Math.random() * 6 - 3);
+
+                const startT = performance.now();
+                const fallDur = 175;
+
+                const tickFall = (now) => {
+                    const t = Math.min(1, (now - startT) / fallDur);
+                    const ease = t * t;
+                    const cx = startX + (endX - startX) * t;
+                    const cy = startY + (endY - startY) * ease;
+                    const stretch = 1 + t * 0.55;
+
+                    const d = `M ${cx} ${cy - r * stretch * 1.35}
+                               C ${cx + r} ${cy - r * 0.3}, ${cx + r} ${cy + r}, ${cx} ${cy + r}
+                               C ${cx - r} ${cy + r}, ${cx - r} ${cy - r * 0.3}, ${cx} ${cy - r * stretch * 1.35} Z`;
+                    dropEl.setAttribute('d', d);
+
+                    if (t < 1) {
+                        requestAnimationFrame(tickFall);
+                    } else {
+                        dropEl.remove();
+                        addCanSurfaceSwirlRing(pigmentIdx, amount);
+                    }
+                };
+                requestAnimationFrame(tickFall);
+            }
+        }
+
+        /**************************************************************
+         * 9. HIGH-DPI FLUID PAINT CAN CANVAS & SWIRL PHYSICS
+         **************************************************************/
+        const canCanvas = document.getElementById('paintSurfaceCanvas');
+        const canCtx = canCanvas.getContext('2d');
+
+        function addCanSurfaceSwirlRing(pigmentIdx, amount) {
+            const pig = PIGMENTS[pigmentIdx];
+            const angle = (pigmentIdx - 2) * 0.6 + (Math.random() * 0.5 - 0.25);
+            const dist = 10 + Math.random() * 24;
+
+            state.swirlBlobs.push({
+                angle: angle + state.stirAngle,
+                dist: dist,
+                radius: Math.min(32, (amount >= 10 ? 20 : 11) + Math.sqrt(amount) * 2.2),
+                rgb: [...pig.rgb],
+                alpha: 0.94,
+                stretch: 1.0,
+                rippleRadius: 2,
+                rippleAlpha: 0.7
+            });
+
+            if (state.swirlBlobs.length > 32) {
+                state.swirlBlobs.shift();
+            }
+        }
+
+        function triggerStirImpulse(power = 0.14) {
+            const totalDrops = state.playerDrops.reduce((a, b) => a + b, 0);
+            if (totalDrops === 0) return;
+
+            state.stirVelocity = Math.min(0.40, state.stirVelocity + power);
+            if (Math.random() < 0.28) {
+                fx.playSwirl();
+            }
+        }
+
+        function animatePaintCanLoop() {
+            const w = canCanvas.width;
+            const h = canCanvas.height;
+            const cx = w / 2;
+            const cy = h / 2;
+
+            if (state.isHoldingStir) {
+                triggerStirImpulse(0.036);
+            }
+
+            if (state.stirVelocity > 0.001) {
+                state.stirAngle += state.stirVelocity;
+                state.stirVelocity *= 0.925;
+
+                // Spin the ↻ icon on the Hold-to-Stir button
+                const stirIcon = document.getElementById('stirIconSpin');
+                if (stirIcon) {
+                    stirIcon.style.transform = `rotate(${(state.stirAngle * 57.3) % 360}deg)`;
+                }
+
+                state.blendProgress = Math.min(1.0, state.blendProgress + state.stirVelocity * 0.19);
+
+                const lerpRate = Math.min(0.28, state.stirVelocity * 0.58);
+                for (let c = 0; c < 3; c++) {
+                    state.displayedRgb[c] += (state.targetMixedRgb[c] - state.displayedRgb[c]) * lerpRate;
+                }
+
+                state.swirlBlobs.forEach(blob => {
+                    blob.angle += state.stirVelocity * (1.35 - blob.dist / 85);
+                    blob.stretch = Math.min(6.8, blob.stretch + state.stirVelocity * 1.7);
+                    blob.alpha *= 0.952;
+                    blob.dist = blob.dist * 0.99 + 20 * 0.01;
+                });
+
+                state.swirlBlobs = state.swirlBlobs.filter(b => b.alpha > 0.03);
+                updateFormulaAndReadinessUI();
+            } else {
+                state.stirVelocity = 0;
+            }
+
+            if (state.blendProgress >= 0.97 && state.playerDrops.some(d => d > 0)) {
+                state.displayedRgb = [...state.targetMixedRgb];
+                state.blendProgress = 1.0;
+            }
+
+            // 1. Base liquid paint fill
+            const r = Math.round(state.displayedRgb[0]);
+            const g = Math.round(state.displayedRgb[1]);
+            const b = Math.round(state.displayedRgb[2]);
+            canCtx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+            canCtx.fillRect(0, 0, w, h);
+
+            // 2. Unblended pigment rings & spiral vortex ribbons
+            const totalDrops = state.playerDrops.reduce((a, b) => a + b, 0);
+            if (totalDrops > 0) {
+                canCtx.save();
+                canCtx.translate(cx, cy);
+                canCtx.scale(1, 0.73);
+                canCtx.rotate(state.stirAngle);
+
+                const vortexAlpha = Math.min(0.24, state.stirVelocity * 0.85 + (1 - state.blendProgress) * 0.12);
+                if (vortexAlpha > 0.01) {
+                    canCtx.strokeStyle = `rgba(255, 255, 255, ${vortexAlpha})`;
+                    canCtx.lineWidth = 1.8;
+                    canCtx.beginPath();
+                    for (let a = 0; a < Math.PI * 4.5; a += 0.22) {
+                        const rad = a * 4.2;
+                        const vx = Math.cos(a) * rad;
+                        const vy = Math.sin(a) * rad;
+                        if (a === 0) canCtx.moveTo(vx, vy);
+                        else canCtx.lineTo(vx, vy);
+                    }
+                    canCtx.stroke();
+                }
+
+                state.swirlBlobs.forEach(blob => {
+                    const bx = Math.cos(blob.angle - state.stirAngle) * blob.dist;
+                    const by = Math.sin(blob.angle - state.stirAngle) * blob.dist;
+
+                    if (blob.rippleAlpha > 0.02) {
+                        canCtx.strokeStyle = `rgba(${blob.rgb[0]}, ${blob.rgb[1]}, ${blob.rgb[2]}, ${blob.rippleAlpha})`;
+                        canCtx.lineWidth = 1.4;
+                        canCtx.beginPath();
+                        canCtx.arc(bx, by, blob.rippleRadius, 0, Math.PI * 2);
+                        canCtx.stroke();
+                        blob.rippleRadius += 1.3;
+                        blob.rippleAlpha *= 0.90;
+                    }
+
+                    canCtx.save();
+                    canCtx.translate(bx, by);
+                    canCtx.rotate(blob.angle - state.stirAngle + Math.PI / 2);
+                    canCtx.scale(blob.stretch, 1 / Math.sqrt(blob.stretch));
+
+                    const grad = canCtx.createRadialGradient(0, 0, 1, 0, 0, blob.radius);
+                    grad.addColorStop(0, `rgba(${blob.rgb[0]}, ${blob.rgb[1]}, ${blob.rgb[2]}, ${blob.alpha})`);
+                    grad.addColorStop(0.7, `rgba(${blob.rgb[0]}, ${blob.rgb[1]}, ${blob.rgb[2]}, ${blob.alpha * 0.65})`);
+                    grad.addColorStop(1, `rgba(${blob.rgb[0]}, ${blob.rgb[1]}, ${blob.rgb[2]}, 0)`);
+
+                    canCtx.fillStyle = grad;
+                    canCtx.beginPath();
+                    canCtx.arc(0, 0, blob.radius, 0, Math.PI * 2);
+                    canCtx.fill();
+                    canCtx.restore();
+                });
+
+                canCtx.restore();
+            }
+
+            // 3. Recessed inner metallic shadow vignette
+            const wallGrad = canCtx.createRadialGradient(cx, cy - 5, w * 0.24, cx, cy, w * 0.52);
+            wallGrad.addColorStop(0, 'rgba(0,0,0,0)');
+            wallGrad.addColorStop(0.8, 'rgba(0,0,0,0.08)');
+            wallGrad.addColorStop(1, 'rgba(0,0,0,0.36)');
+            canCtx.fillStyle = wallGrad;
+            canCtx.fillRect(0, 0, w, h);
+
+            requestAnimationFrame(animatePaintCanLoop);
+        }
+
+        /**************************************************************
+         * 10. LIVE SWATCH BAR, FORMULA & SLIDE-UP EVALUATION DRAWER
+         **************************************************************/
+        function updateFormulaAndReadinessUI() {
+            const playerSwatch = document.getElementById('playerSwatchBox');
+            const liveDeltaPill = document.getElementById('liveDeltaPill');
+            const unmixedBadge = document.getElementById('unmixedBadge');
+            const formulaLine = document.getElementById('formulaBreakdownLine');
+            const dropTotalCounter = document.getElementById('dropTotalCounter');
+            const blendPctLabel = document.getElementById('blendPctLabel');
+
+            const total = state.playerDrops.reduce((a, b) => a + b, 0);
+            dropTotalCounter.textContent = `${total} ${total === 1 ? 'drop' : 'drops'}`;
+
+            if (total === 0) {
+                playerSwatch.style.backgroundColor = '#F2F0EA';
+                liveDeltaPill.textContent = 'Empty can';
+                unmixedBadge.classList.add('hidden');
+                formulaLine.textContent = 'Tap + on dispensers to add pigment drops';
+                blendPctLabel.textContent = '100% mixed';
+                return;
+            }
+
+            const r = Math.round(state.displayedRgb[0]);
+            const g = Math.round(state.displayedRgb[1]);
+            const b = Math.round(state.displayedRgb[2]);
+            const hex = '#' + [r, g, b].map(x => x.toString(16).padStart(2, '0')).join('').toUpperCase();
+            playerSwatch.style.backgroundColor = hex;
+
+            const pctBlend = Math.round(state.blendProgress * 100);
+            blendPctLabel.textContent = `${pctBlend}% mixed`;
+
+            const isBlended = state.blendProgress >= 0.92 && state.swirlBlobs.length <= 2;
+            if (!isBlended) {
+                unmixedBadge.classList.remove('hidden');
+                liveDeltaPill.textContent = `${total}d · Unblended`;
+            } else {
+                unmixedBadge.classList.add('hidden');
+                liveDeltaPill.textContent = `${hex} · Ready`;
+            }
+
+            // Formula ratio summary
+            const parts = [];
+            PIGMENTS.forEach((p, idx) => {
+                const c = state.playerDrops[idx];
+                if (c > 0) {
+                    const pct = ((c / total) * 100).toFixed(0);
+                    parts.push(`${c} ${p.shortName} (${pct}%)`);
+                }
+            });
+            formulaLine.textContent = parts.join(' · ');
+        }
+
+        function getStarsAndVerdict(deltaE) {
+            if (deltaE <= 2.2) return { stars: 3, title: 'Museum Grade Match' };
+            if (deltaE <= 4.5) return { stars: 3, title: 'Mint Condition-ish' };
+            if (deltaE <= 8.5) return { stars: 2, title: 'Curator’s Nod' };
+            if (deltaE <= 14.5) return { stars: 1, title: 'Close Studio Study' };
+            return { stars: 0, title: 'Needs Re-tempering' };
+        }
+
+        function measureCurrentMix() {
+            const total = state.playerDrops.reduce((a, b) => a + b, 0);
+            if (total === 0) {
+                fx.vibrate([12, 30, 12]);
+                const rim = document.getElementById('paintCanRim');
+                rim.classList.add('scale-95');
+                setTimeout(() => rim.classList.remove('scale-95'), 140);
+                return;
+            }
+
+            // Complete any remaining swirl so player is judged on their true pigment ratio
+            state.displayedRgb = [...state.targetMixedRgb];            state.blendProgress = 1.0;
+            state.swirlBlobs = [];
+            updateFormulaAndReadinessUI();
+
+            const study = STUDIES[state.currentStudyIndex];
+            const deltaE = calculateDeltaE(study.targetRgb, state.targetMixedRgb);
+            const accuracy = Math.max(0, Math.min(100, 100 - deltaE * 2.0));
+            const { stars, title } = getStarsAndVerdict(deltaE);
+
+            fx.playMeasure(stars);
+
+            // Save best record to localStorage
+            const prev = state.records[study.id];
+            if (!prev || deltaE < prev.bestDeltaE || stars > prev.stars) {
+                state.records[study.id] = {
+                    bestDeltaE: prev ? Math.min(prev.bestDeltaE, deltaE) : deltaE,
+                    stars: prev ? Math.max(prev.stars, stars) : stars
+                };
+                saveProgress();
+                updateHudStars();
+            }
+
+            // Populate Slide-Up Bottom Sheet
+            document.getElementById('resultDeltaScore').textContent = deltaE.toFixed(2);
+            document.getElementById('resultVerdictTitle').textContent = title;
+
+            const accBadge = document.getElementById('resultAccuracyPct');
+            accBadge.textContent = `${accuracy.toFixed(1)}% match`;
+            accBadge.className = `ml-1 font-mono-lab text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                stars === 3 ? 'bg-emerald-100 text-emerald-800' :
+                stars === 2 ? 'bg-amber-100 text-amber-800' : 'bg-rose-100 text-rose-800'
+            }`;
+
+            // Render 3 Animated Stars
+            const starsRow = document.getElementById('sheetStarsRow');
+            starsRow.innerHTML = '';
+            for (let s = 1; s <= 3; s++) {
+                const span = document.createElement('span');
+                span.className = `inline-block star-animate ${s <= stars ? 'text-amber-400 drop-shadow-2xs' : 'text-stone-300'}`;
+                span.style.animationDelay = `${(s - 1) * 90}ms`;
+                span.textContent = '★';
+                starsRow.appendChild(span);
+            }
+
+            // Mini Swatches
+            const playerHex = computeMixedColor(state.playerDrops).hex;
+            document.getElementById('evalTargetMini').style.backgroundColor = study.targetHex;
+            document.getElementById('evalPlayerMini').style.backgroundColor = playerHex;
+
+            // Diagnostic Meters (Lightness, Temp, Chroma) in CIE Lab space
+            const tLab = rgbToLab(study.targetRgb);
+            const pLab = rgbToLab(state.targetMixedRgb);
+
+            // Lightness diff
+            const dL = pLab[0] - tLab[0];
+            document.getElementById('diagLightnessText').textContent =
+                Math.abs(dL) < 2.5 ? 'Spot on' : (dL > 0 ? 'Too light' : 'Too dark');
+            document.getElementById('diagLightnessBar').style.width = `${Math.max(8, Math.min(92, 50 + dL * 1.4))}%`;
+
+            // Temperature diff (b* yellow-blue + a* red-green)
+            const dWarm = (pLab[2] - tLab[2]) + (pLab[1] - tLab[1]) * 0.4;
+            document.getElementById('diagTempText').textContent =
+                Math.abs(dWarm) < 3.0 ? 'Spot on' : (dWarm > 0 ? 'Too warm' : 'Too cool');
+            document.getElementById('diagTempBar').style.width = `${Math.max(8, Math.min(92, 50 + dWarm * 1.2))}%`;
+
+            // Chroma diff
+            const tChroma = Math.hypot(tLab[1], tLab[2]);
+            const pChroma = Math.hypot(pLab[1], pLab[2]);
+            const dC = pChroma - tChroma;
+            document.getElementById('diagChromaText').textContent =
+                Math.abs(dC) < 3.0 ? 'Spot on' : (dC > 0 ? 'Too vivid' : 'Too muted');
+            document.getElementById('diagChromaBar').style.width = `${Math.max(8, Math.min(92, 50 + dC * 1.3))}%`;
+
+            // Pigment Ratio Comparison Bars
+            const listEl = document.getElementById('pigmentComparisonList');
+            listEl.innerHTML = '';
+            const targetTotal = study.recipe.reduce((a, b) => a + b, 0);
+
+            PIGMENTS.forEach((pig, idx) => {
+                const tCount = study.recipe[idx];
+                const pCount = state.playerDrops[idx];
+                if (tCount === 0 && pCount === 0) return;
+
+                const tPct = (tCount / targetTotal) * 100;
+                const pPct = (pCount / total) * 100;
+                const diff = pPct - tPct;
+
+                const statusLabel = Math.abs(diff) < 1.2 ? 'Spot on' : (diff > 0 ? `+${diff.toFixed(0)}% high` : `${diff.toFixed(0)}% low`);
+
+                const rowEl = document.createElement('div');
+                rowEl.className = 'flex flex-col gap-0.5';
+                rowEl.innerHTML = `
+                    <div class="flex justify-between items-center text-[9px] font-mono-lab">
+                        <span class="text-stone-800 font-medium flex items-center gap-1">
+                            <span class="w-2 h-2 rounded-full inline-block border border-stone-400/50" style="background:${pig.hex}"></span>
+                            ${pig.name}
+                        </span>
+                        <span class="text-stone-500">
+                            ${pCount}d (${pPct.toFixed(0)}%) vs ${tCount}d (${tPct.toFixed(0)}%) · <strong class="text-stone-700">${statusLabel}</strong>
+                        </span>
+                    </div>
+                    <div class="w-full h-2 bg-stone-100 rounded-full overflow-hidden relative border border-stone-200/80">
+                        <div class="absolute top-0 bottom-0 w-0.5 bg-stone-900 z-10" style="left: ${Math.min(98.5, tPct)}%;"></div>
+                        <div class="h-full rounded-full transition-all duration-500" style="width: ${Math.min(100, pPct)}%; background-color: ${pig.id === 'white' ? '#A8A49C' : pig.hex};"></div>
+                    </div>
+                `;
+                listEl.appendChild(rowEl);
+            });
+
+            const recipeParts = [];
+            study.recipe.forEach((c, idx) => {
+                if (c > 0) recipeParts.push(`${c} ${PIGMENTS[idx].name}`);
+            });
+            document.getElementById('exactRecipeText').textContent = `Ideal studio formula: ${recipeParts.join(' · ')}`;
+
+            openEvalSheet();
+        }
+
+        function openEvalSheet() {
+            const backdrop = document.getElementById('evalBackdrop');
+            const sheet = document.getElementById('evalBottomSheet');
+            backdrop.classList.remove('pointer-events-none', 'opacity-0');
+            backdrop.classList.add('opacity-100');
+            sheet.classList.remove('translate-y-full');
+        }
+
+        function closeEvalSheet() {
+            const backdrop = document.getElementById('evalBackdrop');
+            const sheet = document.getElementById('evalBottomSheet');
+            backdrop.classList.add('pointer-events-none', 'opacity-0');
+            backdrop.classList.remove('opacity-100');
+            sheet.classList.add('translate-y-full');
+        }
+
+        /**************************************************************
+         * 11. LOAD STUDY & TIMER CONTROLS
+         **************************************************************/
+        function updateHudStars() {
+            const study = STUDIES[state.currentStudyIndex];
+            const rec = state.records[study.id];
+            const stars = rec ? rec.stars : 0;
+            const container = document.getElementById('hudStudyStars');
+            container.innerHTML = [1, 2, 3].map(i => `<span class="${i <= stars ? 'text-amber-500' : 'text-stone-300'}">★</span>`).join('');
+        }
+
+        function loadStudy(index) {
+            state.currentStudyIndex = (index + STUDIES.length) % STUDIES.length;
+            const study = STUDIES[state.currentStudyIndex];
+
+            state.playerDrops = [0, 0, 0, 0, 0];
+            state.dropHistory = [];
+            state.displayedRgb = [242, 240, 234];
+            state.targetMixedRgb = [242, 240, 234];
+            state.blendProgress = 1.0;
+            state.swirlBlobs = [];
+            state.hintVisible = false;
+
+            document.getElementById('undoLastDropBtn').disabled = true;
+            document.getElementById('hudStudyBadge').textContent = `#${String(study.id).padStart(2, '0')}`;
+            document.getElementById('hudTierLabel').textContent = study.tierName;
+            document.getElementById('studyNameHeading').textContent = study.name;
+            document.getElementById('targetSwatchBox').style.backgroundColor = study.targetHex;
+            document.getElementById('targetHexLabel').textContent = study.targetHex;
+            document.getElementById('hintOverlayText').classList.add('hidden');
+
+            updateHudStars();
+            closeEvalSheet();
+            renderDispensers();
+            updateFormulaAndReadinessUI();
+            resetTimer();
+        }
+
+        function resetTimer() {
+            state.timerSeconds = 60;
+            updateTimerUI();
+        }
+
+        function startTimer() {
+            if (state.timerInterval) clearInterval(state.timerInterval);
+            state.timerInterval = setInterval(() => {
+                if (!state.timedMode) return;
+                // Don't tick if splash screen or bottom sheet is open
+                const splashOpen = !document.getElementById('splashScreen').classList.contains('-translate-y-full');
+                const sheetOpen = !document.getElementById('evalBottomSheet').classList.contains('translate-y-full');
+                if (splashOpen || sheetOpen) return;
+
+                if (state.timerSeconds > 0) {
+                    state.timerSeconds--;
+                    updateTimerUI();
+                    if (state.timerSeconds === 0) {
+                        const total = state.playerDrops.reduce((a, b) => a + b, 0);
+                        if (total > 0) measureCurrentMix();
+                    }
+                }
+            }, 1000);
+        }
+
+        function updateTimerUI() {
+            const display = document.getElementById('timerDisplay');
+            const dot = document.getElementById('timerStatusDot');
+
+            if (!state.timedMode) {
+                display.textContent = 'ZEN';
+                dot.className = 'w-1.5 h-1.5 rounded-full bg-sky-500';
+                return;
+            }
+
+            const mins = String(Math.floor(state.timerSeconds / 60)).padStart(2, '0');
+            const secs = String(state.timerSeconds % 60).padStart(2, '0');
+            display.textContent = `${mins}:${secs}`;
+
+            if (state.timerSeconds <= 10) {
+                dot.className = 'w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping';
+            } else {
+                dot.className = 'w-1.5 h-1.5 rounded-full bg-emerald-500';
+            }
+        }
+
+        /**************************************************************
+         * 12. INTERACTION WIRING (TOUCH SWIRL, HOLD-STIR, FILTERS)
+         **************************************************************/
+        function setupMobileInteractions() {
+            // Desktop Phone Frame vs Full Screen Toggle
+            const toggleFrameBtn = document.getElementById('toggleFrameBtn');
+            if (toggleFrameBtn) {
+                toggleFrameBtn.addEventListener('click', () => {
+                    const isPhone = document.body.classList.contains('phone-frame-mode');
+                    if (isPhone) {
+                        document.body.classList.remove('phone-frame-mode');
+                        document.body.classList.add('fullscreen-mode');
+                        toggleFrameBtn.textContent = 'Full Screen';
+                    } else {
+                        document.body.classList.remove('fullscreen-mode');
+                        document.body.classList.add('phone-frame-mode');
+                        toggleFrameBtn.textContent = 'Phone Frame';
+                    }
+                });
+            }
+
+            // Category Filter Pills on Splash Screen
+            document.querySelectorAll('.filter-pill').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    state.selectedTierFilter = btn.getAttribute('data-tier');
+                    document.querySelectorAll('.filter-pill').forEach(b => {
+                        b.className = 'filter-pill shrink-0 px-3 py-1 rounded-full text-[10px] font-mono-lab uppercase tracking-wider bg-white/90 text-stone-600 border border-stone-200/90 transition-all';
+                    });
+                    btn.className = 'filter-pill shrink-0 px-3 py-1 rounded-full text-[10px] font-mono-lab uppercase tracking-wider bg-stone-900 text-stone-100 shadow-2xs transition-all';
+                    renderSplashGrid();
+                });
+            });
+
+            // Enter Lab / Continue CTA
+            document.getElementById('enterLabBtn').addEventListener('click', () => {
+                const nextIdx = getNextUnfinishedStudyIndex();
+                loadStudy(nextIdx);
+                closeSplashScreen();
+            });
+
+            // Reset Saved Progress
+            document.getElementById('resetProgressBtn').addEventListener('click', () => {
+                state.records = {};
+                saveProgress();
+                renderSplashGrid();
+                fx.vibrate(15);
+            });
+
+            // Open Level Select Grid from HUD
+            document.getElementById('openPaletteBtn').addEventListener('click', () => {
+                openSplashScreen();
+            });
+
+            // Prev / Next Study Quick Buttons
+            document.getElementById('prevStudyBtn').addEventListener('click', () => loadStudy(state.currentStudyIndex - 1));
+            document.getElementById('nextStudyQuickBtn').addEventListener('click', () => loadStudy(state.currentStudyIndex + 1));
+
+            // Timed vs Zen Mode Toggle
+            document.getElementById('timerToggleBtn').addEventListener('click', () => {
+                state.timedMode = !state.timedMode;
+                if (state.timedMode && state.timerSeconds === 0) state.timerSeconds = 60;
+                updateTimerUI();
+            });
+
+            // Sound Toggle (Both Splash & HUD)
+            const toggleSound = () => {
+                fx.soundEnabled = !fx.soundEnabled;
+                const icon = fx.soundEnabled ? '🔊' : '🔇';
+                document.getElementById('splashSoundIcon').textContent = icon;
+                document.getElementById('hudSoundIcon').textContent = icon;
+            };
+            document.getElementById('splashSoundBtn').addEventListener('click', toggleSound);
+            document.getElementById('hudSoundBtn').addEventListener('click', toggleSound);
+
+            // Hint Button Toggle
+            document.getElementById('toggleHintBtn').addEventListener('click', () => {
+                const study = STUDIES[state.currentStudyIndex];
+                state.hintVisible = !state.hintVisible;
+                const hintBox = document.getElementById('hintOverlayText');
+                if (state.hintVisible) {
+                    const active = study.recipe
+                        .map((c, i) => c > 0 ? `${PIGMENTS[i].shortName}` : null)
+                        .filter(Boolean)
+                        .join(' + ');
+                    hintBox.textContent = `${study.note} (${active})`;
+                    hintBox.classList.remove('hidden');
+                } else {
+                    hintBox.classList.add('hidden');
+                }
+            });
+
+            // Undo Last Drop Button
+            document.getElementById('undoLastDropBtn').addEventListener('click', undoLastAction);
+
+            // Clean / Empty Can Button
+            document.getElementById('emptyCanBtn').addEventListener('click', () => {
+                state.playerDrops = [0, 0, 0, 0, 0];
+                state.dropHistory = [];
+                state.displayedRgb = [242, 240, 234];
+                state.targetMixedRgb = [242, 240, 234];
+                state.swirlBlobs = [];
+                state.blendProgress = 1.0;
+                document.getElementById('undoLastDropBtn').disabled = true;
+                fx.vibrate(12);
+                renderDispensers();
+                updateFormulaAndReadinessUI();
+            });
+
+            // Dedicated Thumb "Hold to Stir ↻" Button
+            const holdStirBtn = document.getElementById('holdStirBtn');
+            const startHoldStir = (e) => {
+                e.preventDefault();
+                state.isHoldingStir = true;
+                triggerStirImpulse(0.18);
+                fx.vibrate(8);
+            };
+            const stopHoldStir = () => {
+                state.isHoldingStir = false;
+            };
+            holdStirBtn.addEventListener('pointerdown', startHoldStir);
+            holdStirBtn.addEventListener('pointerup', stopHoldStir);
+            holdStirBtn.addEventListener('pointerleave', stopHoldStir);
+            holdStirBtn.addEventListener('pointercancel', stopHoldStir);
+
+            // Spacebar keyboard shortcut for desktop testing
+            window.addEventListener('keydown', (e) => {
+                if (e.code === 'Space') {
+                    e.preventDefault();
+                    state.isHoldingStir = true;
+                } else if (e.code === 'Enter') {
+                    measureCurrentMix();
+                }
+            });
+            window.addEventListener('keyup', (e) => {
+                if (e.code === 'Space') state.isHoldingStir = false;
+            });
+
+            // Direct Touch / Pointer Swirl inside the Open Paint Can
+            const canRim = document.getElementById('paintCanRim');
+            const handleCanMove = (e) => {
+                if (!state.isDraggingCan) return;
+                const rect = canRim.getBoundingClientRect();
+                const cx = rect.left + rect.width / 2;
+                const cy = rect.top + rect.height / 2;
+                const angle = Math.atan2(e.clientY - cy, e.clientX - cx);
+
+                if (state.lastPointerAngle !== null) {
+                    let delta = angle - state.lastPointerAngle;
+                    if (delta > Math.PI) delta -= Math.PI * 2;
+                    if (delta < -Math.PI) delta += Math.PI * 2;
+                    triggerStirImpulse(Math.min(0.20, Math.abs(delta) * 0.5 + 0.025));
+                }
+                state.lastPointerAngle = angle;
+            };
+
+            canRim.addEventListener('pointerdown', (e) => {
+                e.preventDefault();
+                state.isDraggingCan = true;
+                state.lastPointerAngle = null;
+                triggerStirImpulse(0.14);
+                handleCanMove(e);
+            });
+            window.addEventListener('pointermove', handleCanMove);
+            window.addEventListener('pointerup', () => {
+                state.isDraggingCan = false;
+                state.lastPointerAngle = null;
+            });
+
+            // Measure Mix & Bottom Sheet Controls
+            document.getElementById('measureMixBtn').addEventListener('click', measureCurrentMix);
+            document.getElementById('keepMixingBtn').addEventListener('click', closeEvalSheet);
+            document.getElementById('closeSheetHandle').addEventListener('click', closeEvalSheet);
+            document.getElementById('evalBackdrop').addEventListener('click', closeEvalSheet);
+
+            document.getElementById('retryStudyBtn').addEventListener('click', () => {
+                loadStudy(state.currentStudyIndex);
+            });
+            document.getElementById('nextStudyBtn').addEventListener('click', () => {
+                loadStudy(state.currentStudyIndex + 1);
+            });
+        }
+
+        // Boot Mobile App
+        window.onload = function () {
+            loadSavedProgress();
+            renderSplashGrid();
+            setupMobileInteractions();
+            loadStudy(0);
+            requestAnimationFrame(animatePaintCanLoop);
+        };
+    </script>
+</body>
+</html>
